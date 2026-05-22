@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin — VR Barber Shop</title>
+  <link rel="icon" type="image/png" href="../assets/logo.png"/>
+  <link rel="stylesheet" href="../css/style.css"/>
+  <link rel="stylesheet" href="admin.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Bebas+Neue&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet"/>
+</head>
+<body class="admin-body">
+
+  <!-- LOGIN -->
+  <div id="login-screen" class="login-screen">
+    <div class="login-card">
+      <img src="../assets/logo.png" alt="VR" class="login-logo"/>
+      <h2>Painel Administrativo</h2>
+      <p>Faça login para acessar</p>
+      <div class="form-group">
+        <label>E-mail</label>
+        <input type="email" id="login-email" placeholder="admin@vrbarbershop.com"/>
+      </div>
+      <div class="form-group">
+        <label>Senha</label>
+        <input type="password" id="login-pass" placeholder="••••••••"/>
+      </div>
+      <button class="btn-login" onclick="doLogin()">Entrar</button>
+      <p class="login-error" id="login-error"></p>
+    </div>
+  </div>
+
+  <!-- ADMIN DASHBOARD -->
+  <div id="admin-panel" class="admin-panel" style="display:none;">
+    <aside class="sidebar">
+      <div class="sidebar-top">
+        <img src="../assets/logo.png" alt="VR" class="sidebar-logo"/>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" onclick="showTab('dashboard', this)">
+          <span class="nav-icon">📊</span> Dashboard
+        </a>
+        <a href="#" class="nav-item" onclick="showTab('agendamentos', this)">
+          <span class="nav-icon">📅</span> Agendamentos
+        </a>
+        <a href="#" class="nav-item" onclick="showTab('planos', this)">
+          <span class="nav-icon">⭐</span> Planos Ativos
+        </a>
+        <a href="#" class="nav-item" onclick="showTab('servicos', this)">
+          <span class="nav-icon">✂️</span> Serviços
+        </a>
+      </nav>
+      <div class="sidebar-bottom">
+        <button class="btn-logout" onclick="doLogout()">Sair</button>
+        <a href="../index.html" class="btn-site" target="_blank">Ver Site ↗</a>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+      <!-- HEADER -->
+      <header class="admin-header">
+        <div>
+          <h1 id="page-title">Dashboard</h1>
+          <p id="admin-date"></p>
+        </div>
+        <div class="header-actions">
+          <span class="badge-status" id="status-badge">● Online</span>
+        </div>
+      </header>
+
+      <!-- DASHBOARD TAB -->
+      <div class="tab-content active" id="tab-dashboard">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">📅</div>
+            <div class="stat-info">
+              <span class="stat-value" id="stat-hoje">0</span>
+              <span class="stat-label">Agendamentos Hoje</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-info">
+              <span class="stat-value" id="stat-pendentes">0</span>
+              <span class="stat-label">Pendentes</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-info">
+              <span class="stat-value" id="stat-confirmados">0</span>
+              <span class="stat-label">Confirmados</span>
+            </div>
+          </div>
+          <div class="stat-card gold">
+            <div class="stat-icon">💰</div>
+            <div class="stat-info">
+              <span class="stat-value" id="stat-receita">R$0</span>
+              <span class="stat-label">Receita do Mês</span>
+            </div>
+          </div>
+        </div>
+        <div class="recent-section">
+          <h3>Agendamentos Recentes</h3>
+          <div class="table-wrap" id="recent-list"></div>
+        </div>
+      </div>
+
+      <!-- AGENDAMENTOS TAB -->
+      <div class="tab-content" id="tab-agendamentos">
+        <div class="tab-toolbar">
+          <div class="filter-group">
+            <select id="filter-status" onchange="applyFilters()">
+              <option value="">Todos os Status</option>
+              <option value="pendente">Pendente</option>
+              <option value="confirmado">Confirmado</option>
+              <option value="concluido">Concluído</option>
+              <option value="cancelado">Cancelado</option>
+            </select>
+            <input type="date" id="filter-date" onchange="applyFilters()" placeholder="Filtrar por data"/>
+            <input type="text" id="filter-search" oninput="applyFilters()" placeholder="🔍 Buscar cliente..."/>
+          </div>
+          <button class="btn-export" onclick="exportCSV()">⬇ Exportar CSV</button>
+        </div>
+        <div class="table-wrap">
+          <table class="admin-table" id="agendamentos-table">
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>WhatsApp</th>
+                <th>Serviço / Plano</th>
+                <th>Tipo</th>
+                <th>Data</th>
+                <th>Horário</th>
+                <th>Valor</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="agendamentos-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PLANOS TAB -->
+      <div class="tab-content" id="tab-planos">
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>WhatsApp</th>
+                <th>Plano</th>
+                <th>Valor</th>
+                <th>Data</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="planos-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SERVIÇOS TAB -->
+      <div class="tab-content" id="tab-servicos">
+        <div class="services-admin-grid" id="services-admin-grid"></div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="../js/firebase-config.js"></script>
+  <script type="module" src="admin.js"></script>
+</body>
+</html>
