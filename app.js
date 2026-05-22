@@ -7,20 +7,22 @@ import {
   collection, addDoc, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+const WHATSAPP_NUMBER = '5585940444941';
+
 // ─── Serviços ─────────────────────────────────────
 export const SERVICES = [
-  { id: 'corte',              name: 'Corte',                         price: 25 },
-  { id: 'corte_sobrancelha',  name: 'Corte + Sobrancelha',          price: 30 },
-  { id: 'corte_barba',        name: 'Corte + Barba',                 price: 45 },
-  { id: 'corte_barba_sob',    name: 'Corte + Barba + Sobrancelha',  price: 45 },
-  { id: 'barba',              name: 'Barba',                         price: 20 },
-  { id: 'sobrancelha',        name: 'Sobrancelha',                   price: 5  },
-  { id: 'nevou_corte',        name: 'Nevou + Corte',                 price: 90 },
-  { id: 'luzes_corte',        name: 'Luzes + Corte',                 price: 75 },
-  { id: 'hidratacao',         name: 'Hidratação',                    price: 10 },
+  { id: 'corte',             name: 'Corte',                        price: 25 },
+  { id: 'corte_sobrancelha', name: 'Corte + Sobrancelha',         price: 30 },
+  { id: 'corte_barba',       name: 'Corte + Barba',                price: 45 },
+  { id: 'corte_barba_sob',   name: 'Corte + Barba + Sobrancelha', price: 45 },
+  { id: 'barba',             name: 'Barba',                        price: 20 },
+  { id: 'sobrancelha',       name: 'Sobrancelha',                  price: 5  },
+  { id: 'nevou_corte',       name: 'Nevou + Corte',                price: 90 },
+  { id: 'luzes_corte',       name: 'Luzes + Corte',                price: 75 },
+  { id: 'hidratacao',        name: 'Hidratação',                   price: 10 },
 ];
 
-// ─── Planos ───────────────────────────────────────
+// ─── Planos ────────────────────────────────────────
 export const PLANS = [
   {
     id: 'basico',
@@ -59,9 +61,8 @@ export const PLANS = [
   }
 ];
 
-// ─── Estado ───────────────────────────────────────
+// ─── Estado ────────────────────────────────────────
 let state = {
-  type: null,
   selected: null,
   name: '',
   phone: '',
@@ -70,7 +71,7 @@ let state = {
   obs: ''
 };
 
-// ─── Renderiza serviços ───────────────────────────
+// ─── Renderiza cards de serviços (seção visual) ────
 function renderServices() {
   const grid = document.getElementById('services-grid');
   if (!grid) return;
@@ -82,11 +83,15 @@ function renderServices() {
   `).join('');
 }
 
-// ─── Renderiza planos ─────────────────────────────
+// ─── Renderiza planos — botão "Assinar Agora" abre WhatsApp ─
 function renderPlans() {
   const grid = document.getElementById('plans-grid');
   if (!grid) return;
-  grid.innerHTML = PLANS.map(p => `
+  grid.innerHTML = PLANS.map(p => {
+    const msg = encodeURIComponent(
+      `Olá! Quero assinar o Plano ${p.name} da VR Barber Shop por R$${p.price}/mês. Pode me ajudar?`
+    );
+    return `
     <div class="plan-card ${p.featured ? 'featured' : ''}">
       ${p.badge ? `<div class="plan-badge">${p.badge}</div>` : ''}
       <div class="plan-name">${p.name}</div>
@@ -96,22 +101,62 @@ function renderPlans() {
       <ul class="plan-features">
         ${p.features.map(f => `<li>${f}</li>`).join('')}
       </ul>
-      <button class="btn-plan" onclick="scrollToBookingPlan('${p.id}')">Assinar Agora</button>
+      <a class="btn-plan"
+         href="https://wa.me/${WHATSAPP_NUMBER}?text=${msg}"
+         target="_blank">
+        Assinar Agora
+      </a>
+    </div>
+  `}).join('');
+}
+
+// ─── Scroll para agendamento + pré-seleciona serviço ─
+window.scrollToBooking = function(serviceId) {
+  document.getElementById('agendar').scrollIntoView({ behavior: 'smooth' });
+  setTimeout(() => preSelectService(serviceId), 600);
+};
+
+function preSelectService(serviceId) {
+  const service = SERVICES.find(s => s.id === serviceId);
+  if (!service) return;
+  state.selected = service;
+  renderServiceOptions();
+  setTimeout(() => {
+    const item = document.getElementById('opt-' + serviceId);
+    if (item) {
+      item.classList.add('selected');
+      item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    showStep(2);
+  }, 50);
+}
+
+// ─── Renderiza lista de serviços no formulário ─────
+function renderServiceOptions() {
+  const list = document.getElementById('options-list');
+  if (!list) return;
+  list.innerHTML = SERVICES.map(s => `
+    <div class="option-item" id="opt-${s.id}" onclick="selectService('${s.id}')">
+      <span>${s.name}</span>
+      <span class="option-price">R$${s.price.toFixed(2).replace('.', ',')}</span>
     </div>
   `).join('');
 }
 
-// ─── Scroll helpers ───────────────────────────────
-window.scrollToBooking = function(serviceId) {
-  document.getElementById('agendar').scrollIntoView({ behavior: 'smooth' });
-  setTimeout(() => selectType('servico', serviceId), 600);
-};
-window.scrollToBookingPlan = function(planId) {
-  document.getElementById('agendar').scrollIntoView({ behavior: 'smooth' });
-  setTimeout(() => selectType('plano', planId), 600);
+// ─── Seleciona serviço e avança para Dados ─────────
+window.selectService = function(id) {
+  state.selected = SERVICES.find(s => s.id === id);
+  document.querySelectorAll('.option-item').forEach(el => el.classList.remove('selected'));
+  const item = document.getElementById('opt-' + id);
+  if (item) item.classList.add('selected');
+
+  const dateInput = document.getElementById('pref-date');
+  if (dateInput) dateInput.min = new Date().toISOString().split('T')[0];
+
+  setTimeout(() => showStep(2), 300);
 };
 
-// ─── Controle de passos ───────────────────────────
+// ─── Controle de passos ────────────────────────────
 function showStep(n) {
   document.querySelectorAll('.form-step').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.step').forEach((el, i) => {
@@ -122,46 +167,13 @@ function showStep(n) {
   document.querySelectorAll('.step-line').forEach((el, i) => {
     el.classList.toggle('active', i + 1 < n);
   });
-  document.getElementById('step-' + n).classList.add('active');
+  const stepEl = document.getElementById('step-' + n);
+  if (stepEl) stepEl.classList.add('active');
 }
 
 window.goBack = function(n) { showStep(n); };
 
-// ─── Passo 1 ──────────────────────────────────────
-window.selectType = function(type, preselect) {
-  state.type = type;
-  const isSvc = type === 'servico';
-  document.getElementById('step2-title').textContent = isSvc ? 'Escolha o Serviço' : 'Escolha o Plano';
-
-  const list = document.getElementById('options-list');
-  const items = isSvc ? SERVICES : PLANS;
-
-  list.innerHTML = items.map(item => `
-    <div class="option-item" id="opt-${item.id}" onclick="selectOption('${item.id}')">
-      <span>${item.name}</span>
-      <span class="option-price">R$${item.price.toFixed ? item.price.toFixed(2).replace('.', ',') : item.price + ',00'}</span>
-    </div>
-  `).join('');
-
-  showStep(2);
-  if (preselect) setTimeout(() => selectOption(preselect), 50);
-};
-
-// ─── Passo 2 ──────────────────────────────────────
-window.selectOption = function(id) {
-  const items = state.type === 'servico' ? SERVICES : PLANS;
-  state.selected = items.find(i => i.id === id);
-
-  document.querySelectorAll('.option-item').forEach(el => el.classList.remove('selected'));
-  document.getElementById('opt-' + id)?.classList.add('selected');
-
-  const dateInput = document.getElementById('pref-date');
-  dateInput.min = new Date().toISOString().split('T')[0];
-
-  setTimeout(() => showStep(3), 300);
-};
-
-// ─── Passo 3 → 4 ─────────────────────────────────
+// ─── Passo 2 → 3: valida dados e mostra resumo ─────
 window.goToConfirm = function() {
   const name  = document.getElementById('client-name').value.trim();
   const phone = document.getElementById('client-phone').value.trim();
@@ -180,7 +192,7 @@ window.goToConfirm = function() {
   state.obs   = document.getElementById('obs').value.trim();
 
   renderConfirm();
-  showStep(4);
+  showStep(3);
 };
 
 function formatDate(d) {
@@ -191,39 +203,19 @@ function formatDate(d) {
 function renderConfirm() {
   const sel = state.selected;
   document.getElementById('confirm-summary').innerHTML = `
-    <div class="confirm-row">
-      <label>Tipo</label>
-      <span>${state.type === 'servico' ? 'Serviço Avulso' : 'Plano Mensal'}</span>
-    </div>
-    <div class="confirm-row">
-      <label>${state.type === 'servico' ? 'Serviço' : 'Plano'}</label>
-      <span>${sel.name}</span>
-    </div>
-    <div class="confirm-row">
-      <label>Cliente</label>
-      <span>${state.name}</span>
-    </div>
-    <div class="confirm-row">
-      <label>WhatsApp</label>
-      <span>${state.phone}</span>
-    </div>
-    <div class="confirm-row">
-      <label>Data</label>
-      <span>${formatDate(state.date)}</span>
-    </div>
-    <div class="confirm-row">
-      <label>Horário</label>
-      <span>${state.time}</span>
-    </div>
+    <div class="confirm-row"><label>Serviço</label><span>${sel.name}</span></div>
+    <div class="confirm-row"><label>Cliente</label><span>${state.name}</span></div>
+    <div class="confirm-row"><label>WhatsApp</label><span>${state.phone}</span></div>
+    <div class="confirm-row"><label>Data</label><span>${formatDate(state.date)}</span></div>
+    <div class="confirm-row"><label>Horário</label><span>${state.time}</span></div>
     ${state.obs ? `<div class="confirm-row"><label>Obs.</label><span>${state.obs}</span></div>` : ''}
-    <div class="confirm-row confirm-total">
-      <label>Valor</label>
+    <div class="confirm-row confirm-total"><label>Valor</label>
       <span>R$${Number(sel.price).toFixed(2).replace('.', ',')}</span>
     </div>
   `;
 }
 
-// ─── Passo 4: salvar ──────────────────────────────
+// ─── Passo 3: salva no Firebase e exibe modal ──────
 window.submitBooking = async function() {
   const btn = document.querySelector('.btn-confirm');
   btn.textContent = 'Enviando...';
@@ -231,7 +223,7 @@ window.submitBooking = async function() {
 
   try {
     await addDoc(collection(db, 'agendamentos'), {
-      tipo:     state.type,
+      tipo:     'servico',
       servico:  state.selected.name,
       preco:    state.selected.price,
       cliente:  state.name,
@@ -245,12 +237,14 @@ window.submitBooking = async function() {
 
     document.getElementById('success-modal').classList.add('open');
 
-    state = { type: null, selected: null, name: '', phone: '', date: '', time: '', obs: '' };
+    // Reset
+    state = { selected: null, name: '', phone: '', date: '', time: '', obs: '' };
     document.getElementById('client-name').value = '';
     document.getElementById('client-phone').value = '';
     document.getElementById('pref-date').value = '';
     document.getElementById('pref-time').value = '';
     document.getElementById('obs').value = '';
+    renderServiceOptions();
     showStep(1);
 
   } catch (err) {
@@ -266,10 +260,11 @@ window.closeModal = function() {
   document.getElementById('success-modal').classList.remove('open');
 };
 
-// ─── Máscara telefone ─────────────────────────────
+// ─── Máscara de telefone ───────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   renderServices();
   renderPlans();
+  renderServiceOptions();
 
   const phoneInput = document.getElementById('client-phone');
   if (phoneInput) {
