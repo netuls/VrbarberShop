@@ -31,7 +31,7 @@
     </div>
   </div>
 
-  <!-- ADMIN DASHBOARD -->
+  <!-- PAINEL ADMIN -->
   <div id="admin-panel" class="admin-panel" style="display:none;">
     <aside class="sidebar">
       <div class="sidebar-top">
@@ -39,16 +39,16 @@
       </div>
       <nav class="sidebar-nav">
         <a href="#" class="nav-item active" onclick="showTab('dashboard', this)">
-          <span class="nav-icon">📊</span> Dashboard
+          <span class="nav-icon">📊</span> <span>Dashboard</span>
         </a>
         <a href="#" class="nav-item" onclick="showTab('agendamentos', this)">
-          <span class="nav-icon">📅</span> Agendamentos
+          <span class="nav-icon">📅</span> <span>Agendamentos</span>
         </a>
         <a href="#" class="nav-item" onclick="showTab('planos', this)">
-          <span class="nav-icon">⭐</span> Planos Ativos
+          <span class="nav-icon">⭐</span> <span>Planos Ativos</span>
         </a>
         <a href="#" class="nav-item" onclick="showTab('servicos', this)">
-          <span class="nav-icon">✂️</span> Serviços
+          <span class="nav-icon">✂️</span> <span>Serviços</span>
         </a>
       </nav>
       <div class="sidebar-bottom">
@@ -58,7 +58,6 @@
     </aside>
 
     <main class="admin-main">
-      <!-- HEADER -->
       <header class="admin-header">
         <div>
           <h1 id="page-title">Dashboard</h1>
@@ -69,7 +68,7 @@
         </div>
       </header>
 
-      <!-- DASHBOARD TAB -->
+      <!-- DASHBOARD -->
       <div class="tab-content active" id="tab-dashboard">
         <div class="stats-grid">
           <div class="stat-card">
@@ -107,7 +106,7 @@
         </div>
       </div>
 
-      <!-- AGENDAMENTOS TAB -->
+      <!-- AGENDAMENTOS -->
       <div class="tab-content" id="tab-agendamentos">
         <div class="tab-toolbar">
           <div class="filter-group">
@@ -118,13 +117,13 @@
               <option value="concluido">Concluído</option>
               <option value="cancelado">Cancelado</option>
             </select>
-            <input type="date" id="filter-date" onchange="applyFilters()" placeholder="Filtrar por data"/>
+            <input type="date" id="filter-date" onchange="applyFilters()"/>
             <input type="text" id="filter-search" oninput="applyFilters()" placeholder="🔍 Buscar cliente..."/>
           </div>
           <button class="btn-export" onclick="exportCSV()">⬇ Exportar CSV</button>
         </div>
         <div class="table-wrap">
-          <table class="admin-table" id="agendamentos-table">
+          <table class="admin-table">
             <thead>
               <tr>
                 <th>Cliente</th>
@@ -143,7 +142,7 @@
         </div>
       </div>
 
-      <!-- PLANOS TAB -->
+      <!-- PLANOS -->
       <div class="tab-content" id="tab-planos">
         <div class="table-wrap">
           <table class="admin-table">
@@ -163,7 +162,7 @@
         </div>
       </div>
 
-      <!-- SERVIÇOS TAB -->
+      <!-- SERVIÇOS -->
       <div class="tab-content" id="tab-servicos">
         <div class="services-admin-grid" id="services-admin-grid"></div>
       </div>
