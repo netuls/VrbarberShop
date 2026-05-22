@@ -8,6 +8,20 @@
   <link rel="stylesheet" href="style.css"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Bebas+Neue&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet"/>
+
+  <!-- Firebase via CDN global (compatível com GitHub Pages) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script>
+    firebase.initializeApp({
+      apiKey: "AIzaSyAI6Z4Ay6atavjrsBAfc0XWndjeAX8zbCM",
+      authDomain: "admin-restaurante-ebc77.firebaseapp.com",
+      projectId: "admin-restaurante-ebc77",
+      storageBucket: "admin-restaurante-ebc77.firebasestorage.app",
+      messagingSenderId: "883332092146",
+      appId: "1:883332092146:web:43af09519de61e87f1006b"
+    });
+  </script>
 </head>
 <body>
 
@@ -15,8 +29,7 @@
   <header class="hero">
     <div class="hero-bg"></div>
     <nav class="navbar">
-      <img src="logo.png" alt="VR Barber Shop" class="nav-logo"
-           onerror="this.style.display='none'"/>
+      <img src="logo.png" alt="VR Barber Shop" class="nav-logo" onerror="this.style.display='none'"/>
       <div class="nav-links">
         <a href="#servicos">Serviços</a>
         <a href="#planos">Planos</a>
@@ -52,7 +65,7 @@
     <div class="plans-grid" id="plans-grid"></div>
   </section>
 
-  <!-- AGENDAMENTO — 3 passos: Serviço → Dados → Confirmar -->
+  <!-- AGENDAMENTO -->
   <section id="agendar" class="section booking-section">
     <div class="section-header">
       <span class="section-tag">FAÇA SEU</span>
@@ -62,7 +75,6 @@
     <div class="booking-container">
       <div class="booking-card">
 
-        <!-- Indicador de passos -->
         <div class="step-indicator">
           <div class="step active" id="step-ind-1"><span>1</span><p>Serviço</p></div>
           <div class="step-line"></div>
@@ -71,13 +83,13 @@
           <div class="step" id="step-ind-3"><span>3</span><p>Confirmar</p></div>
         </div>
 
-        <!-- Passo 1: Escolha o serviço -->
+        <!-- Passo 1 -->
         <div class="form-step active" id="step-1">
           <h3>Escolha o Serviço</h3>
           <div class="options-list" id="options-list"></div>
         </div>
 
-        <!-- Passo 2: Dados do cliente -->
+        <!-- Passo 2 -->
         <div class="form-step" id="step-2">
           <h3>Seus Dados</h3>
           <div class="form-group">
@@ -115,7 +127,7 @@
           </div>
         </div>
 
-        <!-- Passo 3: Confirmação -->
+        <!-- Passo 3 -->
         <div class="form-step" id="step-3">
           <h3>Confirmar Agendamento</h3>
           <div class="confirm-summary" id="confirm-summary"></div>
@@ -140,12 +152,10 @@
   </div>
 
   <footer class="footer">
-    <img src="logo.png" alt="VR" class="footer-logo"
-         onerror="this.style.display='none'"/>
+    <img src="logo.png" alt="VR" class="footer-logo" onerror="this.style.display='none'"/>
     <p>VR Barber Shop &copy; 2019–2025. Todos os direitos reservados.</p>
   </footer>
 
-  <script type="module" src="firebase-config.js"></script>
-  <script type="module" src="app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
