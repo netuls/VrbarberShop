@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VR Barber Shop</title>
+  <link rel="icon" type="image/png" href="assets/logo.png"/>
+  <link rel="stylesheet" href="css/style.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Bebas+Neue&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet"/>
+</head>
+<body>
+  <!-- HERO -->
+  <header class="hero">
+    <div class="hero-bg"></div>
+    <nav class="navbar">
+      <img src="assets/logo.png" alt="VR Barber Shop" class="nav-logo"/>
+      <div class="nav-links">
+        <a href="#servicos">Serviços</a>
+        <a href="#planos">Planos</a>
+        <a href="#agendar" class="btn-nav">Agendar</a>
+      </div>
+    </nav>
+    <div class="hero-content">
+      <div class="hero-badge">EST. 2019</div>
+      <h1 class="hero-title">VR<br/><span>Barber Shop</span></h1>
+      <p class="hero-sub">Estilo. Precisão. Tradição.</p>
+      <a href="#agendar" class="btn-hero">Agendar Horário</a>
+    </div>
+    <div class="hero-scroll">▼</div>
+  </header>
+
+  <!-- SERVIÇOS -->
+  <section id="servicos" class="section services-section">
+    <div class="section-header">
+      <span class="section-tag">NOSSOS</span>
+      <h2>Serviços</h2>
+      <div class="section-line"></div>
+    </div>
+    <div class="services-grid" id="services-grid">
+      <!-- JS injeta -->
+    </div>
+  </section>
+
+  <!-- PLANOS -->
+  <section id="planos" class="section plans-section">
+    <div class="section-header">
+      <span class="section-tag">NOSSOS</span>
+      <h2>Planos</h2>
+      <div class="section-line"></div>
+    </div>
+    <div class="plans-grid" id="plans-grid">
+      <!-- JS injeta -->
+    </div>
+  </section>
+
+  <!-- AGENDAMENTO -->
+  <section id="agendar" class="section booking-section">
+    <div class="section-header">
+      <span class="section-tag">FAÇA SEU</span>
+      <h2>Agendamento</h2>
+      <div class="section-line"></div>
+    </div>
+    <div class="booking-container">
+      <div class="booking-card">
+        <div class="step-indicator">
+          <div class="step active" id="step-ind-1"><span>1</span><p>Tipo</p></div>
+          <div class="step-line"></div>
+          <div class="step" id="step-ind-2"><span>2</span><p>Serviço</p></div>
+          <div class="step-line"></div>
+          <div class="step" id="step-ind-3"><span>3</span><p>Dados</p></div>
+          <div class="step-line"></div>
+          <div class="step" id="step-ind-4"><span>4</span><p>Confirmar</p></div>
+        </div>
+
+        <!-- Passo 1: Tipo -->
+        <div class="form-step active" id="step-1">
+          <h3>O que você deseja?</h3>
+          <div class="type-options">
+            <button class="type-btn" onclick="selectType('servico')">
+              <span class="type-icon">✂️</span>
+              <strong>Serviço Avulso</strong>
+              <small>Escolha um serviço e agende</small>
+            </button>
+            <button class="type-btn" onclick="selectType('plano')">
+              <span class="type-icon">⭐</span>
+              <strong>Assinar Plano</strong>
+              <small>Planos mensais com benefícios</small>
+            </button>
+          </div>
+        </div>
+
+        <!-- Passo 2: Serviço/Plano -->
+        <div class="form-step" id="step-2">
+          <h3 id="step2-title">Escolha o Serviço</h3>
+          <div class="options-list" id="options-list"></div>
+          <button class="btn-back" onclick="goBack(1)">← Voltar</button>
+        </div>
+
+        <!-- Passo 3: Dados -->
+        <div class="form-step" id="step-3">
+          <h3>Seus Dados</h3>
+          <div class="form-group">
+            <label>Nome Completo *</label>
+            <input type="text" id="client-name" placeholder="Seu nome"/>
+          </div>
+          <div class="form-group">
+            <label>WhatsApp *</label>
+            <input type="tel" id="client-phone" placeholder="(85) 99999-9999" maxlength="15"/>
+          </div>
+          <div class="form-group">
+            <label>Data Preferida *</label>
+            <input type="date" id="pref-date"/>
+          </div>
+          <div class="form-group">
+            <label>Horário Preferido *</label>
+            <select id="pref-time">
+              <option value="">Selecione...</option>
+              <option>08:00</option><option>08:30</option><option>09:00</option>
+              <option>09:30</option><option>10:00</option><option>10:30</option>
+              <option>11:00</option><option>11:30</option><option>13:00</option>
+              <option>13:30</option><option>14:00</option><option>14:30</option>
+              <option>15:00</option><option>15:30</option><option>16:00</option>
+              <option>16:30</option><option>17:00</option><option>17:30</option>
+              <option>18:00</option><option>18:30</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Observações</label>
+            <textarea id="obs" placeholder="Algo que queira nos informar..."></textarea>
+          </div>
+          <div class="form-row">
+            <button class="btn-back" onclick="goBack(2)">← Voltar</button>
+            <button class="btn-next" onclick="goToConfirm()">Continuar →</button>
+          </div>
+        </div>
+
+        <!-- Passo 4: Confirmação -->
+        <div class="form-step" id="step-4">
+          <h3>Confirmar Agendamento</h3>
+          <div class="confirm-summary" id="confirm-summary"></div>
+          <div class="form-row">
+            <button class="btn-back" onclick="goBack(3)">← Voltar</button>
+            <button class="btn-confirm" onclick="submitBooking()">✓ Confirmar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SUCCESS MODAL -->
+  <div class="modal-overlay" id="success-modal">
+    <div class="modal-box">
+      <div class="modal-icon">✓</div>
+      <h3>Agendamento Enviado!</h3>
+      <p>Seu pedido foi registrado com sucesso. Entraremos em contato pelo WhatsApp para confirmar o horário.</p>
+      <button onclick="closeModal()">Fechar</button>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <img src="assets/logo.png" alt="VR" class="footer-logo"/>
+    <p>VR Barber Shop &copy; 2019–2025. Todos os direitos reservados.</p>
+  </footer>
+
+  <!-- Firebase SDK -->
+  <script type="module" src="js/firebase-config.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
