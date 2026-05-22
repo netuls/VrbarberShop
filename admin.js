@@ -59,7 +59,7 @@ onAuthStateChanged(auth, user => {
   }
 });
 
-// ─── Init ──────────────────────────────────────────
+// ─── Init ─────────────────────────────────────────
 function initAdmin() {
   updateDate();
   renderServicesTab();
@@ -75,7 +75,7 @@ function updateDate() {
   }
 }
 
-// ─── Tabs ──────────────────────────────────────────
+// ─── Tabs ─────────────────────────────────────────
 window.showTab = function(tab, el) {
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -85,7 +85,6 @@ window.showTab = function(tab, el) {
   const titles = {
     dashboard:    'Dashboard',
     agendamentos: 'Agendamentos',
-    planos:       'Planos Ativos',
     servicos:     'Tabela de Serviços'
   };
   document.getElementById('page-title').textContent = titles[tab];
@@ -98,11 +97,10 @@ function loadAgendamentos() {
     allAgendamentos = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     renderDashboard();
     renderAgendamentosTable(allAgendamentos);
-    renderPlanosTab();
   });
 }
 
-// ─── Dashboard ─────────────────────────────────────
+// ─── Dashboard ────────────────────────────────────
 function renderDashboard() {
   const hoje = new Date().toISOString().split('T')[0];
   const deHoje      = allAgendamentos.filter(a => a.data === hoje);
@@ -145,13 +143,13 @@ function renderDashboard() {
   `;
 }
 
-// ─── Tabela agendamentos ──────────────────────────
+// ─── Tabela de agendamentos ───────────────────────
 function renderAgendamentosTable(data) {
   const tbody = document.getElementById('agendamentos-body');
   if (!tbody) return;
 
   if (!data.length) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--gray);padding:32px;">Nenhum agendamento encontrado.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--gray);padding:32px;">Nenhum agendamento encontrado.</td></tr>';
     return;
   }
 
@@ -163,9 +161,6 @@ function renderAgendamentosTable(data) {
            style="color:var(--gold);text-decoration:none;">${a.telefone || '—'}</a>
       </td>
       <td>${a.servico || '—'}</td>
-      <td><span style="font-size:11px;letter-spacing:1px;color:var(--gray);font-family:var(--font-head)">
-        ${a.tipo === 'plano' ? 'PLANO' : 'SERVIÇO'}
-      </span></td>
       <td>${a.data ? formatDate(a.data) : '—'}</td>
       <td>${a.horario || '—'}</td>
       <td style="color:var(--gold);font-family:var(--font-display);font-size:18px;">
@@ -191,7 +186,7 @@ function renderAgendamentosTable(data) {
   `).join('');
 }
 
-// ─── Filtros ───────────────────────────────────────
+// ─── Filtros ──────────────────────────────────────
 window.applyFilters = function() {
   const status = document.getElementById('filter-status').value;
   const date   = document.getElementById('filter-date').value;
@@ -207,7 +202,7 @@ window.applyFilters = function() {
   renderAgendamentosTable(filtered);
 };
 
-// ─── Update status ────────────────────────────────
+// ─── Atualiza status ──────────────────────────────
 window.updateStatus = async function(id, status) {
   try {
     await updateDoc(doc(db, 'agendamentos', id), { status, atualizadoEm: serverTimestamp() });
@@ -216,37 +211,7 @@ window.updateStatus = async function(id, status) {
   }
 };
 
-// ─── Planos tab ───────────────────────────────────
-function renderPlanosTab() {
-  const planos = allAgendamentos.filter(a => a.tipo === 'plano');
-  const tbody = document.getElementById('planos-body');
-  if (!tbody) return;
-
-  if (!planos.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--gray);padding:32px;">Nenhum plano ativo.</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = planos.map(a => `
-    <tr>
-      <td><strong style="color:var(--white)">${a.cliente || '—'}</strong></td>
-      <td><a href="https://wa.me/55${(a.telefone||'').replace(/\D/g,'')}" target="_blank"
-         style="color:var(--gold);text-decoration:none;">${a.telefone || '—'}</a></td>
-      <td>${a.servico || '—'}</td>
-      <td style="color:var(--gold);font-family:var(--font-display);font-size:18px;">
-        R$${(a.preco||0).toFixed(2).replace('.', ',')}
-      </td>
-      <td>${a.data ? formatDate(a.data) : '—'}</td>
-      <td>${badgeHTML(a.status)}</td>
-      <td>
-        <a class="btn-action btn-whats"
-           href="https://wa.me/55${(a.telefone||'').replace(/\D/g,'')}" target="_blank">WhatsApp</a>
-      </td>
-    </tr>
-  `).join('');
-}
-
-// ─── Serviços tab ─────────────────────────────────
+// ─── Aba Serviços ─────────────────────────────────
 function renderServicesTab() {
   const grid = document.getElementById('services-admin-grid');
   if (!grid) return;
@@ -256,8 +221,8 @@ function renderServicesTab() {
       <span class="service-admin-price">R$${s.price.toFixed(2).replace('.', ',')}</span>
     </div>
   `).join('') + `
-    <div style="grid-column:1/-1;margin-top:16px;">
-      <h3 style="font-family:var(--font-head);letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:16px;">Planos</h3>
+    <div style="grid-column:1/-1;margin-top:24px;">
+      <h3 style="font-family:var(--font-head);letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:16px;">Planos Disponíveis</h3>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">
         ${PLANS.map(p => `
           <div class="service-admin-card" style="flex-direction:column;align-items:flex-start;gap:8px;">
@@ -273,13 +238,12 @@ function renderServicesTab() {
   `;
 }
 
-// ─── CSV Export ───────────────────────────────────
+// ─── Exportar CSV ─────────────────────────────────
 window.exportCSV = function() {
-  const rows = [['Cliente','WhatsApp','Serviço/Plano','Tipo','Data','Horário','Valor (R$)','Status','Observações']];
+  const rows = [['Cliente','WhatsApp','Serviço','Data','Horário','Valor (R$)','Status','Observações']];
   allAgendamentos.forEach(a => {
     rows.push([
       a.cliente || '', a.telefone || '', a.servico || '',
-      a.tipo === 'plano' ? 'Plano' : 'Serviço',
       a.data || '', a.horario || '',
       (a.preco || 0).toFixed(2).replace('.', ','),
       a.status || '', a.obs || ''
