@@ -15,7 +15,8 @@
   <header class="hero">
     <div class="hero-bg"></div>
     <nav class="navbar">
-      <img src="logo.png" alt="VR Barber Shop" class="nav-logo"/>
+      <img src="logo.png" alt="VR Barber Shop" class="nav-logo"
+           onerror="this.style.display='none'"/>
       <div class="nav-links">
         <a href="#servicos">Serviços</a>
         <a href="#planos">Planos</a>
@@ -51,7 +52,7 @@
     <div class="plans-grid" id="plans-grid"></div>
   </section>
 
-  <!-- AGENDAMENTO -->
+  <!-- AGENDAMENTO — 3 passos: Serviço → Dados → Confirmar -->
   <section id="agendar" class="section booking-section">
     <div class="section-header">
       <span class="section-tag">FAÇA SEU</span>
@@ -60,42 +61,24 @@
     </div>
     <div class="booking-container">
       <div class="booking-card">
+
+        <!-- Indicador de passos -->
         <div class="step-indicator">
-          <div class="step active" id="step-ind-1"><span>1</span><p>Tipo</p></div>
+          <div class="step active" id="step-ind-1"><span>1</span><p>Serviço</p></div>
           <div class="step-line"></div>
-          <div class="step" id="step-ind-2"><span>2</span><p>Serviço</p></div>
+          <div class="step" id="step-ind-2"><span>2</span><p>Dados</p></div>
           <div class="step-line"></div>
-          <div class="step" id="step-ind-3"><span>3</span><p>Dados</p></div>
-          <div class="step-line"></div>
-          <div class="step" id="step-ind-4"><span>4</span><p>Confirmar</p></div>
+          <div class="step" id="step-ind-3"><span>3</span><p>Confirmar</p></div>
         </div>
 
-        <!-- Passo 1 -->
+        <!-- Passo 1: Escolha o serviço -->
         <div class="form-step active" id="step-1">
-          <h3>O que você deseja?</h3>
-          <div class="type-options">
-            <button class="type-btn" onclick="selectType('servico')">
-              <span class="type-icon">✂️</span>
-              <strong>Serviço Avulso</strong>
-              <small>Escolha um serviço e agende</small>
-            </button>
-            <button class="type-btn" onclick="selectType('plano')">
-              <span class="type-icon">⭐</span>
-              <strong>Assinar Plano</strong>
-              <small>Planos mensais com benefícios</small>
-            </button>
-          </div>
-        </div>
-
-        <!-- Passo 2 -->
-        <div class="form-step" id="step-2">
-          <h3 id="step2-title">Escolha o Serviço</h3>
+          <h3>Escolha o Serviço</h3>
           <div class="options-list" id="options-list"></div>
-          <button class="btn-back" onclick="goBack(1)">← Voltar</button>
         </div>
 
-        <!-- Passo 3 -->
-        <div class="form-step" id="step-3">
+        <!-- Passo 2: Dados do cliente -->
+        <div class="form-step" id="step-2">
           <h3>Seus Dados</h3>
           <div class="form-group">
             <label>Nome Completo *</label>
@@ -127,25 +110,26 @@
             <textarea id="obs" placeholder="Algo que queira nos informar..."></textarea>
           </div>
           <div class="form-row">
-            <button class="btn-back" onclick="goBack(2)">← Voltar</button>
+            <button class="btn-back" onclick="goBack(1)">← Voltar</button>
             <button class="btn-next" onclick="goToConfirm()">Continuar →</button>
           </div>
         </div>
 
-        <!-- Passo 4 -->
-        <div class="form-step" id="step-4">
+        <!-- Passo 3: Confirmação -->
+        <div class="form-step" id="step-3">
           <h3>Confirmar Agendamento</h3>
           <div class="confirm-summary" id="confirm-summary"></div>
           <div class="form-row">
-            <button class="btn-back" onclick="goBack(3)">← Voltar</button>
+            <button class="btn-back" onclick="goBack(2)">← Voltar</button>
             <button class="btn-confirm" onclick="submitBooking()">✓ Confirmar</button>
           </div>
         </div>
+
       </div>
     </div>
   </section>
 
-  <!-- MODAL -->
+  <!-- MODAL SUCESSO -->
   <div class="modal-overlay" id="success-modal">
     <div class="modal-box">
       <div class="modal-icon">✓</div>
@@ -156,7 +140,8 @@
   </div>
 
   <footer class="footer">
-    <img src="logo.png" alt="VR" class="footer-logo"/>
+    <img src="logo.png" alt="VR" class="footer-logo"
+         onerror="this.style.display='none'"/>
     <p>VR Barber Shop &copy; 2019–2025. Todos os direitos reservados.</p>
   </footer>
 
