@@ -9,10 +9,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Bebas+Neue&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet"/>
 
-  <!-- Firebase via CDN (jsdelivr - não bloqueado) -->
-  <script defer src="https://cdn.jsdelivr.net/npm/firebase@10.12.0/firebase-app.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/firebase@10.12.0/firebase-auth.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/firebase@10.12.0/firebase-firestore.js"></script>
+  <!-- Firebase Realtime Database -->
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
 </head>
 <body class="admin-body">
 
@@ -144,52 +144,19 @@
   </div>
 
   <script>
-    // ── Aguarda Firebase carregar ──────────────────────────────
-    function waitForFirebase() {
-      return new Promise((resolve) => {
-        const checkFirebase = setInterval(() => {
-          if (typeof firebase !== 'undefined' && firebase.auth && firebase.firestore) {
-            clearInterval(checkFirebase);
-            resolve();
-          }
-        }, 100);
-        setTimeout(() => clearInterval(checkFirebase), 5000);
-      });
-    }
-
     // ── Firebase config ──────────────────────────────
-    let auth, db;
+    const firebaseConfig = {
+      apiKey: "AIzaSyAI6Z4Ay6atavjrsBAfc0XWndjeAX8zbCM",
+      authDomain: "admin-restaurante-ebc77.firebaseapp.com",
+      projectId: "admin-restaurante-ebc77",
+      storageBucket: "admin-restaurante-ebc77.firebasestorage.app",
+      messagingSenderId: "883332092146",
+      appId: "1:883332092146:web:43af09519de61e87f1006b"
+    };
 
-    waitForFirebase().then(() => {
-      const firebaseConfig = {
-        apiKey: "AIzaSyAI6Z4Ay6atavjrsBAfc0XWndjeAX8zbCM",
-        authDomain: "admin-restaurante-ebc77.firebaseapp.com",
-        projectId: "admin-restaurante-ebc77",
-        storageBucket: "admin-restaurante-ebc77.firebasestorage.app",
-        messagingSenderId: "883332092146",
-        appId: "1:883332092146:web:43af09519de61e87f1006b"
-      };
-      
-      if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-      }
-      auth = firebase.auth();
-      db = firebase.firestore();
-      
-      // Inicia o listener de autenticação
-      auth.onAuthStateChanged(user => {
-        if (user) {
-          document.getElementById('login-screen').style.display = 'none';
-          document.getElementById('admin-panel').style.display = 'flex';
-          initAdmin();
-        } else {
-          document.getElementById('login-screen').style.display = 'flex';
-          document.getElementById('admin-panel').style.display = 'none';
-          const btn = document.querySelector('.btn-login');
-          if (btn) { btn.textContent = 'Entrar'; btn.disabled = false; }
-        }
-      });
-    });
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
     // ── Dados de serviços e planos ───────────────────
     const SERVICES = [
@@ -198,15 +165,16 @@
       { id: 'corte_barba',       name: 'Corte + Barba',                price: 45 },
       { id: 'corte_barba_sob',   name: 'Corte + Barba + Sobrancelha', price: 45 },
       { id: 'barba',             name: 'Barba',                        price: 20 },
-      { id: 'sobrancelha',       name: 'Sobrancelha',                  price: 5  },
+      { id: 'sobrancelha',       name: 'Sobrancelha',                  price: 5 },
       { id: 'nevou_corte',       name: 'Nevou + Corte',                price: 90 },
       { id: 'luzes_corte',       name: 'Luzes + Corte',                price: 75 },
-      { id: 'hidratacao',        name: 'Hidratação',                   price: 10 },
+      { id: 'hidratacao',        name: 'Hidratação',                   price: 10 }
     ];
+
     const PLANS = [
       { name: 'Básico',    price: 80,  features: ['4 cortes por mês','Prioridade na marcação','5% desconto antecipado'] },
       { name: 'Essencial', price: 105, features: ['Corte + Sobrancelha ilimitado','Prioridade na marcação','5% desconto antecipado'] },
-      { name: 'Premium',   price: 135, features: ['Corte + Barba + Sobrancelha ilimitado','Prioridade na marcação','Brinde: lavagem inclusa','10% desconto antecipado'] },
+      { name: 'Premium',   price: 135, features: ['Corte + Barba + Sobrancelha ilimitado','Prioridade na marcação','Brinde: lavagem inclusa','10% desconto antecipado'] }
     ];
 
     // ── Estado ───────────────────────────────────────
@@ -216,12 +184,14 @@
     // ── Auth ─────────────────────────────────────────
     function doLogin() {
       const email = document.getElementById('login-email').value.trim();
-      const pass  = document.getElementById('login-pass').value;
+      const pass = document.getElementById('login-pass').value;
       const errEl = document.getElementById('login-error');
       errEl.textContent = '';
 
-      if (!email || !pass) { errEl.textContent = 'Preencha e-mail e senha.'; return; }
-      if (!auth) { errEl.textContent = 'Firebase não carregou. Recarregue a página.'; return; }
+      if (!email || !pass) {
+        errEl.textContent = 'Preencha e-mail e senha.';
+        return;
+      }
 
       const btn = document.querySelector('.btn-login');
       btn.textContent = 'Entrando...';
@@ -232,13 +202,13 @@
           console.log('Login bem-sucedido');
         })
         .catch(e => {
-          console.error('Erro de login:', e.code, e.message);
+          console.error('Erro:', e.code, e.message);
           const msgs = {
             'auth/invalid-credential': 'E-mail ou senha incorretos.',
-            'auth/user-not-found':     'Usuário não encontrado.',
-            'auth/wrong-password':     'Senha incorreta.',
-            'auth/too-many-requests':  'Muitas tentativas. Aguarde.',
-            'auth/invalid-email':      'E-mail inválido.',
+            'auth/user-not-found': 'Usuário não encontrado.',
+            'auth/wrong-password': 'Senha incorreta.',
+            'auth/too-many-requests': 'Muitas tentativas. Aguarde.',
+            'auth/invalid-email': 'E-mail inválido.'
           };
           errEl.textContent = msgs[e.code] || ('Erro: ' + e.message);
           btn.textContent = 'Entrar';
@@ -248,20 +218,41 @@
 
     function doLogout() {
       if (unsubscribe) unsubscribe();
-      if (auth) auth.signOut();
+      auth.signOut();
     }
 
-    document.addEventListener('keydown', e => {
+    document.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none') {
         doLogin();
       }
     });
 
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('admin-panel').style.display = 'flex';
+        initAdmin();
+      } else {
+        document.getElementById('login-screen').style.display = 'flex';
+        document.getElementById('admin-panel').style.display = 'none';
+        const btn = document.querySelector('.btn-login');
+        if (btn) {
+          btn.textContent = 'Entrar';
+          btn.disabled = false;
+        }
+      }
+    });
+
     function initAdmin() {
       const el = document.getElementById('admin-date');
-      if (el) el.textContent = new Date().toLocaleDateString('pt-BR', {
-        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-      });
+      if (el) {
+        el.textContent = new Date().toLocaleDateString('pt-BR', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+      }
       renderServicesTab();
       loadAgendamentos();
     }
@@ -276,7 +267,6 @@
     }
 
     function loadAgendamentos() {
-      if (!db) return;
       const q = db.collection('agendamentos').orderBy('criadoEm', 'desc');
       unsubscribe = q.onSnapshot(snapshot => {
         allAgendamentos = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -286,33 +276,37 @@
     }
 
     function renderDashboard() {
-      const hoje     = new Date().toISOString().split('T')[0];
+      const hoje = new Date().toISOString().split('T')[0];
       const mesAtual = new Date().toISOString().slice(0, 7);
-      document.getElementById('stat-hoje').textContent        = allAgendamentos.filter(a => a.data === hoje).length;
-      document.getElementById('stat-pendentes').textContent   = allAgendamentos.filter(a => a.status === 'pendente').length;
+      document.getElementById('stat-hoje').textContent = allAgendamentos.filter(a => a.data === hoje).length;
+      document.getElementById('stat-pendentes').textContent = allAgendamentos.filter(a => a.status === 'pendente').length;
       document.getElementById('stat-confirmados').textContent = allAgendamentos.filter(a => a.status === 'confirmado').length;
+      
       const receita = allAgendamentos
-        .filter(a => a.status === 'concluido' && (a.data||'').startsWith(mesAtual))
+        .filter(a => a.status === 'concluido' && (a.data || '').startsWith(mesAtual))
         .reduce((acc, a) => acc + (a.preco || 0), 0);
+      
       document.getElementById('stat-receita').textContent = 'R$' + receita.toFixed(2).replace('.', ',');
 
       const recent = allAgendamentos.slice(0, 8);
       const el = document.getElementById('recent-list');
+      
       if (!recent.length) {
         el.innerHTML = '<p style="color:var(--gray);padding:20px;font-family:var(--font-head);letter-spacing:1px;">Nenhum agendamento ainda.</p>';
         return;
       }
+      
       el.innerHTML = `
         <table class="admin-table">
           <thead><tr><th>Cliente</th><th>Serviço</th><th>Data</th><th>Horário</th><th>Valor</th><th>Status</th></tr></thead>
           <tbody>
             ${recent.map(a => `
               <tr>
-                <td>${a.cliente||'—'}</td>
-                <td>${a.servico||'—'}</td>
+                <td>${a.cliente || '—'}</td>
+                <td>${a.servico || '—'}</td>
                 <td>${a.data ? formatDate(a.data) : '—'}</td>
-                <td>${a.horario||'—'}</td>
-                <td style="color:var(--gold);font-family:var(--font-display);font-size:16px;">R$${(a.preco||0).toFixed(2).replace('.',',')}</td>
+                <td>${a.horario || '—'}</td>
+                <td style="color:var(--gold);font-family:var(--font-display);font-size:16px;">R$${(a.preco || 0).toFixed(2).replace('.', ',')}</td>
                 <td>${badgeHTML(a.status)}</td>
               </tr>`).join('')}
           </tbody>
@@ -322,25 +316,27 @@
     function renderAgendamentosTable(data) {
       const tbody = document.getElementById('agendamentos-body');
       if (!tbody) return;
+      
       if (!data.length) {
         tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--gray);padding:32px;">Nenhum agendamento encontrado.</td></tr>';
         return;
       }
+      
       tbody.innerHTML = data.map(a => `
         <tr>
-          <td><strong style="color:var(--white)">${a.cliente||'—'}</strong></td>
-          <td><a href="https://wa.me/55${(a.telefone||'').replace(/\D/g,'')}" target="_blank" style="color:var(--gold);text-decoration:none;">${a.telefone||'—'}</a></td>
-          <td>${a.servico||'—'}</td>
+          <td><strong style="color:var(--white)">${a.cliente || '—'}</strong></td>
+          <td><a href="https://wa.me/55${(a.telefone || '').replace(/\D/g, '')}" target="_blank" style="color:var(--gold);text-decoration:none;">${a.telefone || '—'}</a></td>
+          <td>${a.servico || '—'}</td>
           <td>${a.data ? formatDate(a.data) : '—'}</td>
-          <td>${a.horario||'—'}</td>
-          <td style="color:var(--gold);font-family:var(--font-display);font-size:18px;">R$${(a.preco||0).toFixed(2).replace('.',',')}</td>
+          <td>${a.horario || '—'}</td>
+          <td style="color:var(--gold);font-family:var(--font-display);font-size:18px;">R$${(a.preco || 0).toFixed(2).replace('.', ',')}</td>
           <td>${badgeHTML(a.status)}</td>
           <td>
             <div class="action-btns">
-              ${a.status==='pendente'   ? `<button class="btn-action btn-confirmar" onclick="updateStatus('${a.id}','confirmado')">Confirmar</button>` : ''}
-              ${a.status==='confirmado' ? `<button class="btn-action btn-concluir"  onclick="updateStatus('${a.id}','concluido')">Concluir</button>`  : ''}
-              ${['pendente','confirmado'].includes(a.status) ? `<button class="btn-action btn-cancelar" onclick="updateStatus('${a.id}','cancelado')">Cancelar</button>` : ''}
-              <a class="btn-action btn-whats" href="https://wa.me/55${(a.telefone||'').replace(/\D/g,'')}" target="_blank">WhatsApp</a>
+              ${a.status === 'pendente' ? `<button class="btn-action btn-confirmar" onclick="updateStatus('${a.id}','confirmado')">Confirmar</button>` : ''}
+              ${a.status === 'confirmado' ? `<button class="btn-action btn-concluir" onclick="updateStatus('${a.id}','concluido')">Concluir</button>` : ''}
+              ${['pendente', 'confirmado'].includes(a.status) ? `<button class="btn-action btn-cancelar" onclick="updateStatus('${a.id}','cancelado')">Cancelar</button>` : ''}
+              <a class="btn-action btn-whats" href="https://wa.me/55${(a.telefone || '').replace(/\D/g, '')}" target="_blank">WhatsApp</a>
             </div>
           </td>
         </tr>`).join('');
@@ -348,28 +344,32 @@
 
     function applyFilters() {
       const status = document.getElementById('filter-status').value;
-      const date   = document.getElementById('filter-date').value;
+      const date = document.getElementById('filter-date').value;
       const search = document.getElementById('filter-search').value.toLowerCase();
+      
       let f = allAgendamentos;
       if (status) f = f.filter(a => a.status === status);
-      if (date)   f = f.filter(a => a.data === date);
-      if (search) f = f.filter(a => (a.cliente||'').toLowerCase().includes(search) || (a.servico||'').toLowerCase().includes(search));
+      if (date) f = f.filter(a => a.data === date);
+      if (search) f = f.filter(a => (a.cliente || '').toLowerCase().includes(search) || (a.servico || '').toLowerCase().includes(search));
+      
       renderAgendamentosTable(f);
     }
 
     function updateStatus(id, status) {
-      if (!db) return;
-      db.collection('agendamentos').doc(id).update({ status, atualizadoEm: firebase.firestore.FieldValue.serverTimestamp() })
-        .catch(() => alert('Erro ao atualizar status.'));
+      db.collection('agendamentos').doc(id).update({
+        status,
+        atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(() => alert('Erro ao atualizar status.'));
     }
 
     function renderServicesTab() {
       const grid = document.getElementById('services-admin-grid');
       if (!grid) return;
+      
       grid.innerHTML = SERVICES.map(s => `
         <div class="service-admin-card">
           <span class="service-admin-name">${s.name}</span>
-          <span class="service-admin-price">R$${s.price.toFixed(2).replace('.',',')}</span>
+          <span class="service-admin-price">R$${s.price.toFixed(2).replace('.', ',')}</span>
         </div>`).join('') + `
         <div style="grid-column:1/-1;margin-top:24px;">
           <h3 style="font-family:var(--font-head);letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:16px;">Planos</h3>
@@ -379,7 +379,7 @@
                 <span class="service-admin-name">${p.name}</span>
                 <span class="service-admin-price">R$${p.price},00<span style="font-size:14px;color:var(--gray);font-family:var(--font-head)">/mês</span></span>
                 <ul style="list-style:none;margin-top:4px;">
-                  ${p.features.map(f=>`<li style="font-size:12px;color:var(--gray);padding:2px 0;">• ${f}</li>`).join('')}
+                  ${p.features.map(f => `<li style="font-size:12px;color:var(--gray);padding:2px 0;">• ${f}</li>`).join('')}
                 </ul>
               </div>`).join('')}
           </div>
@@ -387,30 +387,36 @@
     }
 
     function exportCSV() {
-      const rows = [['Cliente','WhatsApp','Serviço','Data','Horário','Valor (R$)','Status','Obs']];
+      const rows = [['Cliente', 'WhatsApp', 'Serviço', 'Data', 'Horário', 'Valor (R$)', 'Status', 'Obs']];
       allAgendamentos.forEach(a => rows.push([
-        a.cliente||'', a.telefone||'', a.servico||'',
-        a.data||'', a.horario||'',
-        (a.preco||0).toFixed(2).replace('.',','),
-        a.status||'', a.obs||''
+        a.cliente || '',
+        a.telefone || '',
+        a.servico || '',
+        a.data || '',
+        a.horario || '',
+        (a.preco || 0).toFixed(2).replace('.', ','),
+        a.status || '',
+        a.obs || ''
       ]));
-      const csv  = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`.join(',')).join('\n');
-      const blob = new Blob(['\uFEFF'+csv], { type: 'text/csv;charset=utf-8;' });
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement('a');
-      a.href = url;
-      a.download = `agendamentos_vr_${new Date().toISOString().slice(0,10)}.csv`;
-      a.click();
+      
+      const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `agendamentos_vr_${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
       URL.revokeObjectURL(url);
     }
 
     function formatDate(d) {
-      const [y,m,day] = d.split('-');
+      const [y, m, day] = d.split('-');
       return `${day}/${m}/${y}`;
     }
+
     function badgeHTML(status) {
-      const labels = { pendente:'Pendente', confirmado:'Confirmado', concluido:'Concluído', cancelado:'Cancelado' };
-      return `<span class="badge badge-${status||'pendente'}">${labels[status]||status}</span>`;
+      const labels = { pendente: 'Pendente', confirmado: 'Confirmado', concluido: 'Concluído', cancelado: 'Cancelado' };
+      return `<span class="badge badge-${status || 'pendente'}">${labels[status] || status}</span>`;
     }
   </script>
 </body>
