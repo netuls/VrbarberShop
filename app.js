@@ -2,15 +2,10 @@
 //  VR BARBER SHOP — App Principal (Cliente)
 // ================================================
 
-import { db } from './firebase-config.js';
-import {
-  collection, addDoc, serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
 const WHATSAPP_NUMBER = '5585994044941';
 
 // ─── Serviços ─────────────────────────────────────
-export const SERVICES = [
+const SERVICES = [
   { id: 'corte',             name: 'Corte',                        price: 25 },
   { id: 'corte_sobrancelha', name: 'Corte + Sobrancelha',         price: 30 },
   { id: 'corte_barba',       name: 'Corte + Barba',                price: 45 },
@@ -23,12 +18,9 @@ export const SERVICES = [
 ];
 
 // ─── Planos ────────────────────────────────────────
-export const PLANS = [
+const PLANS = [
   {
-    id: 'basico',
-    name: 'Básico',
-    price: 80,
-    featured: false,
+    id: 'basico', name: 'Básico', price: 80, featured: false,
     features: [
       '4 cortes por mês',
       'Prioridade na marcação de horário',
@@ -36,11 +28,7 @@ export const PLANS = [
     ]
   },
   {
-    id: 'essencial',
-    name: 'Essencial',
-    price: 105,
-    featured: true,
-    badge: 'POPULAR',
+    id: 'essencial', name: 'Essencial', price: 105, featured: true, badge: 'POPULAR',
     features: [
       'Corte + Sobrancelha uso ilimitado',
       'Prioridade na marcação de horário',
@@ -48,10 +36,7 @@ export const PLANS = [
     ]
   },
   {
-    id: 'premium',
-    name: 'Premium',
-    price: 135,
-    featured: false,
+    id: 'premium', name: 'Premium', price: 135, featured: false,
     features: [
       'Corte + Barba + Sobrancelha uso ilimitado',
       'Prioridade na marcação de horário',
@@ -62,16 +47,9 @@ export const PLANS = [
 ];
 
 // ─── Estado ────────────────────────────────────────
-let state = {
-  selected: null,
-  name: '',
-  phone: '',
-  date: '',
-  time: '',
-  obs: ''
-};
+let state = { selected: null, name: '', phone: '', date: '', time: '', obs: '' };
 
-// ─── Renderiza cards de serviços (seção visual) ────
+// ─── Renderiza cards de serviços ───────────────────
 function renderServices() {
   const grid = document.getElementById('services-grid');
   if (!grid) return;
@@ -79,11 +57,10 @@ function renderServices() {
     <div class="service-card" onclick="scrollToBooking('${s.id}')">
       <span class="service-name">${s.name}</span>
       <span class="service-price">R$${s.price.toFixed(2).replace('.', ',')}</span>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
-// ─── Renderiza planos — botão "Assinar Agora" abre WhatsApp ─
+// ─── Renderiza planos — "Assinar Agora" abre WhatsApp ─
 function renderPlans() {
   const grid = document.getElementById('plans-grid');
   if (!grid) return;
@@ -101,16 +78,14 @@ function renderPlans() {
       <ul class="plan-features">
         ${p.features.map(f => `<li>${f}</li>`).join('')}
       </ul>
-      <a class="btn-plan"
-         href="https://wa.me/${WHATSAPP_NUMBER}?text=${msg}"
-         target="_blank">
+      <a class="btn-plan" href="https://wa.me/${WHATSAPP_NUMBER}?text=${msg}" target="_blank">
         Assinar Agora
       </a>
-    </div>
-  `}).join('');
+    </div>`;
+  }).join('');
 }
 
-// ─── Scroll para agendamento + pré-seleciona serviço ─
+// ─── Scroll para agendamento + pré-seleciona ───────
 window.scrollToBooking = function(serviceId) {
   document.getElementById('agendar').scrollIntoView({ behavior: 'smooth' });
   setTimeout(() => preSelectService(serviceId), 600);
@@ -123,15 +98,12 @@ function preSelectService(serviceId) {
   renderServiceOptions();
   setTimeout(() => {
     const item = document.getElementById('opt-' + serviceId);
-    if (item) {
-      item.classList.add('selected');
-      item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
+    if (item) { item.classList.add('selected'); item.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
     showStep(2);
   }, 50);
 }
 
-// ─── Renderiza lista de serviços no formulário ─────
+// ─── Lista de serviços no formulário ───────────────
 function renderServiceOptions() {
   const list = document.getElementById('options-list');
   if (!list) return;
@@ -139,20 +111,17 @@ function renderServiceOptions() {
     <div class="option-item" id="opt-${s.id}" onclick="selectService('${s.id}')">
       <span>${s.name}</span>
       <span class="option-price">R$${s.price.toFixed(2).replace('.', ',')}</span>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
-// ─── Seleciona serviço e avança para Dados ─────────
+// ─── Seleciona serviço e avança ────────────────────
 window.selectService = function(id) {
   state.selected = SERVICES.find(s => s.id === id);
   document.querySelectorAll('.option-item').forEach(el => el.classList.remove('selected'));
   const item = document.getElementById('opt-' + id);
   if (item) item.classList.add('selected');
-
   const dateInput = document.getElementById('pref-date');
   if (dateInput) dateInput.min = new Date().toISOString().split('T')[0];
-
   setTimeout(() => showStep(2), 300);
 };
 
@@ -173,24 +142,18 @@ function showStep(n) {
 
 window.goBack = function(n) { showStep(n); };
 
-// ─── Passo 2 → 3: valida dados e mostra resumo ─────
+// ─── Valida dados e mostra resumo ──────────────────
 window.goToConfirm = function() {
   const name  = document.getElementById('client-name').value.trim();
   const phone = document.getElementById('client-phone').value.trim();
   const date  = document.getElementById('pref-date').value;
   const time  = document.getElementById('pref-time').value;
-
   if (!name || !phone || !date || !time) {
     alert('Por favor, preencha todos os campos obrigatórios (*).');
     return;
   }
-
-  state.name  = name;
-  state.phone = phone;
-  state.date  = date;
-  state.time  = time;
-  state.obs   = document.getElementById('obs').value.trim();
-
+  state.name = name; state.phone = phone; state.date = date; state.time = time;
+  state.obs = document.getElementById('obs').value.trim();
   renderConfirm();
   showStep(3);
 };
@@ -211,18 +174,16 @@ function renderConfirm() {
     ${state.obs ? `<div class="confirm-row"><label>Obs.</label><span>${state.obs}</span></div>` : ''}
     <div class="confirm-row confirm-total"><label>Valor</label>
       <span>R$${Number(sel.price).toFixed(2).replace('.', ',')}</span>
-    </div>
-  `;
+    </div>`;
 }
 
-// ─── Passo 3: salva no Firebase e exibe modal ──────
+// ─── Salva no Firebase ─────────────────────────────
 window.submitBooking = async function() {
   const btn = document.querySelector('.btn-confirm');
   btn.textContent = 'Enviando...';
   btn.disabled = true;
-
   try {
-    await addDoc(collection(db, 'agendamentos'), {
+    await firebase.firestore().collection('agendamentos').add({
       tipo:     'servico',
       servico:  state.selected.name,
       preco:    state.selected.price,
@@ -232,23 +193,19 @@ window.submitBooking = async function() {
       horario:  state.time,
       obs:      state.obs,
       status:   'pendente',
-      criadoEm: serverTimestamp()
+      criadoEm: firebase.firestore.FieldValue.serverTimestamp()
     });
-
     document.getElementById('success-modal').classList.add('open');
-
-    // Reset
     state = { selected: null, name: '', phone: '', date: '', time: '', obs: '' };
-    document.getElementById('client-name').value = '';
-    document.getElementById('client-phone').value = '';
-    document.getElementById('pref-date').value = '';
+    ['client-name','client-phone','pref-date','obs'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
     document.getElementById('pref-time').value = '';
-    document.getElementById('obs').value = '';
     renderServiceOptions();
     showStep(1);
-
   } catch (err) {
-    console.error('Erro ao salvar:', err);
+    console.error(err);
     alert('Erro ao enviar. Verifique a conexão e tente novamente.');
   } finally {
     btn.textContent = '✓ Confirmar';
@@ -260,7 +217,7 @@ window.closeModal = function() {
   document.getElementById('success-modal').classList.remove('open');
 };
 
-// ─── Máscara de telefone ───────────────────────────
+// ─── Inicialização ─────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   renderServices();
   renderPlans();
@@ -270,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (phoneInput) {
     phoneInput.addEventListener('input', function() {
       let v = this.value.replace(/\D/g, '').substring(0, 11);
-      if (v.length > 6) v = `(${v.substring(0,2)}) ${v.substring(2,7)}-${v.substring(7)}`;
+      if (v.length > 6)      v = `(${v.substring(0,2)}) ${v.substring(2,7)}-${v.substring(7)}`;
       else if (v.length > 2) v = `(${v.substring(0,2)}) ${v.substring(2)}`;
       else if (v.length > 0) v = `(${v}`;
       this.value = v;
