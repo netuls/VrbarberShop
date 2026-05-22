@@ -9,10 +9,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Bebas+Neue&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet"/>
 
-  <!-- Firebase via CDN global (compatível com GitHub Pages) -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <!-- Firebase via CDN (jsdelivr - não bloqueado) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/firebase@10.12.0/firebase-app.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/firebase@10.12.0/firebase-auth.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/firebase@10.12.0/firebase-firestore.js"></script>
 </head>
 <body class="admin-body">
 
@@ -144,18 +144,52 @@
   </div>
 
   <script>
+    // ── Aguarda Firebase carregar ──────────────────────────────
+    function waitForFirebase() {
+      return new Promise((resolve) => {
+        const checkFirebase = setInterval(() => {
+          if (typeof firebase !== 'undefined' && firebase.auth && firebase.firestore) {
+            clearInterval(checkFirebase);
+            resolve();
+          }
+        }, 100);
+        setTimeout(() => clearInterval(checkFirebase), 5000);
+      });
+    }
+
     // ── Firebase config ──────────────────────────────
-    const firebaseConfig = {
-      apiKey: "AIzaSyAI6Z4Ay6atavjrsBAfc0XWndjeAX8zbCM",
-      authDomain: "admin-restaurante-ebc77.firebaseapp.com",
-      projectId: "admin-restaurante-ebc77",
-      storageBucket: "admin-restaurante-ebc77.firebasestorage.app",
-      messagingSenderId: "883332092146",
-      appId: "1:883332092146:web:43af09519de61e87f1006b"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db   = firebase.firestore();
+    let auth, db;
+
+    waitForFirebase().then(() => {
+      const firebaseConfig = {
+        apiKey: "AIzaSyAI6Z4Ay6atavjrsBAfc0XWndjeAX8zbCM",
+        authDomain: "admin-restaurante-ebc77.firebaseapp.com",
+        projectId: "admin-restaurante-ebc77",
+        storageBucket: "admin-restaurante-ebc77.firebasestorage.app",
+        messagingSenderId: "883332092146",
+        appId: "1:883332092146:web:43af09519de61e87f1006b"
+      };
+      
+      if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+      }
+      auth = firebase.auth();
+      db = firebase.firestore();
+      
+      // Inicia o listener de autenticação
+      auth.onAuthStateChanged(user => {
+        if (user) {
+          document.getElementById('login-screen').style.display = 'none';
+          document.getElementById('admin-panel').style.display = 'flex';
+          initAdmin();
+        } else {
+          document.getElementById('login-screen').style.display = 'flex';
+          document.getElementById('admin-panel').style.display = 'none';
+          const btn = document.querySelector('.btn-login');
+          if (btn) { btn.textContent = 'Entrar'; btn.disabled = false; }
+        }
+      });
+    });
 
     // ── Dados de serviços e planos ───────────────────
     const SERVICES = [
@@ -187,13 +221,18 @@
       errEl.textContent = '';
 
       if (!email || !pass) { errEl.textContent = 'Preencha e-mail e senha.'; return; }
+      if (!auth) { errEl.textContent = 'Firebase não carregou. Recarregue a página.'; return; }
 
       const btn = document.querySelector('.btn-login');
       btn.textContent = 'Entrando...';
       btn.disabled = true;
 
       auth.signInWithEmailAndPassword(email, pass)
+        .then(() => {
+          console.log('Login bem-sucedido');
+        })
         .catch(e => {
+          console.error('Erro de login:', e.code, e.message);
           const msgs = {
             'auth/invalid-credential': 'E-mail ou senha incorretos.',
             'auth/user-not-found':     'Usuário não encontrado.',
@@ -209,25 +248,12 @@
 
     function doLogout() {
       if (unsubscribe) unsubscribe();
-      auth.signOut();
+      if (auth) auth.signOut();
     }
 
     document.addEventListener('keydown', e => {
       if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none') {
         doLogin();
-      }
-    });
-
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('admin-panel').style.display = 'flex';
-        initAdmin();
-      } else {
-        document.getElementById('login-screen').style.display = 'flex';
-        document.getElementById('admin-panel').style.display = 'none';
-        const btn = document.querySelector('.btn-login');
-        if (btn) { btn.textContent = 'Entrar'; btn.disabled = false; }
       }
     });
 
@@ -250,6 +276,7 @@
     }
 
     function loadAgendamentos() {
+      if (!db) return;
       const q = db.collection('agendamentos').orderBy('criadoEm', 'desc');
       unsubscribe = q.onSnapshot(snapshot => {
         allAgendamentos = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -331,6 +358,7 @@
     }
 
     function updateStatus(id, status) {
+      if (!db) return;
       db.collection('agendamentos').doc(id).update({ status, atualizadoEm: firebase.firestore.FieldValue.serverTimestamp() })
         .catch(() => alert('Erro ao atualizar status.'));
     }
@@ -366,7 +394,7 @@
         (a.preco||0).toFixed(2).replace('.',','),
         a.status||'', a.obs||''
       ]));
-      const csv  = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+      const csv  = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`.join(',')).join('\n');
       const blob = new Blob(['\uFEFF'+csv], { type: 'text/csv;charset=utf-8;' });
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement('a');
