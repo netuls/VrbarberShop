@@ -2,6 +2,34 @@
    VR BARBER SHOP — ADMIN STYLES
    ============================== */
 
+:root {
+  --black: #0a0a0a;
+  --dark: #111111;
+  --dark2: #1a1a1a;
+  --dark3: #222222;
+  --gold: #c9a84c;
+  --gold2: #e8c96f;
+  --gold-dim: rgba(201,168,76,0.15);
+  --white: #f5f0e8;
+  --white-dim: rgba(245,240,232,0.7);
+  --gray: #888888;
+  --red: #c0392b;
+
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-head: 'Oswald', sans-serif;
+  --font-body: 'Roboto', sans-serif;
+
+  --radius: 4px;
+  --shadow: 0 8px 40px rgba(0,0,0,0.6);
+  --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
 .admin-body {
   background: var(--black);
   min-height: 100vh;
@@ -336,12 +364,8 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
 .badge-status::before {
@@ -354,12 +378,8 @@
 }
 
 @keyframes blink {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.3;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
 }
 
 /* ─── TAB CONTENT ─── */
@@ -376,14 +396,8 @@
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* ─── STATS ─── */
@@ -748,69 +762,22 @@
 
 /* ─── RESPONSIVE ─── */
 @media (max-width: 1100px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 768px) {
-  .sidebar {
-    width: 64px;
-  }
-
-  .nav-item span:not(.nav-icon) {
-    display: none;
-  }
-
-  .sidebar-top,
-  .sidebar-bottom {
-    padding: 16px 12px;
-  }
-
-  .sidebar-brand {
-    display: none;
-  }
-
-  .admin-header {
-    padding: 16px 20px;
-  }
-
-  .admin-header h1 {
-    font-size: 20px;
-  }
-
-  .tab-content {
-    padding: 20px;
-  }
-
-  .stats-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
-
-  .stat-value {
-    font-size: 24px;
-  }
-
-  .tab-toolbar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .filter-group {
-    width: 100%;
-  }
-
-  .filter-group input,
-  .filter-group select {
-    flex: 1;
-  }
-
-  .btn-export {
-    width: 100%;
-  }
-
-  .services-admin-grid {
-    grid-template-columns: 1fr;
-  }
+  .sidebar { width: 64px; }
+  .nav-item span:not(.nav-icon) { display: none; }
+  .sidebar-top, .sidebar-bottom { padding: 16px 12px; }
+  .sidebar-brand { display: none; }
+  .admin-header { padding: 16px 20px; }
+  .admin-header h1 { font-size: 20px; }
+  .tab-content { padding: 20px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .stat-value { font-size: 24px; }
+  .tab-toolbar { flex-direction: column; align-items: stretch; }
+  .filter-group { width: 100%; }
+  .filter-group input, .filter-group select { flex: 1; }
+  .btn-export { width: 100%; }
+  .services-admin-grid { grid-template-columns: 1fr; }
 }
