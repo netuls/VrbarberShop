@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Bebas+Neue&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet"/>
 </head>
 <body>
+
   <!-- HERO -->
   <header class="hero">
     <div class="hero-bg"></div>
@@ -37,9 +38,7 @@
       <h2>Serviços</h2>
       <div class="section-line"></div>
     </div>
-    <div class="services-grid" id="services-grid">
-      <!-- JS injeta -->
-    </div>
+    <div class="services-grid" id="services-grid"></div>
   </section>
 
   <!-- PLANOS -->
@@ -49,9 +48,7 @@
       <h2>Planos</h2>
       <div class="section-line"></div>
     </div>
-    <div class="plans-grid" id="plans-grid">
-      <!-- JS injeta -->
-    </div>
+    <div class="plans-grid" id="plans-grid"></div>
   </section>
 
   <!-- AGENDAMENTO -->
@@ -73,7 +70,7 @@
           <div class="step" id="step-ind-4"><span>4</span><p>Confirmar</p></div>
         </div>
 
-        <!-- Passo 1: Tipo -->
+        <!-- Passo 1 -->
         <div class="form-step active" id="step-1">
           <h3>O que você deseja?</h3>
           <div class="type-options">
@@ -90,14 +87,14 @@
           </div>
         </div>
 
-        <!-- Passo 2: Serviço/Plano -->
+        <!-- Passo 2 -->
         <div class="form-step" id="step-2">
           <h3 id="step2-title">Escolha o Serviço</h3>
           <div class="options-list" id="options-list"></div>
           <button class="btn-back" onclick="goBack(1)">← Voltar</button>
         </div>
 
-        <!-- Passo 3: Dados -->
+        <!-- Passo 3 -->
         <div class="form-step" id="step-3">
           <h3>Seus Dados</h3>
           <div class="form-group">
@@ -135,7 +132,7 @@
           </div>
         </div>
 
-        <!-- Passo 4: Confirmação -->
+        <!-- Passo 4 -->
         <div class="form-step" id="step-4">
           <h3>Confirmar Agendamento</h3>
           <div class="confirm-summary" id="confirm-summary"></div>
@@ -148,7 +145,7 @@
     </div>
   </section>
 
-  <!-- SUCCESS MODAL -->
+  <!-- MODAL SUCESSO -->
   <div class="modal-overlay" id="success-modal">
     <div class="modal-box">
       <div class="modal-icon">✓</div>
@@ -163,7 +160,6 @@
     <p>VR Barber Shop &copy; 2019–2025. Todos os direitos reservados.</p>
   </footer>
 
-  <!-- Firebase SDK -->
   <script type="module" src="js/firebase-config.js"></script>
   <script type="module" src="js/app.js"></script>
 </body>
