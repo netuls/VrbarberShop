@@ -7,7 +7,7 @@ import {
   collection, addDoc, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-const WHATSAPP_NUMBER = '5585940444941';
+const WHATSAPP_NUMBER = '5585994044941';
 
 // ─── Serviços ─────────────────────────────────────
 export const SERVICES = [
