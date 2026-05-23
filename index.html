@@ -29,7 +29,7 @@
   <header class="hero">
     <div class="hero-bg"></div>
     <nav class="navbar">
-      <img src="logo.png" alt="VR Barber Shop" class="nav-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"/><div class="nav-logo-text" style="display:none"><span class="logo-vr">VR</span><span class="logo-sub">Barber Shop</span></div>
+      <div class="nav-logo-text"><span class="logo-vr">VR</span><span class="logo-sub">Barber Shop</span></div>
       <div class="nav-links">
         <a href="#servicos">Serviços</a>
         <a href="#planos">Planos</a>
@@ -141,6 +141,20 @@
     </div>
   </section>
 
+  <!-- MODAL PLANO -->
+  <div class="modal-overlay" id="plan-modal">
+    <div class="modal-box plan-modal-box">
+      <div class="modal-icon plan-modal-icon">✦</div>
+      <h3 id="plan-modal-title">Plano Essencial</h3>
+      <p id="plan-modal-desc">Ótima escolha! Antes de continuar, tem alguma dúvida sobre o plano? Pode perguntar agora — ou clique em <strong>Falar com a Gente</strong> e um de nós te responde pelo WhatsApp.</p>
+      <textarea id="plan-modal-question" placeholder="Escreva sua dúvida aqui (opcional)..." rows="3"></textarea>
+      <div class="plan-modal-actions">
+        <button class="btn-plan-cancel" onclick="closePlanModal()">Fechar</button>
+        <a id="plan-modal-wa" class="btn-plan-confirm" href="#" target="_blank">Falar com a Gente →</a>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL SUCESSO -->
   <div class="modal-overlay" id="success-modal">
     <div class="modal-box">
@@ -152,8 +166,7 @@
   </div>
 
   <footer class="footer">
-    <img src="logo.png" alt="VR" class="footer-logo" onerror="this.style.display='none'"/>
-    <p>VR Barber Shop &copy; 2019–2025. Todos os direitos reservados.</p>
+    <p>VR Barber Shop &copy; 2019. Todos os direitos reservados.</p>
   </footer>
 
   <script src="app.js"></script>
