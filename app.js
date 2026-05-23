@@ -375,6 +375,11 @@ window.scrollToBooking = function(serviceId) {
 };
 
 function preSelectService(serviceId) {
+  if (!currentUser) {
+    showToast('Faça login para agendar. 👆');
+    openLoginModal();
+    return;
+  }
   const service = SERVICES.find(s => s.id === serviceId);
   if (!service) return;
   state.selected = service;
@@ -613,6 +618,11 @@ function showStep(n) {
 window.goBack = function(n) { showStep(n); };
 
 window.selectService = function(id) {
+  if (!currentUser) {
+    showToast('Faça login para agendar. 👆');
+    openLoginModal();
+    return;
+  }
   const s = SERVICES.find(x => x.id === id);
   if (!s) return;
   state.selected = s;
@@ -629,6 +639,11 @@ window.selectService = function(id) {
 };
 
 window.goToConfirm = function() {
+  if (!currentUser) {
+    showToast('Faça login para continuar. 👆');
+    openLoginModal();
+    return;
+  }
   const name  = document.getElementById('client-name').value.trim();
   const phone = document.getElementById('client-phone').value.trim();
   const date  = state.date || document.getElementById('pref-date').value;
