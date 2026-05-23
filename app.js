@@ -60,18 +60,11 @@ function renderServices() {
     </div>`).join('');
 }
 
-// ─── Renderiza planos — "Assinar Agora" abre WhatsApp ─
+// ─── Renderiza planos — "Tenho Interesse" abre modal ─
 function renderPlans() {
   const grid = document.getElementById('plans-grid');
   if (!grid) return;
-  grid.innerHTML = PLANS.map(p => {
-    const msgCliente = encodeURIComponent(
-      `Olá! Quero assinar o Plano ${p.name} da VR Barber Shop por R$${p.price}/mês. Pode me ajudar?`
-    );
-    const msgNotify = encodeURIComponent(
-      `🔔 *Novo Interesse em Plano!*\n\nUm cliente clicou em "Assinar Agora" no Plano *${p.name}* - R$${p.price}/mês.\n\nEntre em contato para fechar!`
-    );
-    return `
+  grid.innerHTML = PLANS.map(p => `
     <div class="plan-card ${p.featured ? 'featured' : ''}">
       ${p.badge ? `<div class="plan-badge">${p.badge}</div>` : ''}
       <div class="plan-name">${p.name}</div>
@@ -81,16 +74,35 @@ function renderPlans() {
       <ul class="plan-features">
         ${p.features.map(f => `<li>${f}</li>`).join('')}
       </ul>
-      <a class="btn-plan" href="https://wa.me/${WHATSAPP_NOTIFY}?text=${msgNotify}" target="_blank" onclick="notifyPlan('${p.name}', ${p.price})">
-        Assinar Agora
-      </a>
-    </div>`;
-  }).join('');
+      <button class="btn-plan" onclick="openPlanModal('${p.id}', '${p.name}', ${p.price})">
+        Tenho Interesse
+      </button>
+    </div>`).join('');
 }
 
-// ─── Notifica WhatsApp ao clicar no plano ──────────
-window.notifyPlan = function(planName, price) {
-  // O link do href já abre o WhatsApp — esta função pode ser usada para analytics futuros
+// ─── Modal de interesse no plano ──────────────────
+window.openPlanModal = function(planId, planName, price) {
+  const modal = document.getElementById('plan-modal');
+  document.getElementById('plan-modal-title').textContent = `Plano ${planName} — R$${price}/mês`;
+  document.getElementById('plan-modal-question').value = '';
+
+  // Atualiza o link do WhatsApp dinamicamente ao clicar em "Falar com a Gente"
+  const waBtn = document.getElementById('plan-modal-wa');
+  waBtn.onclick = function(e) {
+    e.preventDefault();
+    const duvida = document.getElementById('plan-modal-question').value.trim();
+    let msg = `Olá! Tenho interesse no *Plano ${planName}* da VR Barber Shop (R$${price}/mês).`;
+    if (duvida) msg += `\n\nMinha dúvida: ${duvida}`;
+    else msg += `\n\nPode me passar mais informações?`;
+    window.open(`https://wa.me/${WHATSAPP_NOTIFY}?text=${encodeURIComponent(msg)}`, '_blank');
+    closePlanModal();
+  };
+
+  modal.classList.add('open');
+};
+
+window.closePlanModal = function() {
+  document.getElementById('plan-modal').classList.remove('open');
 };
 
 // ─── Scroll para agendamento + pré-seleciona ───────
