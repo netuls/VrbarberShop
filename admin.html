@@ -161,7 +161,7 @@
         <div style="max-width:800px;">
           <div style="margin-bottom:28px;">
             <h3 style="font-family:'Oswald',sans-serif;letter-spacing:2px;text-transform:uppercase;color:#f5f0e8;font-size:16px;margin-bottom:6px;">Configurar Horários de Atendimento</h3>
-            <p style="color:#888;font-size:13px;font-family:'Roboto',sans-serif;line-height:1.6;">Ative os dias e defina o horário de abertura e fechamento. Os horários aparecem automaticamente no site com intervalos de 30 minutos.</p>
+            <p style="color:#888;font-size:13px;font-family:'Roboto',sans-serif;line-height:1.6;">Ative os dias e defina os horários de atendimento. Você pode ativar o intervalo de almoço para bloquear aquele período. Os horários aparecem automaticamente no site com intervalos de 30 minutos.</p>
           </div>
           <div id="horarios-grid" style="display:flex;flex-direction:column;gap:10px;margin-bottom:32px;"></div>
           <div style="display:flex;gap:12px;align-items:center;">
@@ -173,7 +173,7 @@
           </div>
           <div style="margin-top:36px;padding:20px;background:#161616;border:1px solid #2a2a2a;border-radius:6px;">
             <p style="font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px;">Como funciona</p>
-            <p style="font-size:13px;color:#888;line-height:1.7;">Ao salvar, os horários ficam disponíveis no site para agendamento. Dias desativados não aparecem para o cliente. O intervalo entre horários é sempre de 30 minutos.</p>
+            <p style="font-size:13px;color:#888;line-height:1.7;">Ao salvar, os horários ficam disponíveis no site para agendamento. Dias desativados não aparecem para o cliente. Quando o intervalo de almoço está ativo, os horários durante aquele período ficam bloqueados. O intervalo entre horários é sempre de 30 minutos.</p>
           </div>
         </div>
       </div>
@@ -400,13 +400,13 @@
     ];
 
     const DEFAULT_HORARIOS = {
-      domingo: { ativo:false, inicio:'08:00', fim:'18:00' },
-      segunda: { ativo:true,  inicio:'08:00', fim:'19:00' },
-      terca:   { ativo:true,  inicio:'08:00', fim:'19:00' },
-      quarta:  { ativo:true,  inicio:'08:00', fim:'19:00' },
-      quinta:  { ativo:true,  inicio:'08:00', fim:'19:00' },
-      sexta:   { ativo:true,  inicio:'08:00', fim:'19:00' },
-      sabado:  { ativo:true,  inicio:'08:00', fim:'17:00' },
+      domingo: { ativo:false, inicio:'08:00', fim:'18:00', almoco:false, almoco_inicio:'12:00', almoco_fim:'13:00' },
+      segunda: { ativo:true,  inicio:'08:00', fim:'19:00', almoco:false, almoco_inicio:'12:00', almoco_fim:'13:00' },
+      terca:   { ativo:true,  inicio:'08:00', fim:'19:00', almoco:false, almoco_inicio:'12:00', almoco_fim:'13:00' },
+      quarta:  { ativo:true,  inicio:'08:00', fim:'19:00', almoco:false, almoco_inicio:'12:00', almoco_fim:'13:00' },
+      quinta:  { ativo:true,  inicio:'08:00', fim:'19:00', almoco:false, almoco_inicio:'12:00', almoco_fim:'13:00' },
+      sexta:   { ativo:true,  inicio:'08:00', fim:'19:00', almoco:false, almoco_inicio:'12:00', almoco_fim:'13:00' },
+      sabado:  { ativo:true,  inicio:'08:00', fim:'17:00', almoco:false, almoco_inicio:'12:00', almoco_fim:'13:00' },
     };
 
     let horariosConfig = JSON.parse(JSON.stringify(DEFAULT_HORARIOS));
@@ -414,25 +414,36 @@
     async function carregarHorarios() {
       try {
         const doc = await db.collection('config').doc('horarios').get();
-        if (doc.exists) horariosConfig = Object.assign({}, DEFAULT_HORARIOS, doc.data());
+        if (doc.exists) {
+          const saved = doc.data();
+          // Merge saved data preserving new lunch fields from DEFAULT if missing
+          DIAS_SEMANA.forEach(dia => {
+            horariosConfig[dia.key] = Object.assign({}, DEFAULT_HORARIOS[dia.key], saved[dia.key] || {});
+          });
+        }
       } catch(e) {}
       renderHorariosGrid();
     }
 
-    function gerarSlots(inicio, fim) {
+    function gerarSlots(inicio, fim, almoco, almoco_inicio, almoco_fim) {
       const slots = [];
       let [h, m] = inicio.split(':').map(Number);
       const [hf, mf] = fim.split(':').map(Number);
       const fimMin = hf * 60 + mf;
+      const almocoInicioMin = almoco ? (parseInt(almoco_inicio.split(':')[0]) * 60 + parseInt(almoco_inicio.split(':')[1])) : -1;
+      const almocoFimMin   = almoco ? (parseInt(almoco_fim.split(':')[0])   * 60 + parseInt(almoco_fim.split(':')[1]))   : -1;
       while (h * 60 + m < fimMin) {
-        slots.push(String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0'));
+        const cur = h * 60 + m;
+        if (!almoco || cur < almocoInicioMin || cur >= almocoFimMin) {
+          slots.push(String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0'));
+        }
         m += 30; if (m >= 60) { h++; m -= 60; }
       }
       return slots;
     }
 
-    function previewSlots(inicio, fim) {
-      const s = gerarSlots(inicio, fim);
+    function previewSlots(inicio, fim, almoco, almoco_inicio, almoco_fim) {
+      const s = gerarSlots(inicio, fim, almoco, almoco_inicio, almoco_fim);
       if (!s.length) return '--';
       if (s.length <= 3) return s.join(' - ');
       return s[0] + ' - ' + s[1] + ' - ... - ' + s[s.length-1] + ' (' + s.length + ' horarios)';
@@ -444,38 +455,70 @@
       grid.innerHTML = DIAS_SEMANA.map(dia => {
         const cfg = horariosConfig[dia.key];
         const on  = cfg.ativo;
+        const alOn = cfg.almoco || false;
         return `<div style="
             background:#161616; border:1px solid ${on ? '#c9a84c55' : '#252525'};
             border-radius:6px; padding:16px 20px;
-            display:flex; align-items:center; gap:20px; flex-wrap:wrap; transition:border .2s;">
+            display:flex; flex-direction:column; gap:14px; transition:border .2s;">
 
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;min-width:170px;" onclick="toggleDia('${dia.key}')">
-            <div style="width:44px;height:24px;border-radius:12px;background:${on ? '#c9a84c' : '#333'};position:relative;transition:background .2s;flex-shrink:0;">
-              <div style="width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:3px;left:${on ? '23px' : '3px'};transition:left .2s;"></div>
-            </div>
-            <span style="font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:1px;color:${on ? '#f5f0e8' : '#555'};transition:color .2s;">${dia.label}</span>
-          </label>
+          <!-- Linha principal: toggle + horários de atendimento -->
+          <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;min-width:170px;" onclick="toggleDia('${dia.key}')">
+              <div style="width:44px;height:24px;border-radius:12px;background:${on ? '#c9a84c' : '#333'};position:relative;transition:background .2s;flex-shrink:0;">
+                <div style="width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:3px;left:${on ? '23px' : '3px'};transition:left .2s;"></div>
+              </div>
+              <span style="font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:1px;color:${on ? '#f5f0e8' : '#555'};transition:color .2s;">${dia.label}</span>
+            </label>
 
-          <div style="display:flex;align-items:center;gap:12px;${on ? '' : 'opacity:.3;pointer-events:none;'}">
-            <div style="display:flex;flex-direction:column;gap:3px;">
-              <span style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;color:#666;text-transform:uppercase;">Abertura</span>
-              <input type="time" id="inicio-${dia.key}" value="${cfg.inicio}"
-                style="background:#1e1e1e;border:1px solid #333;border-radius:4px;padding:8px 12px;color:#f5f0e8;font-size:14px;outline:none;"
-                onchange="updateHorario('${dia.key}')"/>
+            <div style="display:flex;align-items:center;gap:12px;${on ? '' : 'opacity:.3;pointer-events:none;'}">
+              <div style="display:flex;flex-direction:column;gap:3px;">
+                <span style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;color:#666;text-transform:uppercase;">Abertura</span>
+                <input type="time" id="inicio-${dia.key}" value="${cfg.inicio}"
+                  style="background:#1e1e1e;border:1px solid #333;border-radius:4px;padding:8px 12px;color:#f5f0e8;font-size:14px;outline:none;"
+                  onchange="updateHorario('${dia.key}')"/>
+              </div>
+              <span style="color:#444;font-size:20px;margin-top:14px;">&#8594;</span>
+              <div style="display:flex;flex-direction:column;gap:3px;">
+                <span style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;color:#666;text-transform:uppercase;">Fechamento</span>
+                <input type="time" id="fim-${dia.key}" value="${cfg.fim}"
+                  style="background:#1e1e1e;border:1px solid #333;border-radius:4px;padding:8px 12px;color:#f5f0e8;font-size:14px;outline:none;"
+                  onchange="updateHorario('${dia.key}')"/>
+              </div>
             </div>
-            <span style="color:#444;font-size:20px;margin-top:14px;">&#8594;</span>
-            <div style="display:flex;flex-direction:column;gap:3px;">
-              <span style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;color:#666;text-transform:uppercase;">Fechamento</span>
-              <input type="time" id="fim-${dia.key}" value="${cfg.fim}"
-                style="background:#1e1e1e;border:1px solid #333;border-radius:4px;padding:8px 12px;color:#f5f0e8;font-size:14px;outline:none;"
-                onchange="updateHorario('${dia.key}')"/>
+
+            <div style="margin-left:auto;${on ? '' : 'opacity:.3;'}">
+              <span style="font-size:11px;color:#666;font-family:'Oswald',sans-serif;letter-spacing:1px;">Horarios: </span>
+              <span style="font-size:12px;color:#c9a84c;font-family:'Roboto',sans-serif;" id="preview-${dia.key}">${previewSlots(cfg.inicio, cfg.fim, cfg.almoco, cfg.almoco_inicio, cfg.almoco_fim)}</span>
             </div>
           </div>
 
-          <div style="margin-left:auto;${on ? '' : 'opacity:.3;'}">
-            <span style="font-size:11px;color:#666;font-family:'Oswald',sans-serif;letter-spacing:1px;">Horarios: </span>
-            <span style="font-size:12px;color:#c9a84c;font-family:'Roboto',sans-serif;" id="preview-${dia.key}">${previewSlots(cfg.inicio, cfg.fim)}</span>
+          <!-- Linha de almoço -->
+          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:12px 14px;border-radius:5px;background:#111;border:1px solid ${alOn ? '#c9a84c33' : '#1e1e1e'};${on ? '' : 'opacity:.3;pointer-events:none;'}">
+            <label style="display:flex;align-items:center;gap:9px;cursor:pointer;min-width:170px;" onclick="toggleAlmoco('${dia.key}')">
+              <div style="width:36px;height:20px;border-radius:10px;background:${alOn ? '#c9a84c' : '#333'};position:relative;transition:background .2s;flex-shrink:0;">
+                <div style="width:14px;height:14px;border-radius:50%;background:#fff;position:absolute;top:3px;left:${alOn ? '19px' : '3px'};transition:left .2s;"></div>
+              </div>
+              <span style="font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:1px;color:${alOn ? '#c9a84c' : '#555'};transition:color .2s;">🍽 Intervalo de Almoço</span>
+            </label>
+
+            <div style="display:flex;align-items:center;gap:10px;${alOn ? '' : 'opacity:.3;pointer-events:none;'}">
+              <div style="display:flex;flex-direction:column;gap:3px;">
+                <span style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;color:#666;text-transform:uppercase;">Início pausa</span>
+                <input type="time" id="almoco-inicio-${dia.key}" value="${cfg.almoco_inicio || '12:00'}"
+                  style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:4px;padding:6px 10px;color:#f5f0e8;font-size:13px;outline:none;"
+                  onchange="updateHorario('${dia.key}')"/>
+              </div>
+              <span style="color:#444;font-size:16px;margin-top:14px;">&#8594;</span>
+              <div style="display:flex;flex-direction:column;gap:3px;">
+                <span style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;color:#666;text-transform:uppercase;">Fim pausa</span>
+                <input type="time" id="almoco-fim-${dia.key}" value="${cfg.almoco_fim || '13:00'}"
+                  style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:4px;padding:6px 10px;color:#f5f0e8;font-size:13px;outline:none;"
+                  onchange="updateHorario('${dia.key}')"/>
+              </div>
+              <span style="font-size:11px;color:#666;font-family:'Roboto',sans-serif;margin-top:14px;">(bloqueado para clientes)</span>
+            </div>
           </div>
+
         </div>`;
       }).join('');
     }
@@ -485,13 +528,22 @@
       renderHorariosGrid();
     }
 
+    function toggleAlmoco(key) {
+      horariosConfig[key].almoco = !horariosConfig[key].almoco;
+      renderHorariosGrid();
+    }
+
     function updateHorario(key) {
-      const inicio = document.getElementById('inicio-' + key).value;
-      const fim    = document.getElementById('fim-' + key).value;
-      horariosConfig[key].inicio = inicio;
-      horariosConfig[key].fim    = fim;
+      const inicio        = document.getElementById('inicio-' + key).value;
+      const fim           = document.getElementById('fim-' + key).value;
+      const almocoInicio  = document.getElementById('almoco-inicio-' + key).value;
+      const almocoFim     = document.getElementById('almoco-fim-' + key).value;
+      horariosConfig[key].inicio        = inicio;
+      horariosConfig[key].fim           = fim;
+      horariosConfig[key].almoco_inicio = almocoInicio;
+      horariosConfig[key].almoco_fim    = almocoFim;
       const prev = document.getElementById('preview-' + key);
-      if (prev) prev.textContent = previewSlots(inicio, fim);
+      if (prev) prev.textContent = previewSlots(inicio, fim, horariosConfig[key].almoco, almocoInicio, almocoFim);
     }
 
     async function salvarHorarios() {
