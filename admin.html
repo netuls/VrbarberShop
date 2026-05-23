@@ -194,13 +194,12 @@
       btn.disabled = true;
 
       setTimeout(() => {
-        console.log('Senha digitada:', pass);
-        console.log('Senha esperada:', ADMIN_PASS);
-        console.log('Igual?', pass === ADMIN_PASS);
         if (pass === ADMIN_PASS) {
           sessionStorage.setItem('vr_admin', '1');
-          document.getElementById('login-screen').style.display = 'none';
-          document.getElementById('admin-panel').style.display = 'flex';
+          const loginScreen = document.getElementById('login-screen');
+          const adminPanel = document.getElementById('admin-panel');
+          loginScreen.style.cssText = 'display:none!important;visibility:hidden!important;z-index:-1!important;';
+          adminPanel.style.cssText = 'display:flex!important;visibility:visible!important;opacity:1!important;';
           initAdmin();
         } else {
           errEl.textContent = 'Senha incorreta.';
@@ -225,8 +224,8 @@
 
     // Verifica se já estava logado na sessão
     if (sessionStorage.getItem('vr_admin') === '1') {
-      document.getElementById('login-screen').style.display = 'none';
-      document.getElementById('admin-panel').style.display = 'flex';
+      document.getElementById('login-screen').style.cssText = 'display:none!important;visibility:hidden!important;z-index:-1!important;';
+      document.getElementById('admin-panel').style.cssText = 'display:flex!important;visibility:visible!important;opacity:1!important;';
       initAdmin();
     }
 
