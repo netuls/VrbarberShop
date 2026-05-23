@@ -12,6 +12,10 @@
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <style>
+    .btn-excluir { background: #7b1e1e !important; color: #f5f0e8 !important; }
+    .btn-excluir:hover { background: #c0392b !important; }
+  </style>
 </head>
 <body class="admin-body">
 
@@ -321,6 +325,7 @@
               ${a.status === 'confirmado' ? `<button class="btn-action btn-concluir" onclick="updateStatus('${a.id}','concluido')">Concluir</button>` : ''}
               ${['pendente', 'confirmado'].includes(a.status) ? `<button class="btn-action btn-cancelar" onclick="updateStatus('${a.id}','cancelado')">Cancelar</button>` : ''}
               <a class="btn-action btn-whats" href="https://wa.me/55${(a.telefone || '').replace(/\D/g, '')}" target="_blank">WhatsApp</a>
+              <button class="btn-action btn-excluir" onclick="deleteAgendamento('${a.id}')">🗑 Excluir</button>
             </div>
           </td>
         </tr>`).join('');
@@ -337,6 +342,12 @@
       if (search) f = f.filter(a => (a.cliente || '').toLowerCase().includes(search) || (a.servico || '').toLowerCase().includes(search));
       
       renderAgendamentosTable(f);
+    }
+
+    function deleteAgendamento(id) {
+      if (!confirm('Tem certeza que deseja excluir este agendamento? Esta ação não pode ser desfeita.')) return;
+      db.collection('agendamentos').doc(id).delete()
+        .catch(() => alert('Erro ao excluir agendamento.'));
     }
 
     function updateStatus(id, status) {
