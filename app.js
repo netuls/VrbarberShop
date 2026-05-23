@@ -424,6 +424,7 @@ window.goToConfirm = function() {
     alert('Por favor, preencha todos os campos obrigatórios (*).');
     return;
   }
+
   state.name = name; state.phone = phone; state.date = date; state.time = time;
   state.obs = document.getElementById('obs').value.trim();
   renderConfirm();
