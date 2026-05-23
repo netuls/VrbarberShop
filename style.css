@@ -184,13 +184,12 @@ input, select, textarea {
 .hero-slide {
   position: absolute;
   inset: 0;
-  background-size: contain;
-  background-position: center center;
+  background-size: cover;
+  background-position: center 20%;
   background-repeat: no-repeat;
-  background-color: #080808;
   opacity: 0;
   transition: opacity 1.2s ease;
-  transform: scale(1);
+  transform: scale(1.08);
   animation: none;
 }
 .hero-slide.active {
@@ -198,8 +197,8 @@ input, select, textarea {
   animation: kenBurns 8s ease-in-out forwards;
 }
 @keyframes kenBurns {
-  from { transform: scale(1); }
-  to   { transform: scale(1.04); }
+  from { transform: scale(1.08); }
+  to   { transform: scale(1.13); }
 }
 
 /* Overlay lateral — escurece só as bordas, centro livre */
