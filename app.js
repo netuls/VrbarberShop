@@ -134,14 +134,81 @@ function renderServiceOptions() {
     </div>`).join('');
 }
 
-// ─── Seleciona serviço e avança ────────────────────
+// ─── Gera slots de horário ─────────────────────────
+function gerarSlots(inicio, fim) {
+  const slots = [];
+  let [h, m] = inicio.split(':').map(Number);
+  const [hf, mf] = fim.split(':').map(Number);
+  const fimMin = hf * 60 + mf;
+  while (h * 60 + m < fimMin) {
+    slots.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+    m += 30;
+    if (m >= 60) { h++; m -= 60; }
+  }
+  return slots;
+}
+
+const DIAS_KEY = ['domingo','segunda','terca','quarta','quinta','sexta','sabado'];
+
+// ─── Carrega horários disponíveis do Firebase ──────
+async function carregarSlotsParaData(dataSelecionada) {
+  const select = document.getElementById('pref-time');
+  if (!select) return;
+  select.innerHTML = '<option value="">Carregando...</option>';
+  select.disabled = true;
+
+  try {
+    const doc = await firebase.firestore().collection('config').doc('horarios').get();
+    const config = doc.exists ? doc.data() : null;
+
+    if (!config) {
+      preencherSelectPadrao(select);
+      return;
+    }
+
+    // Descobre o dia da semana da data selecionada
+    const [y, mo, d] = dataSelecionada.split('-').map(Number);
+    const diaSemana = new Date(y, mo - 1, d).getDay(); // 0=dom
+    const diaKey = DIAS_KEY[diaSemana];
+    const cfg = config[diaKey];
+
+    if (!cfg || !cfg.ativo) {
+      select.innerHTML = '<option value="">Sem atendimento neste dia</option>';
+      select.disabled = false;
+      return;
+    }
+
+    const slots = gerarSlots(cfg.inicio, cfg.fim);
+    select.innerHTML = '<option value="">Selecione...</option>' +
+      slots.map(s => `<option>${s}</option>`).join('');
+    select.disabled = false;
+  } catch(e) {
+    preencherSelectPadrao(select);
+  }
+}
+
+function preencherSelectPadrao(select) {
+  const horarios = ['08:00','08:30','09:00','09:30','10:00','10:30','11:00','11:30',
+    '13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30',
+    '17:00','17:30','18:00','18:30'];
+  select.innerHTML = '<option value="">Selecione...</option>' +
+    horarios.map(h => `<option>${h}</option>`).join('');
+  select.disabled = false;
+}
+
+
 window.selectService = function(id) {
   state.selected = SERVICES.find(s => s.id === id);
   document.querySelectorAll('.option-item').forEach(el => el.classList.remove('selected'));
   const item = document.getElementById('opt-' + id);
   if (item) item.classList.add('selected');
   const dateInput = document.getElementById('pref-date');
-  if (dateInput) dateInput.min = new Date().toISOString().split('T')[0];
+  if (dateInput) {
+    dateInput.min = new Date().toISOString().split('T')[0];
+    dateInput.addEventListener('change', function() {
+      if (this.value) carregarSlotsParaData(this.value);
+    });
+  }
   setTimeout(() => showStep(2), 300);
 };
 
