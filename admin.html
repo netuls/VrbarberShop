@@ -293,6 +293,27 @@
     </main>
   </div>
 
+  <!-- MODAL CONFIRMAR AGENDAMENTO -->
+  <div id="confirm-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:#161616;border:1px solid #2a2a2a;border-radius:10px;padding:36px 32px;max-width:380px;width:90%;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,0.8);">
+      <div style="font-size:28px;margin-bottom:14px;">📲</div>
+      <h3 style="font-family:'Oswald',sans-serif;font-size:16px;letter-spacing:2px;text-transform:uppercase;color:#f5f0e8;margin-bottom:10px;">Confirmar Agendamento</h3>
+      <p style="font-family:'Roboto',sans-serif;font-size:13px;color:#888;line-height:1.6;margin-bottom:28px;">
+        Deseja enviar a mensagem de confirmação para <strong id="confirm-modal-nome" style="color:#f5f0e8;"></strong> pelo WhatsApp?
+      </p>
+      <div style="display:flex;gap:12px;justify-content:center;">
+        <button id="confirm-modal-nao"
+          style="flex:1;padding:12px;background:transparent;border:1px solid #333;border-radius:6px;color:#888;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">
+          Não enviar
+        </button>
+        <button id="confirm-modal-sim"
+          style="flex:1;padding:12px;background:#f5f0e8;border:none;border-radius:6px;color:#0a0a0a;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;font-weight:700;cursor:pointer;">
+          Sim, enviar
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ── Firebase ─────────────────────────────────────
     const firebaseConfig = {
@@ -479,14 +500,37 @@
     }
 
     function updateStatus(id, status) {
+      if (status === 'confirmado') {
+        // Mostra modal perguntando se quer enviar mensagem ao cliente
+        const ag = allAgendamentos.find(a => a.id === id);
+        const nome = ag ? (ag.cliente || 'cliente') : 'cliente';
+        document.getElementById('confirm-modal-nome').textContent = nome;
+        document.getElementById('confirm-modal').style.display = 'flex';
+        document.getElementById('confirm-modal-sim').onclick = function() {
+          fecharConfirmModal();
+          salvarStatus(id, 'confirmado', true);
+        };
+        document.getElementById('confirm-modal-nao').onclick = function() {
+          fecharConfirmModal();
+          salvarStatus(id, 'confirmado', false);
+        };
+        return;
+      }
+      salvarStatus(id, status, false);
+    }
+
+    function fecharConfirmModal() {
+      document.getElementById('confirm-modal').style.display = 'none';
+    }
+
+    function salvarStatus(id, status, enviarWpp) {
       db.collection('agendamentos').doc(id).update({ status, atualizadoEm: firebase.firestore.FieldValue.serverTimestamp() })
         .then(() => {
-          const ag = allAgendamentos.find(a => a.id === id);
-          if (!ag || !ag.telefone) return;
-          const primeiroNome = (ag.cliente || 'Cliente').split(' ')[0];
-          const phone = ag.telefone.replace(/\D/g, '');
-
-          if (status === 'confirmado') {
+          if (enviarWpp && status === 'confirmado') {
+            const ag = allAgendamentos.find(a => a.id === id);
+            if (!ag || !ag.telefone) return;
+            const primeiroNome = (ag.cliente || 'Cliente').split(' ')[0];
+            const phone = ag.telefone.replace(/\D/g, '');
             const lines = [
               `Olá, *${primeiroNome}*! ✅`,
               '',
@@ -499,19 +543,6 @@
               '*Valor:* R$' + (ag.preco || 0).toFixed(2).replace('.', ','),
               '',
               'Te esperamos! Qualquer dúvida é só chamar. ✂️',
-            ];
-            window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(lines.join('\n'))}`, '_blank');
-          }
-
-          if (status === 'concluido') {
-            const lines = [
-              `Olá, *${primeiroNome}*! 🙏`,
-              '',
-              'Obrigado por visitar a *VR Barber Shop* hoje!',
-              '',
-              'Esperamos que tenha gostado do serviço. Quando precisar, estamos aqui.',
-              '',
-              '✂️ Até a próxima!',
             ];
             window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(lines.join('\n'))}`, '_blank');
           }
