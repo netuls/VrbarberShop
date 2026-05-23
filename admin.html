@@ -164,7 +164,10 @@
             <input type="date" id="filter-date" onchange="applyFilters()"/>
             <input type="text" id="filter-search" oninput="applyFilters()" placeholder="🔍 Buscar cliente..."/>
           </div>
-          <button class="btn-export" onclick="exportCSV()">⬇ Exportar CSV</button>
+          <div style="display:flex;gap:10px;">
+            <button class="btn-export" onclick="exportCSV()">⬇ Exportar CSV</button>
+            <button class="btn-export" onclick="abrirModalConcluirTodos()" style="border-color:#27ae60;color:#27ae60;">✓ Concluir Todos</button>
+          </div>
         </div>
         <div class="table-wrap">
           <table class="admin-table">
@@ -291,6 +294,27 @@
       </div>
 
     </main>
+  </div>
+
+  <!-- MODAL CONCLUIR TODOS -->
+  <div id="concluir-todos-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:#161616;border:1px solid #2a2a2a;border-radius:10px;padding:36px 32px;max-width:380px;width:90%;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,0.8);">
+      <div style="font-size:28px;margin-bottom:14px;">✅</div>
+      <h3 style="font-family:'Oswald',sans-serif;font-size:16px;letter-spacing:2px;text-transform:uppercase;color:#f5f0e8;margin-bottom:10px;">Concluir Todos</h3>
+      <p style="font-family:'Roboto',sans-serif;font-size:13px;color:#888;line-height:1.6;margin-bottom:28px;">
+        Isso vai marcar como <strong style="color:#27ae60;">concluído</strong> todos os <strong id="concluir-todos-count" style="color:#f5f0e8;"></strong> agendamentos pendentes e confirmados. Deseja continuar?
+      </p>
+      <div style="display:flex;gap:12px;justify-content:center;">
+        <button onclick="fecharModalConcluirTodos()"
+          style="flex:1;padding:12px;background:transparent;border:1px solid #333;border-radius:6px;color:#888;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">
+          Cancelar
+        </button>
+        <button onclick="confirmarConcluirTodos()"
+          style="flex:1;padding:12px;background:#27ae60;border:none;border-radius:6px;color:#fff;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;font-weight:700;cursor:pointer;">
+          Confirmar
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- MODAL CONFIRMAR AGENDAMENTO -->
@@ -553,6 +577,45 @@
     function deleteAgendamento(id) {
       if (!confirm('Excluir este agendamento? Nao pode ser desfeito.')) return;
       db.collection('agendamentos').doc(id).delete().catch(() => alert('Erro ao excluir.'));
+    }
+
+    function abrirModalConcluirTodos() {
+      const pendentes = allAgendamentos.filter(a => ['pendente','confirmado'].includes(a.status));
+      if (!pendentes.length) {
+        alert('Nenhum agendamento pendente ou confirmado para concluir.');
+        return;
+      }
+      document.getElementById('concluir-todos-count').textContent = pendentes.length;
+      document.getElementById('concluir-todos-modal').style.display = 'flex';
+    }
+
+    function fecharModalConcluirTodos() {
+      document.getElementById('concluir-todos-modal').style.display = 'none';
+    }
+
+    async function confirmarConcluirTodos() {
+      fecharModalConcluirTodos();
+      const btn = document.querySelector('[onclick="abrirModalConcluirTodos()"]');
+      const textoOriginal = btn.textContent;
+      btn.textContent = 'Concluindo...';
+      btn.disabled = true;
+
+      const pendentes = allAgendamentos.filter(a => ['pendente','confirmado'].includes(a.status));
+      try {
+        const batch = db.batch();
+        pendentes.forEach(a => {
+          batch.update(db.collection('agendamentos').doc(a.id), {
+            status: 'concluido',
+            atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        });
+        await batch.commit();
+      } catch(e) {
+        alert('Erro ao concluir agendamentos: ' + (e.message || e));
+      } finally {
+        btn.textContent = textoOriginal;
+        btn.disabled = false;
+      }
     }
 
     function exportCSV() {
