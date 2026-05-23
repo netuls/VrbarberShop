@@ -100,6 +100,13 @@
     </div>
   </section>
 
+  <!-- AUTH BAR -->
+  <div class="auth-bar-wrap">
+    <div class="auth-bar" id="auth-bar">
+      <!-- preenchido via JS -->
+    </div>
+  </div>
+
   <!-- AGENDAMENTO -->
   <section id="agendar" class="section booking-section">
     <div class="section-header">
@@ -171,6 +178,50 @@
       </div>
     </div>
   </section>
+
+  <!-- MODAL LOGIN / CADASTRO -->
+  <div class="modal-overlay" id="login-modal">
+    <div class="modal-box login-modal-box">
+      <div class="modal-icon">✂️</div>
+      <h3>Entrar / Cadastrar</h3>
+
+      <!-- Passo 1: telefone -->
+      <div class="login-step active" id="login-step-phone">
+        <p>Digite seu WhatsApp para entrar ou criar sua conta.</p>
+        <div class="form-group" style="text-align:left;margin-top:16px;">
+          <label>WhatsApp *</label>
+          <input type="tel" id="login-phone-input" placeholder="(85) 99999-9999"
+            maxlength="15" inputmode="tel" autocomplete="tel"/>
+        </div>
+        <p class="login-error" id="login-error"></p>
+        <button class="btn-confirm" id="btn-login-next" onclick="loginCheckPhone()" style="margin-top:8px;width:100%;">Continuar →</button>
+        <button class="btn-back" onclick="closeLoginModal()" style="margin-top:8px;width:100%;">Fechar</button>
+      </div>
+
+      <!-- Passo 2: nome (só para novos) -->
+      <div class="login-step" id="login-step-name">
+        <p>Primeira vez por aqui! Qual o seu nome completo?</p>
+        <div class="form-group" style="text-align:left;margin-top:16px;">
+          <label>Nome e Sobrenome *</label>
+          <input type="text" id="login-name-input" placeholder="Nome e sobrenome"
+            autocomplete="name" autocorrect="off" autocapitalize="words"/>
+        </div>
+        <p class="login-error" id="login-error"></p>
+        <button class="btn-confirm" id="btn-login-register" onclick="loginRegister()" style="margin-top:8px;width:100%;">Cadastrar →</button>
+        <button class="btn-back" onclick="closeLoginModal()" style="margin-top:8px;width:100%;">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL MEUS AGENDAMENTOS -->
+  <div class="modal-overlay" id="mybookings-modal">
+    <div class="modal-box mybookings-modal-box">
+      <div class="modal-icon">📋</div>
+      <h3>Meus Agendamentos</h3>
+      <div id="mybookings-list"></div>
+      <button class="btn-back" onclick="closeMyBookings()" style="margin-top:20px;width:100%;">Fechar</button>
+    </div>
+  </div>
 
   <!-- MODAL PLANO -->
   <div class="modal-overlay" id="plan-modal">
