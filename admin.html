@@ -11,8 +11,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <style>
-    #dash-filter-date::-webkit-calendar-picker-indicator { filter: invert(0.5) sepia(1) saturate(2) hue-rotate(5deg); cursor: pointer; }
-    #dash-filter-date { color-scheme: dark; }
+    #dash-filter-de::-webkit-calendar-picker-indicator,
+    #dash-filter-ate::-webkit-calendar-picker-indicator { filter: invert(0.5) sepia(1) saturate(2) hue-rotate(5deg); cursor: pointer; }
     #stat-card-receita-dia { animation: fadeInCard .35s ease; }
     @keyframes fadeInCard { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
     #dash-date-filter-bar input[type="date"]:focus { border-color: #c8a96e !important; box-shadow: 0 0 0 2px rgba(200,169,110,.15); }
@@ -107,20 +107,48 @@
       <div class="tab-content active" id="tab-dashboard">
 
         <!-- FILTRO DE DATA NO TOPO DO DASHBOARD -->
-        <div id="dash-date-filter-bar" style="display:flex;align-items:center;gap:14px;background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:14px 22px;margin-bottom:28px;flex-wrap:wrap;">
-          <span style="color:#888;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;white-space:nowrap;">📅 Filtrar dashboard por data</span>
-          <div style="width:1px;height:20px;background:#2a2a2a;flex-shrink:0;"></div>
-          <input type="date" id="dash-filter-date" onchange="renderDashboard()"
-            style="background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:8px 14px;outline:none;color:#f5f0e8;font-family:'Roboto',sans-serif;font-size:14px;cursor:pointer;min-width:150px;color-scheme:dark;"/>
-          <button onclick="setDashFilterToday()"
-            style="background:#1e1e1e;border:1px solid #333;color:#aaa;padding:8px 16px;border-radius:6px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;">
-            Hoje
-          </button>
-          <button onclick="clearDashFilter()"
-            style="background:#1e1e1e;border:1px solid #333;color:#888;padding:8px 16px;border-radius:6px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;">
-            Limpar
-          </button>
-          <span id="dash-filter-label" style="font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:1px;color:#555;margin-left:auto;white-space:nowrap;"></span>
+        <div id="dash-date-filter-bar" style="background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:16px 22px;margin-bottom:28px;">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <span style="color:#888;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;white-space:nowrap;">📅 Filtrar por período</span>
+            <div style="width:1px;height:20px;background:#2a2a2a;flex-shrink:0;"></div>
+
+            <!-- DE -->
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;color:#555;text-transform:uppercase;">De</span>
+              <input type="date" id="dash-filter-de" onchange="renderDashboard()"
+                style="background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:8px 12px;outline:none;color:#f5f0e8;font-family:'Roboto',sans-serif;font-size:13px;cursor:pointer;color-scheme:dark;"/>
+            </div>
+
+            <span style="color:#444;font-size:16px;">→</span>
+
+            <!-- ATÉ -->
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;color:#555;text-transform:uppercase;">Até</span>
+              <input type="date" id="dash-filter-ate" onchange="renderDashboard()"
+                style="background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:8px 12px;outline:none;color:#f5f0e8;font-family:'Roboto',sans-serif;font-size:13px;cursor:pointer;color-scheme:dark;"/>
+            </div>
+
+            <div style="width:1px;height:20px;background:#2a2a2a;flex-shrink:0;"></div>
+
+            <!-- Atalhos rápidos -->
+            <button onclick="setDashFilterToday()"
+              style="background:#1e1e1e;border:1px solid #333;color:#aaa;padding:7px 14px;border-radius:6px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;">
+              Hoje
+            </button>
+            <button onclick="setDashFilterWeek()"
+              style="background:#1e1e1e;border:1px solid #333;color:#aaa;padding:7px 14px;border-radius:6px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;">
+              Essa Semana
+            </button>
+            <button onclick="setDashFilterMonth()"
+              style="background:#1e1e1e;border:1px solid #333;color:#aaa;padding:7px 14px;border-radius:6px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;">
+              Este Mês
+            </button>
+            <button onclick="clearDashFilter()"
+              style="background:#1e1e1e;border:1px solid #333;color:#666;padding:7px 14px;border-radius:6px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:1px;text-transform:uppercase;">
+              Limpar
+            </button>
+            <span id="dash-filter-label" style="font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:1px;color:#555;margin-left:auto;white-space:nowrap;"></span>
+          </div>
         </div>
 
         <div class="stats-grid">
@@ -476,48 +504,90 @@
     }
 
     function clearDashFilter() {
-      document.getElementById('dash-filter-date').value = '';
+      document.getElementById('dash-filter-de').value = '';
+      document.getElementById('dash-filter-ate').value = '';
       renderDashboard();
     }
 
     function setDashFilterToday() {
       const hoje = new Date().toISOString().split('T')[0];
-      document.getElementById('dash-filter-date').value = hoje;
+      document.getElementById('dash-filter-de').value = hoje;
+      document.getElementById('dash-filter-ate').value = hoje;
+      renderDashboard();
+    }
+
+    function setDashFilterWeek() {
+      const now = new Date();
+      const day = now.getDay(); // 0=dom
+      const monday = new Date(now); monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
+      const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
+      document.getElementById('dash-filter-de').value = monday.toISOString().split('T')[0];
+      document.getElementById('dash-filter-ate').value = sunday.toISOString().split('T')[0];
+      renderDashboard();
+    }
+
+    function setDashFilterMonth() {
+      const now = new Date();
+      const first = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+      const last  = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+      document.getElementById('dash-filter-de').value = first;
+      document.getElementById('dash-filter-ate').value = last;
       renderDashboard();
     }
 
     function renderDashboard() {
       const hoje = new Date().toISOString().split('T')[0];
       const mesAtual = new Date().toISOString().slice(0, 7);
-      const filterDate = document.getElementById('dash-filter-date').value;
-      const hasFilter = !!filterDate;
+      const filterDe  = document.getElementById('dash-filter-de').value;
+      const filterAte = document.getElementById('dash-filter-ate').value;
+
+      // Considera filtro ativo se ao menos um campo preenchido
+      const hasFilter = !!(filterDe || filterAte);
+      // Efetivo: se só um lado preenchido, o outro assume o mesmo valor
+      const efDe  = filterDe  || filterAte;
+      const efAte = filterAte || filterDe;
+
+      // Highlight nas bordas dos inputs quando ativos
+      const styleAtivo  = 'background:#1a1a1a;border:1px solid #c8a96e;border-radius:6px;padding:8px 12px;outline:none;color:#f5f0e8;font-family:\'Roboto\',sans-serif;font-size:13px;cursor:pointer;color-scheme:dark;';
+      const styleNormal = 'background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:8px 12px;outline:none;color:#f5f0e8;font-family:\'Roboto\',sans-serif;font-size:13px;cursor:pointer;color-scheme:dark;';
+      document.getElementById('dash-filter-de').style.cssText  = filterDe  ? styleAtivo : styleNormal;
+      document.getElementById('dash-filter-ate').style.cssText = filterAte ? styleAtivo : styleNormal;
 
       // ── Label do filtro ──────────────────────────────
       const labelEl = document.getElementById('dash-filter-label');
       if (hasFilter) {
-        const [y, m, d] = filterDate.split('-');
-        labelEl.textContent = 'Exibindo: ' + d + '/' + m + '/' + y;
+        const fmtDe  = efDe  ? efDe.split('-').reverse().join('/')  : '—';
+        const fmtAte = efAte ? efAte.split('-').reverse().join('/') : '—';
+        labelEl.textContent = efDe === efAte ? ('📍 ' + fmtDe) : ('📍 ' + fmtDe + ' → ' + fmtAte);
         labelEl.style.color = '#c8a96e';
       } else {
         labelEl.textContent = '';
       }
 
-      // ── Cards principais (reagem ao filtro quando ativo) ──
-      const baseDate = hasFilter ? filterDate : hoje;
-      const agendamentosNaData = allAgendamentos.filter(a => a.data === baseDate);
+      // ── Filtragem por intervalo ──────────────────────
+      const agendamentosNoRange = hasFilter
+        ? allAgendamentos.filter(a => a.data >= efDe && a.data <= efAte)
+        : [];
 
-      document.getElementById('stat-hoje').textContent = agendamentosNaData.length;
-      document.getElementById('stat-hoje-label').textContent = hasFilter ? 'Agendamentos no Dia' : 'Agendamentos Hoje';
+      // ── Cards ────────────────────────────────────────
+      const isSingleDay = hasFilter && efDe === efAte;
+
+      document.getElementById('stat-hoje').textContent = hasFilter
+        ? agendamentosNoRange.length
+        : allAgendamentos.filter(a => a.data === hoje).length;
+      document.getElementById('stat-hoje-label').textContent = hasFilter
+        ? (isSingleDay ? 'Agendamentos no Dia' : 'Agendamentos no Período')
+        : 'Agendamentos Hoje';
 
       document.getElementById('stat-pendentes').textContent = hasFilter
-        ? agendamentosNaData.filter(a => a.status === 'pendente').length
+        ? agendamentosNoRange.filter(a => a.status === 'pendente').length
         : allAgendamentos.filter(a => a.status === 'pendente').length;
-      document.getElementById('stat-pendentes-label').textContent = hasFilter ? 'Pendentes no Dia' : 'Pendentes';
+      document.getElementById('stat-pendentes-label').textContent = hasFilter ? 'Pendentes no Período' : 'Pendentes';
 
       document.getElementById('stat-confirmados').textContent = hasFilter
-        ? agendamentosNaData.filter(a => a.status === 'confirmado').length
+        ? agendamentosNoRange.filter(a => a.status === 'confirmado').length
         : allAgendamentos.filter(a => a.status === 'confirmado').length;
-      document.getElementById('stat-confirmados-label').textContent = hasFilter ? 'Confirmados no Dia' : 'Confirmados';
+      document.getElementById('stat-confirmados-label').textContent = hasFilter ? 'Confirmados no Período' : 'Confirmados';
 
       // ── Receita do mês (sempre fixa) ──────────────────
       const receitaMes = allAgendamentos
@@ -526,30 +596,33 @@
       document.getElementById('stat-receita').textContent = 'R$' + receitaMes.toFixed(2).replace('.', ',');
       document.getElementById('stat-receita-label').textContent = 'Receita do Mês';
 
-      // ── Card de Receita do Dia (só aparece com filtro ativo) ──
+      // ── Card de Receita do Período (aparece só com filtro) ──
       const cardReceitaDia = document.getElementById('stat-card-receita-dia');
       if (hasFilter) {
-        const receitaDia = agendamentosNaData
+        const receitaPeriodo = agendamentosNoRange
           .filter(a => a.status === 'concluido')
           .reduce((acc, a) => acc + (a.preco || 0), 0);
-        document.getElementById('stat-receita-dia').textContent = 'R$' + receitaDia.toFixed(2).replace('.', ',');
-        const [y, m, d] = filterDate.split('-');
-        document.getElementById('stat-receita-dia-label').textContent = 'Receita de ' + d + '/' + m;
+        document.getElementById('stat-receita-dia').textContent = 'R$' + receitaPeriodo.toFixed(2).replace('.', ',');
+        document.getElementById('stat-receita-dia-label').textContent = isSingleDay
+          ? 'Receita de ' + efDe.split('-').slice(1).reverse().join('/')
+          : 'Receita do Período';
         cardReceitaDia.style.display = '';
       } else {
         cardReceitaDia.style.display = 'none';
       }
 
-      // ── Tabela de agendamentos recentes / filtrados ──
-      const recent = hasFilter ? agendamentosNaData : allAgendamentos.slice(0, 8);
+      // ── Tabela ───────────────────────────────────────
+      const recent = hasFilter ? agendamentosNoRange : allAgendamentos.slice(0, 8);
       const sectionTitle = document.getElementById('recent-section-title');
       if (sectionTitle) {
-        sectionTitle.textContent = hasFilter ? 'Agendamentos do Dia Filtrado' : 'Agendamentos Recentes';
+        sectionTitle.textContent = hasFilter
+          ? (isSingleDay ? 'Agendamentos do Dia' : 'Agendamentos do Período')
+          : 'Agendamentos Recentes';
       }
 
       const el = document.getElementById('recent-list');
       if (!recent.length) {
-        el.innerHTML = '<p style="color:#555;padding:20px;font-family:Oswald,sans-serif;letter-spacing:1px;">Nenhum agendamento encontrado para esta data.</p>';
+        el.innerHTML = '<p style="color:#555;padding:20px;font-family:Oswald,sans-serif;letter-spacing:1px;">Nenhum agendamento encontrado para o período selecionado.</p>';
         return;
       }
       el.innerHTML = `<table class="admin-table">
