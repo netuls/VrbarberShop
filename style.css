@@ -1,806 +1,277 @@
-/* ==============================
-   VR BARBER SHOP — MAIN STYLES
-   ============================== */
+// ================================================
+//  VR BARBER SHOP — App Principal (Cliente)
+// ================================================
 
-:root {
-  --black: #080808;
-  --dark: #101010;
-  --dark2: #161616;
-  --dark3: #1e1e1e;
-  --dark4: #262626;
-  --accent: #c0c0c0;
-  --accent2: #e0e0e0;
-  --accent-dim: rgba(180,180,180,0.10);
-  --white: #f0ece4;
-  --white-dim: rgba(240,236,228,0.65);
-  --gray: #555555;
-  --gray2: #888888;
-  --red: #c0392b;
+const WHATSAPP_NUMBER = '5585994044941';
+const WHATSAPP_NOTIFY = '5585994044941'; // número que recebe notificações
 
-  --font-display: 'Bebas Neue', sans-serif;
-  --font-head: 'Oswald', sans-serif;
-  --font-body: 'Roboto', sans-serif;
+// ─── Serviços (sem Corte + Barba R$45) ───────────
+const SERVICES = [
+  { id: 'corte',             name: 'Corte',                        price: 25 },
+  { id: 'corte_sobrancelha', name: 'Corte + Sobrancelha',         price: 30 },
+  { id: 'corte_barba_sob',   name: 'Corte + Barba + Sobrancelha', price: 45 },
+  { id: 'barba',             name: 'Barba',                        price: 20 },
+  { id: 'sobrancelha',       name: 'Sobrancelha',                  price: 5  },
+  { id: 'nevou_corte',       name: 'Nevou + Corte',                price: 90 },
+  { id: 'luzes_corte',       name: 'Luzes + Corte',                price: 75 },
+  { id: 'hidratacao',        name: 'Hidratação',                   price: 10 },
+];
 
-  --radius: 4px;
-  --shadow: 0 8px 40px rgba(0,0,0,0.7);
-  --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
-}
+// ─── Planos ────────────────────────────────────────
+const PLANS = [
+  {
+    id: 'basico', name: 'Básico', price: 80, featured: false,
+    features: [
+      '4 cortes por mês',
+      'Prioridade na marcação de horário',
+      '5% de desconto no pagamento antecipado (até 5 dias antes)',
+    ]
+  },
+  {
+    id: 'essencial', name: 'Essencial', price: 105, featured: true, badge: 'POPULAR',
+    features: [
+      'Corte + Sobrancelha uso ilimitado',
+      'Prioridade na marcação de horário',
+      '5% de desconto no pagamento antecipado (até 5 dias antes)',
+    ]
+  },
+  {
+    id: 'premium', name: 'Premium', price: 135, featured: false,
+    features: [
+      'Corte + Barba + Sobrancelha uso ilimitado',
+      'Prioridade na marcação de horário',
+      'Brinde: lavagem inclusa',
+      '10% de desconto no pagamento antecipado (até 5 dias antes)',
+    ]
+  }
+];
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
-body {
-  background: var(--black);
-  color: var(--white);
-  font-family: var(--font-body);
-  overflow-x: hidden;
-}
+// ─── Estado ────────────────────────────────────────
+let state = { selected: null, name: '', phone: '', date: '', time: '', obs: '' };
 
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: var(--dark); }
-::-webkit-scrollbar-thumb { background: var(--gray); border-radius: 3px; }
-
-/* ================== NAVBAR ================== */
-.navbar {
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 18px 60px;
-  background: linear-gradient(to bottom, rgba(8,8,8,0.95) 0%, transparent 100%);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-}
-
-.nav-logo-text {
-  display: flex;
-  flex-direction: column;
-  line-height: 1;
-}
-.nav-logo-text .logo-vr {
-  font-family: var(--font-display);
-  font-size: 28px;
-  color: var(--white);
-  letter-spacing: 4px;
-}
-.nav-logo-text .logo-sub {
-  font-family: var(--font-head);
-  font-size: 10px;
-  letter-spacing: 5px;
-  color: var(--gray2);
-  text-transform: uppercase;
+// ─── Renderiza cards de serviços ───────────────────
+function renderServices() {
+  const grid = document.getElementById('services-grid');
+  if (!grid) return;
+  grid.innerHTML = SERVICES.map(s => `
+    <div class="service-card" onclick="scrollToBooking('${s.id}')">
+      <span class="service-name">${s.name}</span>
+      <span class="service-price">R$${s.price.toFixed(2).replace('.', ',')}</span>
+    </div>`).join('');
 }
 
-.nav-links { display: flex; align-items: center; gap: 36px; }
-.nav-links a {
-  color: var(--white-dim);
-  text-decoration: none;
-  font-family: var(--font-head);
-  font-size: 13px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  transition: var(--transition);
-}
-.nav-links a:hover { color: var(--white); }
-
-.btn-nav {
-  background: var(--dark4) !important;
-  color: var(--white) !important;
-  padding: 10px 28px !important;
-  border-radius: var(--radius);
-  font-weight: 700 !important;
-  letter-spacing: 2px !important;
-  border: 1px solid rgba(255,255,255,0.15) !important;
-}
-.btn-nav:hover { background: var(--dark3) !important; border-color: rgba(255,255,255,0.3) !important; transform: translateY(-2px); }
-
-/* ================== HERO ================== */
-.hero {
-  position: relative;
-  height: 100vh;
-  min-height: 700px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
+// ─── Renderiza planos — "Tenho Interesse" abre modal ─
+function renderPlans() {
+  const grid = document.getElementById('plans-grid');
+  if (!grid) return;
+  grid.innerHTML = PLANS.map(p => `
+    <div class="plan-card ${p.featured ? 'featured' : ''}">
+      ${p.badge ? `<div class="plan-badge">${p.badge}</div>` : ''}
+      <div class="plan-name">${p.name}</div>
+      <div class="plan-price">R$${p.price}</div>
+      <div class="plan-price-sub">/ MÊS</div>
+      <div class="plan-divider"></div>
+      <ul class="plan-features">
+        ${p.features.map(f => `<li>${f}</li>`).join('')}
+      </ul>
+      <button class="btn-plan" onclick="openPlanModal('${p.id}', '${p.name}', ${p.price})">
+        Tenho Interesse
+      </button>
+    </div>`).join('');
 }
 
-.hero-bg {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse at 50% 35%, rgba(255,255,255,0.03) 0%, transparent 55%),
-    linear-gradient(180deg, #0a0a0a 0%, #080808 100%);
-  z-index: 0;
-}
-.hero-bg::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image:
-    repeating-linear-gradient(0deg, transparent, transparent 80px, rgba(255,255,255,0.012) 80px, rgba(255,255,255,0.012) 81px),
-    repeating-linear-gradient(90deg, transparent, transparent 80px, rgba(255,255,255,0.012) 80px, rgba(255,255,255,0.012) 81px);
-}
-.hero-bg::after {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 200px;
-  background: linear-gradient(to bottom, transparent, var(--black));
+// ─── Modal de interesse no plano ──────────────────
+window.openPlanModal = function(planId, planName, price) {
+  const modal = document.getElementById('plan-modal');
+  document.getElementById('plan-modal-title').textContent = `Plano ${planName} — R$${price}/mês`;
+  document.getElementById('plan-modal-question').value = '';
+
+  // Atualiza o link do WhatsApp dinamicamente ao clicar em "Falar com a Gente"
+  const waBtn = document.getElementById('plan-modal-wa');
+  waBtn.onclick = function(e) {
+    e.preventDefault();
+    const duvida = document.getElementById('plan-modal-question').value.trim();
+    let msg = `Olá! Tenho interesse no *Plano ${planName}* da VR Barber Shop (R$${price}/mês).`;
+    if (duvida) msg += `\n\nMinha dúvida: ${duvida}`;
+    else msg += `\n\nPode me passar mais informações?`;
+    window.open(`https://wa.me/${WHATSAPP_NOTIFY}?text=${encodeURIComponent(msg)}`, '_blank');
+    closePlanModal();
+  };
+
+  modal.classList.add('open');
+};
+
+window.closePlanModal = function() {
+  document.getElementById('plan-modal').classList.remove('open');
+};
+
+// ─── Scroll para agendamento + pré-seleciona ───────
+window.scrollToBooking = function(serviceId) {
+  document.getElementById('agendar').scrollIntoView({ behavior: 'smooth' });
+  setTimeout(() => preSelectService(serviceId), 600);
+};
+
+function preSelectService(serviceId) {
+  const service = SERVICES.find(s => s.id === serviceId);
+  if (!service) return;
+  state.selected = service;
+  renderServiceOptions();
+  setTimeout(() => {
+    const item = document.getElementById('opt-' + serviceId);
+    if (item) { item.classList.add('selected'); item.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+    showStep(2);
+  }, 50);
 }
 
-.hero-content {
-  position: relative;
-  z-index: 1;
-  text-align: center;
-  animation: fadeUp 1s ease both;
+// ─── Lista de serviços no formulário ───────────────
+function renderServiceOptions() {
+  const list = document.getElementById('options-list');
+  if (!list) return;
+  list.innerHTML = SERVICES.map(s => `
+    <div class="option-item" id="opt-${s.id}" onclick="selectService('${s.id}')">
+      <span>${s.name}</span>
+      <span class="option-price">R$${s.price.toFixed(2).replace('.', ',')}</span>
+    </div>`).join('');
 }
 
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(40px); }
-  to   { opacity: 1; transform: translateY(0); }
+// ─── Seleciona serviço e avança ────────────────────
+window.selectService = function(id) {
+  state.selected = SERVICES.find(s => s.id === id);
+  document.querySelectorAll('.option-item').forEach(el => el.classList.remove('selected'));
+  const item = document.getElementById('opt-' + id);
+  if (item) item.classList.add('selected');
+  const dateInput = document.getElementById('pref-date');
+  if (dateInput) dateInput.min = new Date().toISOString().split('T')[0];
+  setTimeout(() => showStep(2), 300);
+};
+
+// ─── Controle de passos ────────────────────────────
+function showStep(n) {
+  document.querySelectorAll('.form-step').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.step').forEach((el, i) => {
+    el.classList.remove('active', 'done');
+    if (i + 1 < n) el.classList.add('done');
+    if (i + 1 === n) el.classList.add('active');
+  });
+  document.querySelectorAll('.step-line').forEach((el, i) => {
+    el.classList.toggle('active', i + 1 < n);
+  });
+  const stepEl = document.getElementById('step-' + n);
+  if (stepEl) stepEl.classList.add('active');
 }
 
-.hero-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-family: var(--font-head);
-  font-size: 11px;
-  letter-spacing: 6px;
-  color: var(--gray2);
-  border: 1px solid rgba(255,255,255,0.15);
-  padding: 7px 24px;
-  margin-bottom: 28px;
-  animation: fadeUp 1s 0.2s ease both;
-  background: rgba(255,255,255,0.03);
-}
-.hero-badge::before, .hero-badge::after {
-  content: '—';
-  opacity: 0.5;
+window.goBack = function(n) { showStep(n); };
+
+// ─── Valida dados e mostra resumo ──────────────────
+window.goToConfirm = function() {
+  const name  = document.getElementById('client-name').value.trim();
+  const phone = document.getElementById('client-phone').value.trim();
+  const date  = document.getElementById('pref-date').value;
+  const time  = document.getElementById('pref-time').value;
+  if (!name || !phone || !date || !time) {
+    alert('Por favor, preencha todos os campos obrigatórios (*).');
+    return;
+  }
+  state.name = name; state.phone = phone; state.date = date; state.time = time;
+  state.obs = document.getElementById('obs').value.trim();
+  renderConfirm();
+  showStep(3);
+};
+
+function formatDate(d) {
+  const [y, m, day] = d.split('-');
+  return `${day}/${m}/${y}`;
 }
 
-.hero-title {
-  font-family: var(--font-display);
-  font-size: clamp(80px, 14vw, 180px);
-  line-height: 0.85;
-  color: var(--white);
-  text-shadow: 0 2px 60px rgba(0,0,0,0.8);
-  animation: fadeUp 1s 0.3s ease both;
-}
-.hero-title span {
-  color: var(--accent);
-  font-size: clamp(28px, 4.5vw, 56px);
-  display: block;
-  letter-spacing: 10px;
-  font-family: var(--font-head);
-  font-weight: 300;
-  margin-top: 10px;
+function renderConfirm() {
+  const sel = state.selected;
+  document.getElementById('confirm-summary').innerHTML = `
+    <div class="confirm-row"><label>Serviço</label><span>${sel.name}</span></div>
+    <div class="confirm-row"><label>Cliente</label><span>${state.name}</span></div>
+    <div class="confirm-row"><label>WhatsApp</label><span>${state.phone}</span></div>
+    <div class="confirm-row"><label>Data</label><span>${formatDate(state.date)}</span></div>
+    <div class="confirm-row"><label>Horário</label><span>${state.time}</span></div>
+    ${state.obs ? `<div class="confirm-row"><label>Obs.</label><span>${state.obs}</span></div>` : ''}
+    <div class="confirm-row confirm-total"><label>Valor</label>
+      <span>R$${Number(sel.price).toFixed(2).replace('.', ',')}</span>
+    </div>`;
 }
 
-.hero-sub {
-  margin: 24px 0 44px;
-  font-family: var(--font-head);
-  font-size: 13px;
-  letter-spacing: 8px;
-  color: var(--gray2);
-  text-transform: uppercase;
-  animation: fadeUp 1s 0.4s ease both;
+// ─── Envia notificação WhatsApp ao dono ───────────
+function sendWhatsAppNotification() {
+  const sel = state.selected;
+  const msg = encodeURIComponent(
+    `🔔 *Novo Agendamento!*\n\n` +
+    `👤 *Cliente:* ${state.name}\n` +
+    `📱 *WhatsApp:* ${state.phone}\n` +
+    `✂️ *Serviço:* ${sel.name}\n` +
+    `📅 *Data:* ${formatDate(state.date)}\n` +
+    `🕐 *Horário:* ${state.time}\n` +
+    `💰 *Valor:* R$${Number(sel.price).toFixed(2).replace('.', ',')}\n` +
+    (state.obs ? `📝 *Obs:* ${state.obs}\n` : '') +
+    `\nAcesse o painel para confirmar.`
+  );
+  window.open(`https://wa.me/${WHATSAPP_NOTIFY}?text=${msg}`, '_blank');
 }
 
-.btn-hero {
-  display: inline-block;
-  font-family: var(--font-head);
-  font-size: 14px;
-  letter-spacing: 4px;
-  text-transform: uppercase;
-  text-decoration: none;
-  color: var(--white);
-  background: var(--dark4);
-  padding: 16px 52px;
-  border-radius: var(--radius);
-  transition: var(--transition);
-  animation: fadeUp 1s 0.5s ease both;
-  border: 1px solid rgba(255,255,255,0.2);
-  font-weight: 700;
-}
-.btn-hero:hover {
-  background: var(--dark3);
-  border-color: rgba(255,255,255,0.4);
-  transform: translateY(-3px);
-  box-shadow: 0 16px 50px rgba(0,0,0,0.4);
-}
+// ─── Salva no Firebase ─────────────────────────────
+window.submitBooking = async function() {
+  const btn = document.querySelector('.btn-confirm');
+  btn.textContent = 'Enviando...';
+  btn.disabled = true;
+  try {
+    await firebase.firestore().collection('agendamentos').add({
+      tipo:     'servico',
+      servico:  state.selected.name,
+      preco:    state.selected.price,
+      cliente:  state.name,
+      telefone: state.phone,
+      data:     state.date,
+      horario:  state.time,
+      obs:      state.obs,
+      status:   'pendente',
+      criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+    });
 
-.hero-scroll {
-  position: absolute;
-  bottom: 32px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: var(--gray2);
-  font-size: 16px;
-  opacity: 0.6;
-  animation: bounce 2s infinite;
-  z-index: 1;
-}
-@keyframes bounce {
-  0%, 100% { transform: translateX(-50%) translateY(0); }
-  50% { transform: translateX(-50%) translateY(8px); }
-}
+    // Abre WhatsApp com notificação para o dono
+    sendWhatsAppNotification();
 
-/* ================== SECTIONS ================== */
-.section {
-  padding: 100px 60px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
+    document.getElementById('success-modal').classList.add('open');
+    state = { selected: null, name: '', phone: '', date: '', time: '', obs: '' };
+    ['client-name','client-phone','pref-date','obs'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    document.getElementById('pref-time').value = '';
+    renderServiceOptions();
+    showStep(1);
+  } catch (err) {
+    console.error(err);
+    alert('Erro ao enviar. Verifique a conexão e tente novamente.');
+  } finally {
+    btn.textContent = '✓ Confirmar';
+    btn.disabled = false;
+  }
+};
 
-.section-header {
-  text-align: center;
-  margin-bottom: 70px;
-}
+window.closeModal = function() {
+  document.getElementById('success-modal').classList.remove('open');
+};
 
-.section-tag {
-  font-family: var(--font-head);
-  font-size: 11px;
-  letter-spacing: 6px;
-  color: var(--gray2);
-  text-transform: uppercase;
-}
+// ─── Inicialização ─────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  renderServices();
+  renderPlans();
+  renderServiceOptions();
 
-.section-header h2 {
-  font-family: var(--font-display);
-  font-size: clamp(48px, 6vw, 80px);
-  color: var(--white);
-  margin-top: 4px;
-  letter-spacing: 2px;
-}
-
-.section-line {
-  width: 40px;
-  height: 2px;
-  background: var(--gray);
-  margin: 14px auto 0;
-  opacity: 0.7;
-}
-
-/* ================== SERVICES ================== */
-.services-section {
-  background: var(--dark);
-  max-width: 100%;
-  padding: 100px 60px;
-  border-top: 1px solid rgba(255,255,255,0.04);
-  border-bottom: 1px solid rgba(255,255,255,0.04);
-}
-
-.services-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 1px;
-  max-width: 1200px;
-  margin: 0 auto;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.05);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.service-card {
-  background: var(--dark2);
-  padding: 24px 28px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  transition: var(--transition);
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-}
-.service-card::after {
-  content: '→';
-  position: absolute;
-  right: 24px;
-  color: var(--gray2);
-  opacity: 0;
-  transform: translateX(-8px);
-  transition: var(--transition);
-  font-size: 16px;
-}
-.service-card:hover {
-  background: var(--dark3);
-  padding-right: 44px;
-}
-.service-card:hover::after { opacity: 1; transform: translateX(0); }
-
-.service-name {
-  font-family: var(--font-head);
-  font-size: 15px;
-  font-weight: 500;
-  letter-spacing: 0.5px;
-  color: var(--white-dim);
-  transition: var(--transition);
-}
-.service-card:hover .service-name { color: var(--white); }
-
-.service-price {
-  font-family: var(--font-display);
-  font-size: 22px;
-  color: var(--gray2);
-  white-space: nowrap;
-  transition: var(--transition);
-}
-.service-card:hover .service-price { color: var(--accent); }
-
-/* ================== PLANS ================== */
-.plans-section {
-  background: var(--black);
-  max-width: 100%;
-  padding: 100px 60px;
-}
-
-.plans-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1px;
-  max-width: 1000px;
-  margin: 0 auto;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.05);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.plan-card {
-  background: var(--dark2);
-  padding: 40px 32px;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  position: relative;
-  transition: var(--transition);
-}
-.plan-card:hover { background: var(--dark3); }
-.plan-card.featured {
-  background: var(--dark3);
-  border-left: 1px solid rgba(255,255,255,0.1);
-  border-right: 1px solid rgba(255,255,255,0.1);
-}
-
-.plan-badge {
-  position: absolute;
-  top: 20px; right: 20px;
-  background: var(--dark4);
-  border: 1px solid rgba(255,255,255,0.15);
-  color: var(--white-dim);
-  font-family: var(--font-head);
-  font-size: 9px;
-  letter-spacing: 3px;
-  padding: 4px 10px;
-  border-radius: 2px;
-}
-
-.plan-name {
-  font-family: var(--font-head);
-  font-size: 13px;
-  letter-spacing: 4px;
-  color: var(--gray2);
-  text-transform: uppercase;
-  margin-bottom: 16px;
-}
-
-.plan-price {
-  font-family: var(--font-display);
-  font-size: 56px;
-  color: var(--white);
-  line-height: 1;
-}
-
-.plan-price-sub {
-  font-family: var(--font-head);
-  font-size: 11px;
-  letter-spacing: 3px;
-  color: var(--gray2);
-  margin-bottom: 24px;
-}
-
-.plan-divider {
-  height: 1px;
-  background: rgba(255,255,255,0.07);
-  margin-bottom: 24px;
-}
-
-.plan-features {
-  list-style: none;
-  flex: 1;
-  margin-bottom: 32px;
-}
-.plan-features li {
-  font-size: 13px;
-  color: var(--gray2);
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
-  padding-left: 16px;
-  position: relative;
-  line-height: 1.5;
-}
-.plan-features li::before {
-  content: '—';
-  position: absolute;
-  left: 0;
-  color: var(--gray);
-  opacity: 0.6;
-  font-size: 10px;
-}
-.plan-features li:last-child { border-bottom: none; }
-
-.btn-plan {
-  display: block;
-  text-align: center;
-  background: transparent;
-  border: 1px solid rgba(255,255,255,0.15);
-  color: var(--white-dim);
-  font-family: var(--font-head);
-  font-size: 13px;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  padding: 14px;
-  text-decoration: none;
-  transition: var(--transition);
-  border-radius: var(--radius);
-  cursor: pointer;
-}
-.btn-plan:hover {
-  background: var(--dark4);
-  color: var(--white);
-  border-color: rgba(255,255,255,0.3);
-  transform: translateY(-2px);
-}
-.plan-card.featured .btn-plan {
-  background: var(--dark4);
-  color: var(--white);
-  border-color: rgba(255,255,255,0.2);
-}
-.plan-card.featured .btn-plan:hover { background: var(--gray); border-color: var(--gray); }
-
-/* ================== BOOKING ================== */
-.booking-section {
-  background: var(--dark);
-  max-width: 100%;
-  padding: 100px 60px;
-  border-top: 1px solid rgba(255,255,255,0.04);
-}
-
-.booking-container { max-width: 680px; margin: 0 auto; }
-
-.booking-card {
-  background: var(--dark2);
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 8px;
-  padding: 48px;
-  box-shadow: var(--shadow);
-}
-
-/* Step indicator */
-.step-indicator {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 48px;
-  gap: 0;
-}
-.step { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.step span {
-  width: 34px; height: 34px;
-  border-radius: 50%;
-  border: 1px solid var(--gray);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-head);
-  font-size: 13px;
-  color: var(--gray);
-  transition: var(--transition);
-}
-.step p {
-  font-size: 10px;
-  letter-spacing: 1.5px;
-  color: var(--gray);
-  font-family: var(--font-head);
-  text-transform: uppercase;
-  transition: var(--transition);
-}
-.step.active span { border-color: var(--accent); background: var(--accent); color: var(--black); }
-.step.active p { color: var(--accent); }
-.step.done span { border-color: var(--gray); color: var(--gray2); }
-.step-line {
-  flex: 1;
-  height: 1px;
-  background: rgba(255,255,255,0.08);
-  min-width: 40px;
-  max-width: 80px;
-  margin-bottom: 22px;
-  transition: var(--transition);
-}
-.step-line.active { background: var(--gray); opacity: 0.5; }
-
-.form-step { display: none; }
-.form-step.active { display: block; animation: fadeIn 0.4s ease; }
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.form-step h3 {
-  font-family: var(--font-head);
-  font-size: 18px;
-  font-weight: 400;
-  letter-spacing: 3px;
-  color: var(--white-dim);
-  margin-bottom: 28px;
-  text-transform: uppercase;
-}
-
-.options-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  max-height: 420px;
-  overflow-y: auto;
-  margin-bottom: 20px;
-  background: rgba(255,255,255,0.04);
-  border-radius: 6px;
-}
-
-.option-item {
-  background: var(--dark3);
-  padding: 16px 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-  transition: var(--transition);
-}
-.option-item:hover, .option-item.selected {
-  background: var(--dark4);
-}
-.option-item.selected { border-left: 2px solid var(--accent); }
-.option-item span:first-child {
-  font-family: var(--font-head);
-  font-size: 14px;
-  letter-spacing: 0.5px;
-  color: var(--white-dim);
-}
-.option-item.selected span:first-child { color: var(--white); }
-.option-price {
-  font-family: var(--font-display);
-  font-size: 18px;
-  color: var(--gray2);
-}
-.option-item.selected .option-price { color: var(--accent); }
-
-.form-group { margin-bottom: 18px; }
-.form-group label {
-  display: block;
-  font-family: var(--font-head);
-  font-size: 11px;
-  letter-spacing: 2px;
-  color: var(--gray2);
-  text-transform: uppercase;
-  margin-bottom: 8px;
-}
-.form-group input,
-.form-group select,
-.form-group textarea {
-  width: 100%;
-  background: var(--dark3);
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: var(--radius);
-  padding: 12px 16px;
-  color: var(--white);
-  font-family: var(--font-body);
-  font-size: 14px;
-  outline: none;
-  transition: var(--transition);
-}
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-  border-color: rgba(255,255,255,0.25);
-  background: var(--dark4);
-}
-.form-group select option { background: var(--dark2); }
-.form-group textarea { resize: vertical; min-height: 80px; }
-
-.form-row { display: flex; gap: 10px; margin-top: 24px; }
-
-.btn-back, .btn-next, .btn-confirm {
-  flex: 1;
-  padding: 14px;
-  border-radius: var(--radius);
-  font-family: var(--font-head);
-  font-size: 13px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: var(--transition);
-  border: 1px solid;
-}
-.btn-back { background: transparent; border-color: rgba(255,255,255,0.1); color: var(--gray2); }
-.btn-back:hover { border-color: rgba(255,255,255,0.2); color: var(--white); }
-.btn-next { background: var(--dark4); border-color: rgba(255,255,255,0.2); color: var(--white); font-weight: 700; }
-.btn-next:hover { background: var(--gray); border-color: var(--gray); }
-.btn-confirm { background: var(--dark4); border-color: rgba(255,255,255,0.2); color: var(--white); font-weight: 700; }
-.btn-confirm:hover { background: var(--gray); border-color: var(--gray); transform: translateY(-2px); }
-
-.confirm-summary {
-  background: var(--dark3);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 6px;
-  padding: 24px;
-  margin-bottom: 8px;
-}
-.confirm-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
-  font-size: 14px;
-}
-.confirm-row:last-child { border-bottom: none; }
-.confirm-row label {
-  font-family: var(--font-head);
-  letter-spacing: 1px;
-  color: var(--gray);
-  font-size: 11px;
-  text-transform: uppercase;
-}
-.confirm-row span { color: var(--white-dim); font-weight: 400; }
-.confirm-total span { color: var(--accent); font-family: var(--font-display); font-size: 22px; }
-
-/* ================== MODAL ================== */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.9);
-  z-index: 999;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(8px);
-}
-.modal-overlay.open { display: flex; }
-.modal-box {
-  background: var(--dark2);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 8px;
-  padding: 48px 40px;
-  text-align: center;
-  max-width: 420px;
-  width: 90%;
-  animation: fadeUp 0.4s ease;
-}
-.modal-icon {
-  width: 60px; height: 60px;
-  border-radius: 50%;
-  background: var(--dark4);
-  border: 1px solid rgba(255,255,255,0.15);
-  color: var(--white);
-  font-size: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 20px;
-  font-weight: 700;
-}
-.modal-box h3 { font-family: var(--font-display); font-size: 28px; letter-spacing: 2px; margin-bottom: 12px; }
-.modal-box p { color: var(--gray2); line-height: 1.7; margin-bottom: 20px; font-size: 14px; }
-.modal-box button {
-  background: var(--dark4);
-  border: 1px solid rgba(255,255,255,0.15);
-  color: var(--white);
-  padding: 12px 40px;
-  font-family: var(--font-head);
-  font-size: 13px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  cursor: pointer;
-  border-radius: var(--radius);
-  transition: var(--transition);
-  font-weight: 700;
-}
-.modal-box button:hover { background: var(--gray); }
-
-/* Plan modal specific */
-.plan-modal-box { text-align: left; max-width: 460px; }
-.plan-modal-box h3 { text-align: center; }
-.plan-modal-box p { text-align: center; }
-.plan-modal-icon { font-size: 18px; }
-
-.plan-modal-box textarea {
-  width: 100%;
-  background: var(--dark3);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: var(--radius);
-  padding: 12px 16px;
-  color: var(--white);
-  font-family: var(--font-body);
-  font-size: 14px;
-  outline: none;
-  resize: vertical;
-  margin-bottom: 20px;
-  transition: var(--transition);
-}
-.plan-modal-box textarea:focus { border-color: rgba(255,255,255,0.25); }
-.plan-modal-box textarea::placeholder { color: var(--gray); }
-
-.plan-modal-actions { display: flex; gap: 10px; }
-
-.btn-plan-cancel {
-  flex: 1;
-  padding: 13px;
-  border-radius: var(--radius);
-  font-family: var(--font-head);
-  font-size: 12px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: var(--transition);
-  background: transparent;
-  border: 1px solid rgba(255,255,255,0.1);
-  color: var(--gray2);
-}
-.btn-plan-cancel:hover { border-color: rgba(255,255,255,0.2); color: var(--white); }
-
-.btn-plan-confirm {
-  flex: 2;
-  padding: 13px;
-  border-radius: var(--radius);
-  font-family: var(--font-head);
-  font-size: 12px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: var(--transition);
-  background: var(--dark4);
-  border: 1px solid rgba(255,255,255,0.2);
-  color: var(--white);
-  text-decoration: none;
-  text-align: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-}
-.btn-plan-confirm:hover { background: var(--gray); transform: translateY(-1px); }
-
-/* ================== FOOTER ================== */
-.footer {
-  background: var(--black);
-  border-top: 1px solid rgba(255,255,255,0.04);
-  text-align: center;
-  padding: 36px 20px;
-}
-.footer p {
-  font-family: var(--font-head);
-  font-size: 11px;
-  letter-spacing: 3px;
-  color: var(--gray);
-  text-transform: uppercase;
-}
-
-/* ================== RESPONSIVE ================== */
-@media (max-width: 768px) {
-  .navbar { padding: 16px 20px; }
-  .nav-links { gap: 16px; }
-  .nav-links a:not(.btn-nav) { display: none; }
-  .section { padding: 70px 20px; }
-  .services-section, .plans-section, .booking-section { padding: 70px 20px; }
-  .services-grid { grid-template-columns: 1fr; }
-  .plans-grid { grid-template-columns: 1fr; }
-  .booking-card { padding: 28px 20px; }
-  .step-line { min-width: 20px; }
-  .step p { font-size: 9px; }
-}
+  const phoneInput = document.getElementById('client-phone');
+  if (phoneInput) {
+    phoneInput.addEventListener('input', function() {
+      let v = this.value.replace(/\D/g, '').substring(0, 11);
+      if (v.length > 6)      v = `(${v.substring(0,2)}) ${v.substring(2,7)}-${v.substring(7)}`;
+      else if (v.length > 2) v = `(${v.substring(0,2)}) ${v.substring(2)}`;
+      else if (v.length > 0) v = `(${v}`;
+      this.value = v;
+    });
+  }
+});
