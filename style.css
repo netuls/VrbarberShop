@@ -1123,3 +1123,210 @@ input, select, textarea {
   .cortes-prev { left: 8px; }
   .cortes-next { right: 8px; }
 }
+
+/* ================== AUTH BAR ================== */
+.auth-bar-wrap {
+  background: var(--dark);
+  border-top: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  padding: 14px 60px;
+}
+.auth-bar {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.auth-hello {
+  font-family: var(--font-head);
+  font-size: 14px;
+  letter-spacing: 1px;
+  color: var(--white-dim);
+  flex: 1;
+}
+.auth-hello strong { color: var(--white); }
+.auth-msg {
+  font-family: var(--font-head);
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: var(--gray2);
+  flex: 1;
+}
+.auth-btn-primary {
+  background: var(--dark4);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: var(--white);
+  padding: 10px 24px;
+  font-family: var(--font-head);
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: var(--transition);
+  font-weight: 700;
+  min-height: 44px;
+  -webkit-tap-highlight-color: transparent;
+}
+.auth-btn-primary:active { background: var(--gray); }
+.auth-btn-secondary {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--white-dim);
+  padding: 10px 20px;
+  font-family: var(--font-head);
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: var(--transition);
+  min-height: 44px;
+  -webkit-tap-highlight-color: transparent;
+}
+.auth-btn-secondary:active { border-color: rgba(255,255,255,0.3); color: var(--white); }
+.auth-btn-logout {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.07);
+  color: var(--gray);
+  padding: 10px 16px;
+  font-family: var(--font-head);
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: var(--transition);
+  min-height: 44px;
+  -webkit-tap-highlight-color: transparent;
+}
+.auth-btn-logout:active { color: var(--white); border-color: rgba(255,255,255,0.2); }
+
+/* ================== MODAL LOGIN ================== */
+.login-modal-box { text-align: center; }
+.login-modal-box p { color: var(--gray2); font-size: 14px; line-height: 1.6; margin-bottom: 4px; }
+.login-step { display: none; }
+.login-step.active { display: block; }
+.login-error {
+  color: #e05555 !important;
+  font-size: 12px !important;
+  min-height: 18px;
+  margin-top: 6px !important;
+  letter-spacing: 0.5px;
+}
+
+/* ================== MEUS AGENDAMENTOS ================== */
+.mybookings-modal-box {
+  text-align: left;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+.mybookings-modal-box h3 { text-align: center; }
+.mybookings-loading,
+.mybookings-empty {
+  text-align: center;
+  color: var(--gray2);
+  font-size: 14px;
+  padding: 24px 0;
+}
+
+.agd-card {
+  background: var(--dark3);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  transition: var(--transition);
+}
+.agd-info { flex: 1; }
+.agd-servico {
+  font-family: var(--font-head);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--white);
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+.agd-detalhe {
+  font-size: 13px;
+  color: var(--gray2);
+  margin-bottom: 6px;
+}
+.agd-preco {
+  font-family: var(--font-display);
+  font-size: 20px;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+.agd-status {
+  display: inline-block;
+  font-family: var(--font-head);
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+.agd-status.confirmado { background: rgba(80,180,100,0.15); color: #6dcc85; border: 1px solid rgba(80,180,100,0.25); }
+.agd-status.pendente   { background: rgba(200,160,70,0.12); color: #c9a84c; border: 1px solid rgba(200,160,70,0.25); }
+
+.btn-cancelar {
+  background: transparent;
+  border: 1px solid rgba(200,60,60,0.3);
+  color: #e05555;
+  padding: 10px 16px;
+  font-family: var(--font-head);
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+  min-height: 44px;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+}
+.btn-cancelar:active { background: rgba(200,60,60,0.2); }
+
+/* ================== TOAST ================== */
+#vr-toast {
+  position: fixed;
+  bottom: calc(28px + var(--sab));
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--dark3);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--white);
+  font-family: var(--font-head);
+  font-size: 13px;
+  letter-spacing: 1px;
+  padding: 14px 28px;
+  border-radius: 40px;
+  z-index: 9999;
+  opacity: 0;
+  transition: all 0.35s cubic-bezier(0.4,0,0.2,1);
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+}
+#vr-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ================== RESPONSIVE AUTH ================== */
+@media (max-width: 768px) {
+  .auth-bar-wrap { padding: 12px 20px; }
+  .auth-bar { gap: 10px; }
+  .auth-msg { font-size: 12px; }
+  .mybookings-modal-box { max-height: 85vh; }
+  .agd-card { flex-direction: column; align-items: flex-start; }
+  .btn-cancelar { width: 100%; }
+}
