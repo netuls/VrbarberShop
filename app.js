@@ -3,12 +3,12 @@
 // ================================================
 
 const WHATSAPP_NUMBER = '5585994044941';
+const WHATSAPP_NOTIFY = '5585994044941'; // número que recebe notificações
 
-// ─── Serviços ─────────────────────────────────────
+// ─── Serviços (sem Corte + Barba R$45) ───────────
 const SERVICES = [
   { id: 'corte',             name: 'Corte',                        price: 25 },
   { id: 'corte_sobrancelha', name: 'Corte + Sobrancelha',         price: 30 },
-  { id: 'corte_barba',       name: 'Corte + Barba',                price: 45 },
   { id: 'corte_barba_sob',   name: 'Corte + Barba + Sobrancelha', price: 45 },
   { id: 'barba',             name: 'Barba',                        price: 20 },
   { id: 'sobrancelha',       name: 'Sobrancelha',                  price: 5  },
@@ -65,8 +65,11 @@ function renderPlans() {
   const grid = document.getElementById('plans-grid');
   if (!grid) return;
   grid.innerHTML = PLANS.map(p => {
-    const msg = encodeURIComponent(
+    const msgCliente = encodeURIComponent(
       `Olá! Quero assinar o Plano ${p.name} da VR Barber Shop por R$${p.price}/mês. Pode me ajudar?`
+    );
+    const msgNotify = encodeURIComponent(
+      `🔔 *Novo Interesse em Plano!*\n\nUm cliente clicou em "Assinar Agora" no Plano *${p.name}* - R$${p.price}/mês.\n\nEntre em contato para fechar!`
     );
     return `
     <div class="plan-card ${p.featured ? 'featured' : ''}">
@@ -78,12 +81,17 @@ function renderPlans() {
       <ul class="plan-features">
         ${p.features.map(f => `<li>${f}</li>`).join('')}
       </ul>
-      <a class="btn-plan" href="https://wa.me/${WHATSAPP_NUMBER}?text=${msg}" target="_blank">
+      <a class="btn-plan" href="https://wa.me/${WHATSAPP_NOTIFY}?text=${msgNotify}" target="_blank" onclick="notifyPlan('${p.name}', ${p.price})">
         Assinar Agora
       </a>
     </div>`;
   }).join('');
 }
+
+// ─── Notifica WhatsApp ao clicar no plano ──────────
+window.notifyPlan = function(planName, price) {
+  // O link do href já abre o WhatsApp — esta função pode ser usada para analytics futuros
+};
 
 // ─── Scroll para agendamento + pré-seleciona ───────
 window.scrollToBooking = function(serviceId) {
@@ -177,6 +185,23 @@ function renderConfirm() {
     </div>`;
 }
 
+// ─── Envia notificação WhatsApp ao dono ───────────
+function sendWhatsAppNotification() {
+  const sel = state.selected;
+  const msg = encodeURIComponent(
+    `🔔 *Novo Agendamento!*\n\n` +
+    `👤 *Cliente:* ${state.name}\n` +
+    `📱 *WhatsApp:* ${state.phone}\n` +
+    `✂️ *Serviço:* ${sel.name}\n` +
+    `📅 *Data:* ${formatDate(state.date)}\n` +
+    `🕐 *Horário:* ${state.time}\n` +
+    `💰 *Valor:* R$${Number(sel.price).toFixed(2).replace('.', ',')}\n` +
+    (state.obs ? `📝 *Obs:* ${state.obs}\n` : '') +
+    `\nAcesse o painel para confirmar.`
+  );
+  window.open(`https://wa.me/${WHATSAPP_NOTIFY}?text=${msg}`, '_blank');
+}
+
 // ─── Salva no Firebase ─────────────────────────────
 window.submitBooking = async function() {
   const btn = document.querySelector('.btn-confirm');
@@ -195,6 +220,10 @@ window.submitBooking = async function() {
       status:   'pendente',
       criadoEm: firebase.firestore.FieldValue.serverTimestamp()
     });
+
+    // Abre WhatsApp com notificação para o dono
+    sendWhatsAppNotification();
+
     document.getElementById('success-modal').classList.add('open');
     state = { selected: null, name: '', phone: '', date: '', time: '', obs: '' };
     ['client-name','client-phone','pref-date','obs'].forEach(id => {
