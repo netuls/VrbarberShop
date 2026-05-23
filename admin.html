@@ -98,6 +98,10 @@
         </div>
         <div class="recent-section">
           <h3>Agendamentos Recentes</h3>
+          <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
+            <input type="date" id="dash-filter-date" onchange="renderDashboard()" style="background:#1a1a1a;border:1px solid #333;color:#f5f0e8;padding:8px 12px;border-radius:6px;font-family:inherit;font-size:14px;"/>
+            <button onclick="clearDashFilter()" style="background:#333;border:none;color:#c9a84c;padding:8px 14px;border-radius:6px;cursor:pointer;font-family:inherit;font-size:13px;">✕ Limpar</button>
+          </div>
           <div class="table-wrap" id="recent-list"></div>
         </div>
       </div>
@@ -263,27 +267,35 @@
       });
     }
 
+    function clearDashFilter() {
+      document.getElementById('dash-filter-date').value = '';
+      renderDashboard();
+    }
+
     function renderDashboard() {
       const hoje = new Date().toISOString().split('T')[0];
       const mesAtual = new Date().toISOString().slice(0, 7);
+      const filterDate = document.getElementById('dash-filter-date') ? document.getElementById('dash-filter-date').value : '';
+
       document.getElementById('stat-hoje').textContent = allAgendamentos.filter(a => a.data === hoje).length;
       document.getElementById('stat-pendentes').textContent = allAgendamentos.filter(a => a.status === 'pendente').length;
       document.getElementById('stat-confirmados').textContent = allAgendamentos.filter(a => a.status === 'confirmado').length;
-      
+
       const receita = allAgendamentos
         .filter(a => a.status === 'concluido' && (a.data || '').startsWith(mesAtual))
         .reduce((acc, a) => acc + (a.preco || 0), 0);
-      
       document.getElementById('stat-receita').textContent = 'R$' + receita.toFixed(2).replace('.', ',');
 
-      const recent = allAgendamentos.slice(0, 8);
+      let recent = filterDate
+        ? allAgendamentos.filter(a => a.data === filterDate)
+        : allAgendamentos.slice(0, 8);
+
       const el = document.getElementById('recent-list');
-      
       if (!recent.length) {
-        el.innerHTML = '<p style="color:var(--gray);padding:20px;font-family:var(--font-head);letter-spacing:1px;">Nenhum agendamento ainda.</p>';
+        el.innerHTML = '<p style="color:var(--gray);padding:20px;font-family:var(--font-head);letter-spacing:1px;">Nenhum agendamento encontrado.</p>';
         return;
       }
-      
+
       el.innerHTML = `
         <table class="admin-table">
           <thead><tr><th>Cliente</th><th>Serviço</th><th>Data</th><th>Horário</th><th>Valor</th><th>Status</th></tr></thead>
