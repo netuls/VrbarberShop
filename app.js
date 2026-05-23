@@ -67,18 +67,20 @@ function phoneKey(phone) {
 }
 
 // Verifica se cliente existe; se não, cria
-async function loginOrRegister(rawPhone, nome) {
+async function loginOrRegister(rawPhone, nome, nascimento) {
   const key = phoneKey(rawPhone);
   const db = firebase.firestore();
   const ref = db.collection('clientes').doc(key);
   const snap = await ref.get();
   if (!snap.exists) {
-    await ref.set({
+    const data = {
       nome: nome,
       telefone: key,
       criadoEm: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    return { nome, telefone: key, novo: true };
+    };
+    if (nascimento) data.nascimento = nascimento;
+    await ref.set(data);
+    return { nome, telefone: key, nascimento: nascimento || '', novo: true };
   }
   return { ...snap.data(), novo: false };
 }
@@ -162,6 +164,7 @@ window.loginCheckPhone = async function() {
 window.loginRegister = async function() {
   const raw  = document.getElementById('login-phone-input').value.trim();
   const nome = document.getElementById('login-name-input').value.trim();
+  const nascimento = (document.getElementById('login-birth-input')?.value || '').trim();
   if (!nome || nome.split(' ').length < 2) {
     document.getElementById('login-error').textContent = 'Digite seu nome e sobrenome.';
     return;
@@ -169,7 +172,7 @@ window.loginRegister = async function() {
   const btn = document.getElementById('btn-login-register');
   btn.textContent = 'Salvando...'; btn.disabled = true;
   try {
-    currentUser = await loginOrRegister(raw, nome);
+    currentUser = await loginOrRegister(raw, nome, nascimento);
     saveSession(currentUser);
     closeLoginModal();
     renderAuthBar();
