@@ -58,6 +58,9 @@
         <a href="#" class="nav-item" onclick="showTab('horarios', this)">
           <span class="nav-icon">🕐</span> <span>Horários</span>
         </a>
+        <a href="#" class="nav-item" onclick="showTab('datas', this)">
+          <span class="nav-icon">📆</span> <span>Datas Especiais</span>
+        </a>
       </nav>
       <div class="sidebar-bottom">
         <button class="btn-logout" onclick="doLogout()">Sair</button>
@@ -178,6 +181,93 @@
         </div>
       </div>
 
+      <!-- DATAS ESPECIAIS -->
+      <div class="tab-content" id="tab-datas">
+        <div style="max-width:800px;">
+          <div style="margin-bottom:28px;">
+            <h3 style="font-family:'Oswald',sans-serif;letter-spacing:2px;text-transform:uppercase;color:#f5f0e8;font-size:16px;margin-bottom:6px;">Datas Especiais de Atendimento</h3>
+            <p style="color:#888;font-size:13px;font-family:'Roboto',sans-serif;line-height:1.6;">Cadastre feriados ou datas específicas com horários diferenciados. Essas datas <strong style="color:#c9a84c;">substituem</strong> a configuração semanal naquele dia — útil para feriados em que você vai abrir, ou dias normais que você vai fechar.</p>
+          </div>
+
+          <!-- Formulário para adicionar data -->
+          <div style="background:#161616;border:1px solid #c9a84c44;border-radius:8px;padding:24px;margin-bottom:28px;">
+            <p style="font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:18px;">➕ Adicionar Data Especial</p>
+            <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;">
+              <div style="display:flex;flex-direction:column;gap:4px;">
+                <span style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;color:#666;text-transform:uppercase;">Data</span>
+                <input type="date" id="de-data"
+                  style="background:#1e1e1e;border:1px solid #333;border-radius:4px;padding:10px 14px;color:#f5f0e8;font-size:14px;outline:none;color-scheme:dark;"/>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px;">
+                <span style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;color:#666;text-transform:uppercase;">Descrição</span>
+                <input type="text" id="de-desc" placeholder="Ex: Natal, Aniversário da cidade..."
+                  style="background:#1e1e1e;border:1px solid #333;border-radius:4px;padding:10px 14px;color:#f5f0e8;font-size:14px;outline:none;width:220px;font-family:'Roboto',sans-serif;"/>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px;">
+                <span style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;color:#666;text-transform:uppercase;">Tipo</span>
+                <select id="de-tipo" onchange="toggleDETipo()"
+                  style="background:#1e1e1e;border:1px solid #333;border-radius:4px;padding:10px 14px;color:#f5f0e8;font-size:14px;outline:none;font-family:'Roboto',sans-serif;cursor:pointer;">
+                  <option value="aberto">🟢 Aberto (horário especial)</option>
+                  <option value="fechado">🔴 Fechado (dia inteiro)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Horários (visível só quando tipo=aberto) -->
+            <div id="de-horarios-wrap" style="display:flex;flex-wrap:wrap;gap:16px;margin-top:16px;align-items:flex-end;">
+              <div style="display:flex;flex-direction:column;gap:4px;">
+                <span style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;color:#666;text-transform:uppercase;">Abertura</span>
+                <input type="time" id="de-inicio" value="08:00"
+                  style="background:#1e1e1e;border:1px solid #333;border-radius:4px;padding:10px 12px;color:#f5f0e8;font-size:14px;outline:none;color-scheme:dark;"/>
+              </div>
+              <span style="color:#444;font-size:20px;padding-bottom:10px;">→</span>
+              <div style="display:flex;flex-direction:column;gap:4px;">
+                <span style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;color:#666;text-transform:uppercase;">Fechamento</span>
+                <input type="time" id="de-fim" value="17:00"
+                  style="background:#1e1e1e;border:1px solid #333;border-radius:4px;padding:10px 12px;color:#f5f0e8;font-size:14px;outline:none;color-scheme:dark;"/>
+              </div>
+              <!-- Almoço -->
+              <div style="display:flex;align-items:center;gap:8px;padding-bottom:4px;">
+                <div id="de-almoco-toggle" onclick="toggleDEAlmoco()"
+                  style="width:36px;height:20px;border-radius:10px;background:#333;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;">
+                  <div id="de-almoco-knob" style="width:14px;height:14px;border-radius:50%;background:#fff;position:absolute;top:3px;left:3px;transition:left .2s;"></div>
+                </div>
+                <span style="font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:1px;color:#666;">Intervalo de Almoço</span>
+              </div>
+              <div id="de-almoco-wrap" style="display:flex;gap:10px;align-items:flex-end;opacity:.3;pointer-events:none;">
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                  <span style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;color:#666;text-transform:uppercase;">Início pausa</span>
+                  <input type="time" id="de-almoco-inicio" value="12:00"
+                    style="background:#1e1e1e;border:1px solid #2a2a2a;border-radius:4px;padding:8px 10px;color:#f5f0e8;font-size:13px;outline:none;color-scheme:dark;"/>
+                </div>
+                <span style="color:#444;font-size:16px;padding-bottom:10px;">→</span>
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                  <span style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;color:#666;text-transform:uppercase;">Fim pausa</span>
+                  <input type="time" id="de-almoco-fim" value="13:00"
+                    style="background:#1e1e1e;border:1px solid #2a2a2a;border-radius:4px;padding:8px 10px;color:#f5f0e8;font-size:13px;outline:none;color-scheme:dark;"/>
+                </div>
+              </div>
+            </div>
+
+            <button onclick="adicionarDataEspecial()"
+              style="margin-top:20px;background:#c9a84c;border:none;color:#0a0a0a;padding:12px 28px;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:4px;font-weight:700;">
+              Adicionar Data
+            </button>
+          </div>
+
+          <!-- Lista de datas cadastradas -->
+          <div>
+            <p style="font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:2px;color:#888;text-transform:uppercase;margin-bottom:12px;">Datas Cadastradas</p>
+            <div id="datas-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+          </div>
+
+          <div style="margin-top:36px;padding:20px;background:#161616;border:1px solid #2a2a2a;border-radius:6px;">
+            <p style="font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px;">Como funciona</p>
+            <p style="font-size:13px;color:#888;line-height:1.7;">As datas especiais têm <strong style="color:#f5f0e8;">prioridade total</strong> sobre a grade semanal. Se você marcar um feriado como <em>Fechado</em>, o cliente não verá horários naquele dia mesmo que seja um dia normalmente ativo. Se marcar como <em>Aberto</em>, o cliente verá os horários especiais que você definir.</p>
+          </div>
+        </div>
+      </div>
+
     </main>
   </div>
 
@@ -275,9 +365,10 @@
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
       document.getElementById('tab-' + tab).classList.add('active');
       el.classList.add('active');
-      const titles = { dashboard: 'Dashboard', agendamentos: 'Agendamentos', horarios: 'Horarios de Atendimento' };
+      const titles = { dashboard: 'Dashboard', agendamentos: 'Agendamentos', horarios: 'Horarios de Atendimento', datas: 'Datas Especiais' };
       document.getElementById('page-title').textContent = titles[tab] || tab;
       if (tab === 'horarios') carregarHorarios();
+      if (tab === 'datas') carregarDatasEspeciais();
     }
 
     // ── Agendamentos ─────────────────────────────────
@@ -573,6 +664,108 @@
     function badgeHTML(status) {
       const labels = { pendente:'Pendente', confirmado:'Confirmado', concluido:'Concluido', cancelado:'Cancelado' };
       return '<span class="badge badge-' + (status||'pendente') + '">' + (labels[status]||status) + '</span>';
+    }
+
+    // ── Datas Especiais ──────────────────────────────
+    let datasEspeciais = {}; // { 'YYYY-MM-DD': { desc, tipo, inicio, fim, almoco, almoco_inicio, almoco_fim } }
+    let deAlmocoAtivo = false;
+
+    function toggleDETipo() {
+      const tipo = document.getElementById('de-tipo').value;
+      document.getElementById('de-horarios-wrap').style.display = tipo === 'aberto' ? 'flex' : 'none';
+    }
+
+    function toggleDEAlmoco() {
+      deAlmocoAtivo = !deAlmocoAtivo;
+      const toggle = document.getElementById('de-almoco-toggle');
+      const knob   = document.getElementById('de-almoco-knob');
+      const wrap   = document.getElementById('de-almoco-wrap');
+      toggle.style.background = deAlmocoAtivo ? '#c9a84c' : '#333';
+      knob.style.left         = deAlmocoAtivo ? '19px' : '3px';
+      wrap.style.opacity      = deAlmocoAtivo ? '1' : '.3';
+      wrap.style.pointerEvents = deAlmocoAtivo ? 'auto' : 'none';
+    }
+
+    async function carregarDatasEspeciais() {
+      try {
+        const doc = await db.collection('config').doc('datas_especiais').get();
+        datasEspeciais = doc.exists ? (doc.data() || {}) : {};
+      } catch(e) { datasEspeciais = {}; }
+      renderDatasLista();
+    }
+
+    function renderDatasLista() {
+      const el = document.getElementById('datas-list');
+      if (!el) return;
+      const keys = Object.keys(datasEspeciais).sort();
+      if (!keys.length) {
+        el.innerHTML = '<p style="color:#444;font-family:Oswald,sans-serif;font-size:13px;letter-spacing:1px;padding:16px 0;">Nenhuma data especial cadastrada.</p>';
+        return;
+      }
+      el.innerHTML = keys.map(data => {
+        const d = datasEspeciais[data];
+        const isFechado = d.tipo === 'fechado';
+        const cor = isFechado ? '#c0392b' : '#27ae60';
+        const icone = isFechado ? '🔴' : '🟢';
+        const [y, m, day] = data.split('-');
+        const dataFmt = day + '/' + m + '/' + y;
+        let horarioInfo = isFechado ? 'Fechado' : (d.inicio + ' → ' + d.fim);
+        if (!isFechado && d.almoco) horarioInfo += ' | Almoço: ' + d.almoco_inicio + '→' + d.almoco_fim;
+        return `<div style="background:#161616;border:1px solid #252525;border-radius:6px;padding:14px 18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+          <span style="font-family:'Oswald',sans-serif;font-size:15px;color:#f5f0e8;letter-spacing:1px;min-width:100px;">${dataFmt}</span>
+          <span style="font-family:'Roboto',sans-serif;font-size:13px;color:#aaa;flex:1;">${d.desc || '—'}</span>
+          <span style="font-family:'Roboto',sans-serif;font-size:12px;color:${cor};">${icone} ${horarioInfo}</span>
+          <button onclick="removerDataEspecial('${data}')"
+            style="background:#7b1e1e;border:none;color:#f5f0e8;padding:6px 14px;border-radius:4px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:1px;white-space:nowrap;">
+            Remover
+          </button>
+        </div>`;
+      }).join('');
+    }
+
+    async function adicionarDataEspecial() {
+      const data   = document.getElementById('de-data').value;
+      const desc   = document.getElementById('de-desc').value.trim();
+      const tipo   = document.getElementById('de-tipo').value;
+      const inicio = document.getElementById('de-inicio').value;
+      const fim    = document.getElementById('de-fim').value;
+      const almocoInicio = document.getElementById('de-almoco-inicio').value;
+      const almocoFim    = document.getElementById('de-almoco-fim').value;
+
+      if (!data) { alert('Selecione uma data.'); return; }
+      if (tipo === 'aberto' && (!inicio || !fim)) { alert('Defina os horários de abertura e fechamento.'); return; }
+
+      datasEspeciais[data] = {
+        desc,
+        tipo,
+        inicio:       tipo === 'aberto' ? inicio : '',
+        fim:          tipo === 'aberto' ? fim    : '',
+        almoco:       tipo === 'aberto' ? deAlmocoAtivo : false,
+        almoco_inicio: tipo === 'aberto' && deAlmocoAtivo ? almocoInicio : '',
+        almoco_fim:    tipo === 'aberto' && deAlmocoAtivo ? almocoFim    : '',
+      };
+
+      try {
+        await db.collection('config').doc('datas_especiais').set(datasEspeciais);
+        // Reset form
+        document.getElementById('de-data').value  = '';
+        document.getElementById('de-desc').value  = '';
+        document.getElementById('de-tipo').value  = 'aberto';
+        document.getElementById('de-inicio').value = '08:00';
+        document.getElementById('de-fim').value    = '17:00';
+        toggleDETipo();
+        if (deAlmocoAtivo) toggleDEAlmoco();
+        renderDatasLista();
+      } catch(e) { alert('Erro ao salvar. Tente novamente.'); }
+    }
+
+    async function removerDataEspecial(data) {
+      if (!confirm('Remover a data ' + formatDate(data) + '?')) return;
+      delete datasEspeciais[data];
+      try {
+        await db.collection('config').doc('datas_especiais').set(datasEspeciais);
+        renderDatasLista();
+      } catch(e) { alert('Erro ao remover.'); }
     }
   </script>
 </body>
