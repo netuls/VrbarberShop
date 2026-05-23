@@ -212,10 +212,9 @@
     function doLogout() {
       if (unsubscribe) unsubscribe();
       sessionStorage.removeItem('vr_admin');
-      document.getElementById('login-screen').style.display = 'flex';
-      document.getElementById('admin-panel').style.display = 'none';
+      document.getElementById('login-screen').style.cssText = 'display:flex!important;visibility:visible!important;z-index:999!important;';
+      document.getElementById('admin-panel').style.cssText = 'display:none!important;visibility:hidden!important;';
     }
-
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none') {
         doLogin();
