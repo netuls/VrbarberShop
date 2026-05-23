@@ -459,6 +459,31 @@
 
     function updateStatus(id, status) {
       db.collection('agendamentos').doc(id).update({ status, atualizadoEm: firebase.firestore.FieldValue.serverTimestamp() })
+        .then(() => {
+          if (status === 'confirmado') {
+            // Busca os dados do agendamento para montar a mensagem ao cliente
+            const ag = allAgendamentos.find(a => a.id === id);
+            if (ag && ag.telefone) {
+              const primeiroNome = (ag.cliente || 'Cliente').split(' ')[0];
+              const lines = [
+                `Olá, *${primeiroNome}*! ✅`,
+                '',
+                'Seu agendamento na *VR Barber Shop* foi *confirmado*!',
+                '',
+                '📋 *Detalhes:*',
+                '*Serviço:* ' + (ag.servico || '--'),
+                '*Data:* ' + (ag.data ? formatDate(ag.data) : '--'),
+                '*Horário:* ' + (ag.horario || '--'),
+                '*Valor:* R$' + (ag.preco || 0).toFixed(2).replace('.', ','),
+                '',
+                'Te esperamos! Qualquer dúvida é só chamar. ✂️',
+              ];
+              const phone = ag.telefone.replace(/\D/g, '');
+              const msg = encodeURIComponent(lines.join('\n'));
+              window.open(`https://wa.me/55${phone}?text=${msg}`, '_blank');
+            }
+          }
+        })
         .catch(() => alert('Erro ao atualizar status.'));
     }
 
