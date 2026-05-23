@@ -173,14 +173,7 @@
               <span class="stat-label" id="stat-confirmados-label">Confirmados</span>
             </div>
           </div>
-          <div class="stat-card gold">
-            <div class="stat-icon">💰</div>
-            <div class="stat-info">
-              <span class="stat-value" id="stat-receita">R$0</span>
-              <span class="stat-label" id="stat-receita-label">Receita do Mês</span>
-            </div>
-          </div>
-          <!-- Card de Receita do Dia (aparece só quando há filtro) -->
+          <!-- Card de Receita do Período (aparece só quando há filtro) -->
           <div class="stat-card gold" id="stat-card-receita-dia" style="display:none;">
             <div class="stat-icon">🏆</div>
             <div class="stat-info">
@@ -537,7 +530,6 @@
 
     function renderDashboard() {
       const hoje = new Date().toISOString().split('T')[0];
-      const mesAtual = new Date().toISOString().slice(0, 7);
       const filterDe  = document.getElementById('dash-filter-de').value;
       const filterAte = document.getElementById('dash-filter-ate').value;
 
@@ -588,13 +580,6 @@
         ? agendamentosNoRange.filter(a => a.status === 'confirmado').length
         : allAgendamentos.filter(a => a.status === 'confirmado').length;
       document.getElementById('stat-confirmados-label').textContent = hasFilter ? 'Confirmados no Período' : 'Confirmados';
-
-      // ── Receita do mês (sempre fixa) ──────────────────
-      const receitaMes = allAgendamentos
-        .filter(a => a.status === 'concluido' && (a.data || '').startsWith(mesAtual))
-        .reduce((acc, a) => acc + (a.preco || 0), 0);
-      document.getElementById('stat-receita').textContent = 'R$' + receitaMes.toFixed(2).replace('.', ',');
-      document.getElementById('stat-receita-label').textContent = 'Receita do Mês';
 
       // ── Card de Receita do Período (aparece só com filtro) ──
       const cardReceitaDia = document.getElementById('stat-card-receita-dia');
