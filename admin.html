@@ -109,6 +109,9 @@
         <a href="#" class="nav-item" onclick="showTab('datas', this)">
           <span class="nav-icon">📆</span> <span>Datas Especiais</span>
         </a>
+        <a href="#" class="nav-item" onclick="showTab('clientes', this)">
+          <span class="nav-icon">👥</span> <span>Clientes</span>
+        </a>
       </nav>
       <div class="sidebar-bottom">
         <button class="btn-logout" onclick="doLogout()">Sair</button>
@@ -361,6 +364,82 @@
     </main>
   </div>
 
+  <template id="tpl-tab-clientes">
+    <div class="tab-content" id="tab-clientes">
+
+      <!-- BANNER ANIVERSARIANTES -->
+      <div id="aniversariantes-banner" style="display:none;background:#1a1208;border:1px solid #4a3800;border-radius:10px;padding:16px 20px;margin-bottom:20px;">
+        <div style="font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:2px;color:#c8a96e;text-transform:uppercase;margin-bottom:10px;">🎂 Aniversários Amanhã</div>
+        <div id="aniversariantes-lista" style="display:flex;flex-direction:column;gap:8px;"></div>
+      </div>
+
+      <!-- CADASTRO MANUAL -->
+      <details style="margin-bottom:20px;">
+        <summary style="font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:2px;color:#888;text-transform:uppercase;cursor:pointer;padding:14px 18px;background:#111;border:1px solid #222;border-radius:8px;list-style:none;display:flex;align-items:center;gap:8px;">
+          <span>＋</span> Cadastrar Cliente Manualmente
+        </summary>
+        <div style="background:#111;border:1px solid #222;border-top:none;border-radius:0 0 8px 8px;padding:20px 18px;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;">
+          <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:160px;">
+            <span style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;color:#555;text-transform:uppercase;">Nome *</span>
+            <input type="text" id="cad-nome" placeholder="Nome e sobrenome" autocapitalize="words"
+              style="background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:10px 14px;color:#f5f0e8;font-family:'Roboto',sans-serif;font-size:14px;outline:none;"/>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:140px;">
+            <span style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;color:#555;text-transform:uppercase;">WhatsApp *</span>
+            <input type="tel" id="cad-tel" placeholder="85999999999" maxlength="15"
+              style="background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:10px 14px;color:#f5f0e8;font-family:'Roboto',sans-serif;font-size:14px;outline:none;"/>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;min-width:150px;">
+            <span style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;color:#555;text-transform:uppercase;">Nascimento <em style="font-style:normal;color:#444;">(opcional)</em></span>
+            <input type="date" id="cad-nasc"
+              style="background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:10px 12px;color:#f5f0e8;font-family:'Roboto',sans-serif;font-size:14px;outline:none;color-scheme:dark;cursor:pointer;"/>
+          </div>
+          <button onclick="cadastrarClienteManual()"
+            style="background:#2a2a2a;border:1px solid #444;color:#f5f0e8;padding:10px 24px;border-radius:6px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;font-weight:700;white-space:nowrap;">
+            Salvar Cliente
+          </button>
+          <span id="cad-status" style="font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:1px;color:#555;align-self:center;"></span>
+        </div>
+      </details>
+
+      <!-- BUSCA E ORDENAÇÃO -->
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px;">
+        <input type="text" id="clientes-search" oninput="filtrarClientes()"
+          placeholder="🔍 Buscar cliente..."
+          style="background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:10px 16px;color:#f5f0e8;font-family:'Roboto',sans-serif;font-size:14px;outline:none;flex:1;min-width:200px;"/>
+        <select id="clientes-sort" onchange="filtrarClientes()"
+          style="background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:10px 14px;color:#f5f0e8;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:1px;outline:none;cursor:pointer;color-scheme:dark;">
+          <option value="nome">Ordenar: Nome A-Z</option>
+          <option value="visitas">Ordenar: + Visitas</option>
+          <option value="ticket">Ordenar: Maior Ticket</option>
+          <option value="gasto">Ordenar: Maior Gasto Total</option>
+          <option value="recente">Ordenar: + Recente</option>
+        </select>
+      </div>
+
+      <!-- RESUMO GERAL -->
+      <div id="clientes-resumo" style="display:flex;gap:1px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.05);border-radius:8px;overflow:hidden;margin-bottom:28px;flex-wrap:wrap;"></div>
+
+      <!-- LISTA -->
+      <div id="clientes-lista"></div>
+
+      <!-- DRAWER DE HISTÓRICO -->
+      <div id="cliente-drawer" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.8);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);" onclick="fecharClienteDrawer(event)">
+        <div id="cliente-drawer-box" style="position:absolute;right:0;top:0;bottom:0;width:min(520px,100vw);background:#111;border-left:1px solid #222;overflow-y:auto;-webkit-overflow-scrolling:touch;">
+          <div style="padding:28px 28px 12px;display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid #1e1e1e;position:sticky;top:0;background:#111;z-index:1;">
+            <div>
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;color:#f5f0e8;" id="drawer-nome">—</div>
+              <div style="font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:2px;color:#555;text-transform:uppercase;" id="drawer-tel">—</div>
+              <div style="font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:1px;color:#666;margin-top:4px;" id="drawer-nasc"></div>
+            </div>
+            <button onclick="fecharClienteDrawer()" style="background:none;border:none;color:#555;font-size:22px;cursor:pointer;line-height:1;padding:4px;">✕</button>
+          </div>
+          <div style="padding:24px 28px;" id="drawer-content"></div>
+        </div>
+      </div>
+    </div>
+  </template>
+
   <!-- MODAL CONCLUIR TODOS -->
   <div id="concluir-todos-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;">
     <div style="background:#161616;border:1px solid #2a2a2a;border-radius:10px;padding:36px 32px;max-width:380px;width:90%;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,0.8);">
@@ -489,18 +568,26 @@
       const el = document.getElementById('admin-date');
       if (el) el.textContent = new Date().toLocaleDateString('pt-BR', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
       loadAgendamentos();
+      verificarAniversariosGlobal();
     }
 
     // ── Tabs ─────────────────────────────────────────
     function showTab(tab, el) {
+      // Injeta o tab de clientes do template na primeira vez
+      if (tab === 'clientes' && !document.getElementById('tab-clientes')) {
+        const tpl = document.getElementById('tpl-tab-clientes');
+        const clone = tpl.content.cloneNode(true);
+        document.querySelector('.admin-main').appendChild(clone);
+      }
       document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
       document.getElementById('tab-' + tab).classList.add('active');
       if (el) el.classList.add('active');
-      const titles = { dashboard: 'Dashboard', agendamentos: 'Agendamentos', horarios: 'Horarios de Atendimento', datas: 'Datas Especiais' };
+      const titles = { dashboard: 'Dashboard', agendamentos: 'Agendamentos', horarios: 'Horarios de Atendimento', datas: 'Datas Especiais', clientes: 'Clientes' };
       document.getElementById('page-title').textContent = titles[tab] || tab;
       if (tab === 'horarios') carregarHorarios();
       if (tab === 'datas') carregarDatasEspeciais();
+      if (tab === 'clientes') renderClientes();
       // Scroll para o topo no mobile
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -969,7 +1056,372 @@
       btn.disabled = false;
     }
 
-    // ── Utilitários ──────────────────────────────────
+    // ── CLIENTES ─────────────────────────────────────
+
+    let _clientesFirestore = {}; // { telefoneKey: { nome, telefone, nascimento } }
+
+    async function carregarClientesFirestore() {
+      try {
+        const snap = await db.collection('clientes').get();
+        snap.forEach(doc => { _clientesFirestore[doc.id] = doc.data(); });
+      } catch(e) { console.warn('Erro ao carregar clientes:', e); }
+    }
+
+    function buildClientMap() {
+      const map = {};
+      allAgendamentos.forEach(a => {
+        const key = (a.telefone || '').replace(/\D/g, '') || a.cliente || 'desconhecido';
+        if (!map[key]) {
+          map[key] = {
+            key,
+            nome: a.cliente || '—',
+            telefone: a.telefone || '—',
+            nascimento: '',
+            agendamentos: [],
+          };
+        }
+        if (a.cliente) map[key].nome = a.cliente;
+        map[key].agendamentos.push(a);
+      });
+      // Mescla dados do Firestore (nascimento, nome atualizado)
+      Object.keys(_clientesFirestore).forEach(key => {
+        const fs = _clientesFirestore[key];
+        if (!map[key]) {
+          map[key] = { key, nome: fs.nome || '—', telefone: fs.telefone || key, nascimento: fs.nascimento || '', agendamentos: [] };
+        } else {
+          if (fs.nascimento) map[key].nascimento = fs.nascimento;
+          if (fs.nome) map[key].nome = fs.nome;
+        }
+      });
+      return map;
+    }
+
+    function calcClientStats(agendamentos) {
+      const concluidos = agendamentos.filter(a => a.status === 'concluido');
+      const gastoTotal = concluidos.reduce((s, a) => s + (a.preco || 0), 0);
+      const ticket     = concluidos.length ? gastoTotal / concluidos.length : 0;
+      const servicoMap = {};
+      agendamentos.forEach(a => {
+        if (!a.servico) return;
+        servicoMap[a.servico] = (servicoMap[a.servico] || 0) + 1;
+      });
+      const servicoFavorito = Object.entries(servicoMap).sort((a, b) => b[1] - a[1])[0];
+      const datas = agendamentos.map(a => a.data).filter(Boolean).sort();
+      const ultimaVisita = datas[datas.length - 1];
+      return { concluidos: concluidos.length, total: agendamentos.length, gastoTotal, ticket, servicoMap, servicoFavorito, ultimaVisita };
+    }
+
+    function fmtNascimento(nasc) {
+      if (!nasc) return '';
+      const [y, m, d] = nasc.split('-');
+      return d + '/' + m + '/' + y;
+    }
+
+    function isAniversarioAmanha(nascimento) {
+      if (!nascimento) return false;
+      const amanha = new Date(); amanha.setDate(amanha.getDate() + 1);
+      const [, m, d] = nascimento.split('-');
+      return parseInt(m) === (amanha.getMonth() + 1) && parseInt(d) === amanha.getDate();
+    }
+
+    function renderAniversariantesBanner(clientes) {
+      const banner = document.getElementById('aniversariantes-banner');
+      const lista  = document.getElementById('aniversariantes-lista');
+      if (!banner || !lista) return;
+      const aniversariantes = clientes.filter(c => isAniversarioAmanha(c.nascimento));
+      if (!aniversariantes.length) { banner.style.display = 'none'; return; }
+      banner.style.display = 'block';
+      lista.innerHTML = aniversariantes.map(c => {
+        const tel = (c.telefone || '').replace(/\D/g, '');
+        const msg = encodeURIComponent('Ola ' + c.nome.split(' ')[0] + '! Amanha e seu aniversario e nos da VR Barber Shop queremos te desejar um dia incrivel! Que tal comemorar com um corte novo? Agende seu horario e venha nos visitar. Feliz aniversario!');
+        return `<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:10px 14px;background:#201500;border:1px solid #3a2800;border-radius:6px;">
+          <span style="font-size:20px;">🎂</span>
+          <div style="flex:1;">
+            <div style="font-family:'Oswald',sans-serif;font-size:14px;color:#f5f0e8;letter-spacing:1px;">${c.nome}</div>
+            <div style="font-family:'Roboto',sans-serif;font-size:11px;color:#c8a96e;">Aniversário amanhã · ${fmtNascimento(c.nascimento)}</div>
+          </div>
+          ${tel ? `<a href="https://wa.me/55${tel}?text=${msg}" target="_blank"
+            style="background:#1a2e1a;border:1px solid #2a4a2a;color:#4caf50;padding:8px 16px;border-radius:6px;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;text-decoration:none;white-space:nowrap;">
+            Enviar Parabens →
+          </a>` : ''}
+        </div>`;
+      }).join('');
+    }
+
+    async function cadastrarClienteManual() {
+      const nome  = (document.getElementById('cad-nome')?.value || '').trim();
+      const tel   = (document.getElementById('cad-tel')?.value  || '').replace(/\D/g, '');
+      const nasc  = (document.getElementById('cad-nasc')?.value || '').trim();
+      const st    = document.getElementById('cad-status');
+      if (!nome || !tel) { if(st) { st.textContent = 'Nome e telefone são obrigatórios.'; st.style.color='#c0392b'; } return; }
+      if(st) { st.textContent = 'Salvando...'; st.style.color = '#888'; }
+      try {
+        const data = { nome, telefone: tel, criadoEm: firebase.firestore.FieldValue.serverTimestamp() };
+        if (nasc) data.nascimento = nasc;
+        await db.collection('clientes').doc(tel).set(data, { merge: true });
+        _clientesFirestore[tel] = { ...(_clientesFirestore[tel] || {}), ...data };
+        if(st) { st.textContent = 'Cliente salvo!'; st.style.color = '#4caf50'; }
+        document.getElementById('cad-nome').value = '';
+        document.getElementById('cad-tel').value  = '';
+        document.getElementById('cad-nasc').value = '';
+        setTimeout(() => { if(st) st.textContent = ''; }, 3000);
+        renderClientes();
+      } catch(e) {
+        if(st) { st.textContent = 'Erro ao salvar.'; st.style.color = '#c0392b'; }
+      }
+    }
+
+    let _clientListCache = [];
+
+    async function renderClientes() {
+      await carregarClientesFirestore();
+      const map = buildClientMap();
+      const clientes = Object.values(map).map(c => ({ ...c, stats: calcClientStats(c.agendamentos) }));
+      _clientListCache = clientes;
+
+      renderAniversariantesBanner(clientes);
+
+      const totalClientes = clientes.length;
+      const totalGasto    = clientes.reduce((s, c) => s + c.stats.gastoTotal, 0);
+      const totalConc     = clientes.reduce((s, c) => s + c.stats.concluidos, 0);
+      const ticketMedio   = totalConc ? totalGasto / totalConc : 0;
+      const clienteTop    = [...clientes].sort((a, b) => b.stats.gastoTotal - a.stats.gastoTotal)[0];
+
+      const resumoEl = document.getElementById('clientes-resumo');
+      if (resumoEl) resumoEl.innerHTML = [
+        { icon: '👥', val: totalClientes, label: 'Total de Clientes' },
+        { icon: '💰', val: 'R$' + totalGasto.toFixed(2).replace('.', ','), label: 'Receita Total' },
+        { icon: '🎯', val: isNaN(ticketMedio) || !isFinite(ticketMedio) ? 'R$0,00' : 'R$' + ticketMedio.toFixed(2).replace('.', ','), label: 'Ticket Médio Geral' },
+        { icon: '🏆', val: clienteTop ? clienteTop.nome.split(' ')[0] : '—', label: 'Maior Gastador' },
+      ].map(c => `
+        <div style="flex:1;min-width:130px;background:#161616;padding:18px 20px;">
+          <div style="font-size:20px;margin-bottom:6px;">${c.icon}</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#f5f0e8;letter-spacing:1px;">${c.val}</div>
+          <div style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;color:#555;text-transform:uppercase;margin-top:2px;">${c.label}</div>
+        </div>
+      `).join('');
+
+      filtrarClientes();
+    }
+
+    function filtrarClientes() {
+      const search = (document.getElementById('clientes-search')?.value || '').toLowerCase();
+      const sort   = document.getElementById('clientes-sort')?.value || 'nome';
+      let lista = _clientListCache.filter(c =>
+        c.nome.toLowerCase().includes(search) || c.telefone.includes(search)
+      );
+      lista.sort((a, b) => {
+        if (sort === 'nome')    return a.nome.localeCompare(b.nome);
+        if (sort === 'visitas') return b.stats.total - a.stats.total;
+        if (sort === 'ticket')  return b.stats.ticket - a.stats.ticket;
+        if (sort === 'gasto')   return b.stats.gastoTotal - a.stats.gastoTotal;
+        if (sort === 'recente') return (b.stats.ultimaVisita || '').localeCompare(a.stats.ultimaVisita || '');
+        return 0;
+      });
+
+      const el = document.getElementById('clientes-lista');
+      if (!el) return;
+      if (!lista.length) {
+        el.innerHTML = '<p style="color:#444;font-family:Oswald,sans-serif;font-size:13px;letter-spacing:1px;padding:20px 0;">Nenhum cliente encontrado.</p>';
+        return;
+      }
+
+      el.innerHTML = `<div style="display:flex;flex-direction:column;gap:1px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.05);border-radius:8px;overflow:hidden;">
+        ${lista.map(c => {
+          const s = c.stats;
+          const favorito   = s.servicoFavorito ? s.servicoFavorito[0] : '—';
+          const ultimaFmt  = s.ultimaVisita ? s.ultimaVisita.split('-').reverse().join('/') : '—';
+          const nascFmt    = c.nascimento ? fmtNascimento(c.nascimento) : '';
+          const anivAmanha = isAniversarioAmanha(c.nascimento);
+          return `<div onclick="abrirClienteDrawer('${encodeURIComponent(JSON.stringify({ nome: c.nome, telefone: c.telefone, nascimento: c.nascimento || '', agendamentos: c.agendamentos }))}')"
+            style="background:#161616;padding:16px 20px;display:flex;align-items:center;gap:16px;cursor:pointer;transition:background .2s;flex-wrap:wrap;${anivAmanha ? 'border-left:3px solid #c8a96e;' : ''}"
+            onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background='#161616'">
+            <div style="width:42px;height:42px;border-radius:50%;background:${anivAmanha ? '#2a1e00' : '#222'};border:1px solid ${anivAmanha ? '#c8a96e' : '#2a2a2a'};display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:${anivAmanha ? '#c8a96e' : '#555'};flex-shrink:0;">
+              ${anivAmanha ? '🎂' : (c.nome || '?')[0].toUpperCase()}
+            </div>
+            <div style="flex:1;min-width:120px;">
+              <div style="font-family:'Oswald',sans-serif;font-size:15px;font-weight:500;color:#f5f0e8;">${c.nome}${anivAmanha ? ' <span style="font-size:10px;color:#c8a96e;letter-spacing:1px;">· ANIVER. AMANHÃ</span>' : ''}</div>
+              <div style="font-family:'Roboto',sans-serif;font-size:11px;color:#555;margin-top:2px;">${c.telefone}${nascFmt ? ' · ' + nascFmt : ''}</div>
+            </div>
+            <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:center;">
+              <div style="text-align:center;">
+                <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#f5f0e8;">${s.total}</div>
+                <div style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:2px;color:#444;text-transform:uppercase;">Visitas</div>
+              </div>
+              <div style="text-align:center;">
+                <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#c8a96e;">R$${s.ticket.toFixed(0)}</div>
+                <div style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:2px;color:#444;text-transform:uppercase;">Ticket</div>
+              </div>
+              <div style="text-align:center;">
+                <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#f5f0e8;">R$${s.gastoTotal.toFixed(0)}</div>
+                <div style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:2px;color:#444;text-transform:uppercase;">Total Gasto</div>
+              </div>
+              <div style="text-align:center;max-width:110px;">
+                <div style="font-family:'Roboto',sans-serif;font-size:11px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${favorito}</div>
+                <div style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:2px;color:#444;text-transform:uppercase;">Favorito</div>
+              </div>
+              <div style="text-align:center;">
+                <div style="font-family:'Roboto',sans-serif;font-size:11px;color:#666;">${ultimaFmt}</div>
+                <div style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:2px;color:#444;text-transform:uppercase;">Última Visita</div>
+              </div>
+            </div>
+            <div style="color:#333;font-size:14px;flex-shrink:0;">›</div>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }
+
+    function abrirClienteDrawer(encodedData) {
+      const c = JSON.parse(decodeURIComponent(encodedData));
+      const s = calcClientStats(c.agendamentos);
+      const anivAmanha = isAniversarioAmanha(c.nascimento);
+
+      document.getElementById('drawer-nome').textContent = c.nome;
+      document.getElementById('drawer-tel').textContent  = c.telefone;
+      const drawerNasc = document.getElementById('drawer-nasc');
+      if (drawerNasc) drawerNasc.innerHTML = c.nascimento
+        ? '🎂 ' + fmtNascimento(c.nascimento) + (anivAmanha ? ' <span style="color:#c8a96e;font-size:10px;letter-spacing:1px;">· AMANHÃ!</span>' : '')
+        : '';
+
+      const ags = [...c.agendamentos].sort((a, b) => (b.data || '').localeCompare(a.data || ''));
+      const servicosRank = Object.entries(s.servicoMap).sort((a, b) => b[1] - a[1]);
+      const tel = (c.telefone || '').replace(/\D/g, '');
+      const msgAniv = encodeURIComponent('Ola ' + c.nome.split(' ')[0] + '! Amanha e seu aniversario e nos da VR Barber Shop queremos te desejar um dia incrivel! Que tal comemorar com um corte novo? Feliz aniversario!');
+
+      document.getElementById('drawer-content').innerHTML = `
+        ${anivAmanha && tel ? `<div style="background:#1a1208;border:1px solid #4a3800;border-radius:8px;padding:14px 16px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <span style="font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:1px;color:#c8a96e;">🎂 Aniversário amanhã! Que tal enviar uma mensagem?</span>
+          <a href="https://wa.me/55${tel}?text=${msgAniv}" target="_blank"
+            style="background:#1a2e1a;border:1px solid #2a4a2a;color:#4caf50;padding:8px 14px;border-radius:6px;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;text-decoration:none;white-space:nowrap;">
+            Enviar Parabens →
+          </a>
+        </div>` : ''}
+
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.06);border-radius:8px;overflow:hidden;margin-bottom:24px;">
+          ${[
+            { icon: '✂️', val: s.total,                                                                     label: 'Visitas' },
+            { icon: '✅', val: s.concluidos,                                                                 label: 'Concluídos' },
+            { icon: '💰', val: 'R$' + s.gastoTotal.toFixed(2).replace('.', ','),                             label: 'Total Gasto' },
+            { icon: '🎯', val: 'R$' + s.ticket.toFixed(2).replace('.', ','),                                 label: 'Ticket Médio' },
+            { icon: '📅', val: s.ultimaVisita ? s.ultimaVisita.split('-').reverse().join('/') : '—',         label: 'Última Visita' },
+            { icon: '🏆', val: s.servicoFavorito ? s.servicoFavorito[0].split('+')[0].trim() : '—',          label: 'Serviço Favorito' },
+          ].map(m => `
+            <div style="background:#161616;padding:14px 16px;text-align:center;">
+              <div style="font-size:16px;margin-bottom:4px;">${m.icon}</div>
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#f5f0e8;letter-spacing:1px;">${m.val}</div>
+              <div style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:1.5px;color:#444;text-transform:uppercase;margin-top:2px;">${m.label}</div>
+            </div>
+          `).join('')}
+        </div>
+
+        ${servicosRank.length ? `<div style="margin-bottom:24px;">
+          <p style="font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:2px;color:#555;text-transform:uppercase;margin-bottom:12px;">Serviços Mais Usados</p>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            ${servicosRank.map(([serv, qtd]) => {
+              const pct = Math.round((qtd / s.total) * 100);
+              return `<div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                  <span style="font-family:'Roboto',sans-serif;font-size:13px;color:#aaa;">${serv}</span>
+                  <span style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#f5f0e8;">${qtd}x</span>
+                </div>
+                <div style="background:#1e1e1e;border-radius:2px;height:3px;overflow:hidden;">
+                  <div style="background:#c8a96e;height:100%;width:${pct}%;"></div>
+                </div>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>` : ''}
+
+        ${ags.length ? `<div>
+          <p style="font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:2px;color:#555;text-transform:uppercase;margin-bottom:12px;">Histórico de Visitas</p>
+          <div style="display:flex;flex-direction:column;gap:1px;background:rgba(255,255,255,0.04);border-radius:6px;overflow:hidden;">
+            ${ags.map(a => `
+              <div style="background:#161616;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+                <div>
+                  <div style="font-family:'Roboto',sans-serif;font-size:13px;color:#f5f0e8;">${a.servico || '—'}</div>
+                  <div style="font-family:'Roboto',sans-serif;font-size:11px;color:#444;margin-top:2px;">${a.data ? a.data.split('-').reverse().join('/') : '—'} ${a.horario ? '· ' + a.horario : ''}</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;">
+                  <span style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#c8a96e;">R$${(a.preco||0).toFixed(2).replace('.',',')}</span>
+                  ${badgeHTML(a.status)}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>` : ''}
+
+        ${tel ? `<a href="https://wa.me/55${tel}" target="_blank"
+          style="display:block;margin-top:24px;text-align:center;background:#1e1e1e;border:1px solid #333;color:#aaa;padding:14px;border-radius:6px;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;"
+          onmouseover="this.style.background='#2a2a2a'" onmouseout="this.style.background='#1e1e1e'">
+          Abrir WhatsApp →
+        </a>` : ''}
+      `;
+
+      document.getElementById('cliente-drawer').style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function fecharClienteDrawer(e) {
+      if (e && e.target !== document.getElementById('cliente-drawer')) return;
+      document.getElementById('cliente-drawer').style.display = 'none';
+      document.body.style.overflow = '';
+    }
+
+    // Verifica aniversários ao carregar o admin (mesmo sem abrir a aba)
+    async function verificarAniversariosGlobal() {
+      try {
+        const snap = await db.collection('clientes').get();
+        const amanha = new Date(); amanha.setDate(amanha.getDate() + 1);
+        const aniversariantes = [];
+        snap.forEach(doc => {
+          const d = doc.data();
+          if (d.nascimento) {
+            const [, m, dia] = d.nascimento.split('-');
+            if (parseInt(m) === (amanha.getMonth() + 1) && parseInt(dia) === amanha.getDate()) {
+              aniversariantes.push(d);
+            }
+          }
+        });
+        if (aniversariantes.length) {
+          const nomes = aniversariantes.map(c => c.nome.split(' ')[0]).join(', ');
+          // Notificação via toast no painel
+          setTimeout(() => {
+            showAdminToast('🎂 Aniversário amanhã: ' + nomes + '! Acesse Clientes para enviar mensagem.', 8000);
+          }, 2000);
+        }
+      } catch(e) {}
+    }
+
+    function showAdminToast(msg, duration = 4000) {
+      let toast = document.getElementById('admin-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'admin-toast';
+        toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#2a1e00;border:1px solid #c8a96e;color:#f5f0e8;padding:14px 24px;border-radius:8px;font-family:Oswald,sans-serif;font-size:13px;letter-spacing:1px;z-index:99999;max-width:90vw;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.7);';
+        document.body.appendChild(toast);
+      }
+      toast.textContent = msg;
+      toast.style.display = 'block';
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => { toast.style.display = 'none'; }, duration);
+    }
+      const map = {};
+      allAgendamentos.forEach(a => {
+        const key = (a.telefone || '').replace(/\D/g, '') || a.cliente || 'desconhecido';
+        if (!map[key]) {
+          map[key] = {
+            nome: a.cliente || '—',
+            telefone: a.telefone || '—',
+            agendamentos: [],
+          };
+        }
+        // Atualiza nome mais recente
+        if (a.cliente) map[key].nome = a.cliente;
+        map[key].agendamentos.push(a);
+      });
+      return map;
+    }
+
     function formatDate(d) {
       const [y, m, day] = d.split('-');
       return day + '/' + m + '/' + y;
@@ -1107,6 +1559,9 @@
     </a>
     <a class="bottom-nav-item" id="bnav-datas" onclick="showTab('datas', this); syncBottomNav('bnav-datas')">
       <span class="bnav-icon">📆</span>Datas
+    </a>
+    <a class="bottom-nav-item" id="bnav-clientes" onclick="showTab('clientes', this); syncBottomNav('bnav-clientes')">
+      <span class="bnav-icon">👥</span>Clientes
     </a>
     <a class="bottom-nav-item" id="bnav-sair" onclick="doLogout()">
       <span class="bnav-icon">🚪</span>Sair
