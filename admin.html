@@ -264,6 +264,7 @@
           <div style="margin-top:36px;padding:20px;background:#161616;border:1px solid #2a2a2a;border-radius:6px;">
             <p style="font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px;">Como funciona</p>
             <p style="font-size:13px;color:#888;line-height:1.7;">As datas especiais têm <strong style="color:#f5f0e8;">prioridade total</strong> sobre a grade semanal. Se você marcar um feriado como <em>Fechado</em>, o cliente não verá horários naquele dia mesmo que seja um dia normalmente ativo. Se marcar como <em>Aberto</em>, o cliente verá os horários especiais que você definir.</p>
+            <p style="font-size:12px;color:#666;line-height:1.7;margin-top:10px;">⚠️ Se aparecer "Erro ao salvar", acesse o <strong style="color:#f5f0e8;">Firebase Console → Firestore → Regras</strong> e certifique-se que a coleção <code style="background:#1a1a1a;padding:2px 6px;border-radius:3px;color:#c9a84c;">config</code> tem permissão de escrita.</p>
           </div>
         </div>
       </div>
@@ -746,26 +747,38 @@
       };
 
       try {
-        await db.collection('config').doc('datas_especiais').set(datasEspeciais);
+        // Usa set com merge:true para não sobrescrever outros campos do documento
+        // e funciona mesmo se o documento ainda não existir
+        const docRef = db.collection('config').doc('datas_especiais');
+        await docRef.set(datasEspeciais, { merge: true });
         // Reset form
-        document.getElementById('de-data').value  = '';
-        document.getElementById('de-desc').value  = '';
-        document.getElementById('de-tipo').value  = 'aberto';
+        document.getElementById('de-data').value   = '';
+        document.getElementById('de-desc').value   = '';
+        document.getElementById('de-tipo').value   = 'aberto';
         document.getElementById('de-inicio').value = '08:00';
         document.getElementById('de-fim').value    = '17:00';
         toggleDETipo();
         if (deAlmocoAtivo) toggleDEAlmoco();
         renderDatasLista();
-      } catch(e) { alert('Erro ao salvar. Tente novamente.'); }
+      } catch(e) {
+        console.error('Erro ao salvar data especial:', e);
+        alert('Erro ao salvar: ' + (e.message || e.code || 'Verifique as regras do Firestore.'));
+      }
     }
 
     async function removerDataEspecial(data) {
       if (!confirm('Remover a data ' + formatDate(data) + '?')) return;
-      delete datasEspeciais[data];
       try {
-        await db.collection('config').doc('datas_especiais').set(datasEspeciais);
+        // Usa FieldValue.delete() para remover só esse campo, sem apagar os outros
+        const update = {};
+        update[data] = firebase.firestore.FieldValue.delete();
+        await db.collection('config').doc('datas_especiais').update(update);
+        delete datasEspeciais[data];
         renderDatasLista();
-      } catch(e) { alert('Erro ao remover.'); }
+      } catch(e) {
+        console.error('Erro ao remover data especial:', e);
+        alert('Erro ao remover: ' + (e.message || e.code || 'Verifique as regras do Firestore.'));
+      }
     }
   </script>
 </body>
