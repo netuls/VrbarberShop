@@ -21,10 +21,6 @@
       <h2>Painel Administrativo</h2>
       <p>Faça login para acessar</p>
       <div class="form-group">
-        <label>E-mail</label>
-        <input type="email" id="login-email" placeholder="admin@vrbarbershop.com"/>
-      </div>
-      <div class="form-group">
         <label>Senha</label>
         <input type="password" id="login-pass" placeholder="••••••••"/>
       </div>
@@ -157,8 +153,7 @@
     const db = firebase.firestore();
 
     // ── Login simples (sem Firebase Auth) ────────────
-    const ADMIN_EMAIL = 'vrbarbershop@gmail.com';
-    const ADMIN_PASS  = '59360102'; // ← troque aqui quando quiser
+    const ADMIN_PASS = '59360102'; // ← troque aqui quando quiser
 
     // ── Dados de serviços e planos ───────────────────
     const SERVICES = [
@@ -185,13 +180,12 @@
 
     // ── Auth simples ──────────────────────────────────
     function doLogin() {
-      const email = document.getElementById('login-email').value.trim();
       const pass  = document.getElementById('login-pass').value;
       const errEl = document.getElementById('login-error');
       errEl.textContent = '';
 
-      if (!email || !pass) {
-        errEl.textContent = 'Preencha e-mail e senha.';
+      if (!pass) {
+        errEl.textContent = 'Digite a senha.';
         return;
       }
 
@@ -200,13 +194,13 @@
       btn.disabled = true;
 
       setTimeout(() => {
-        if (email === ADMIN_EMAIL && pass === ADMIN_PASS) {
+        if (pass === ADMIN_PASS) {
           sessionStorage.setItem('vr_admin', '1');
           document.getElementById('login-screen').style.display = 'none';
           document.getElementById('admin-panel').style.display = 'flex';
           initAdmin();
         } else {
-          errEl.textContent = 'E-mail ou senha incorretos.';
+          errEl.textContent = 'Senha incorreta.';
           btn.textContent = 'Entrar';
           btn.disabled = false;
         }
