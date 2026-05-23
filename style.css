@@ -172,15 +172,42 @@ input, select, textarea {
 .hero-bg {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(ellipse at 50% 35%, rgba(255,255,255,0.03) 0%, transparent 55%),
-    linear-gradient(180deg, #0a0a0a 0%, #080808 100%);
   z-index: 0;
+}
+
+/* ── Slideshow ── */
+.hero-slides {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.hero-slide {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center top;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+.hero-slide.active { opacity: 1; }
+
+/* Overlay escuro sobre as fotos para manter legibilidade */
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg,
+      rgba(8,8,8,0.72) 0%,
+      rgba(8,8,8,0.55) 40%,
+      rgba(8,8,8,0.72) 75%,
+      rgba(8,8,8,0.95) 100%);
+  z-index: 1;
 }
 .hero-bg::before {
   content: '';
   position: absolute;
   inset: 0;
+  z-index: 2;
   background-image:
     repeating-linear-gradient(0deg, transparent, transparent 80px, rgba(255,255,255,0.012) 80px, rgba(255,255,255,0.012) 81px),
     repeating-linear-gradient(90deg, transparent, transparent 80px, rgba(255,255,255,0.012) 80px, rgba(255,255,255,0.012) 81px);
@@ -191,6 +218,7 @@ input, select, textarea {
   bottom: 0; left: 0; right: 0;
   height: 200px;
   background: linear-gradient(to bottom, transparent, var(--black));
+  z-index: 3;
 }
 
 .hero-content {
@@ -989,3 +1017,32 @@ input, select, textarea {
   .plan-card.featured .btn-plan:hover { background: var(--gray); border-color: var(--gray); }
   .btn-nav:hover { background: var(--dark3) !important; border-color: rgba(255,255,255,0.3) !important; transform: translateY(-2px); }
 }
+
+/* ── Slideshow dots ── */
+.hero-dots {
+  position: absolute;
+  bottom: calc(70px + var(--sab));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 5;
+}
+.hero-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.3);
+  border: 1px solid rgba(255,255,255,0.3);
+  transition: all 0.4s ease;
+  cursor: pointer;
+}
+.hero-dot.active {
+  background: var(--white);
+  width: 20px;
+  border-radius: 3px;
+}
+
+/* ── Hero sub com itens animados ── */
+.hero-sub { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.hero-sub-dot { color: var(--accent); opacity: 0.6; font-size: 10px; }
+.hero-sub-item { letter-spacing: 8px; }
