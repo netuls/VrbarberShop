@@ -1405,6 +1405,8 @@
       clearTimeout(toast._t);
       toast._t = setTimeout(() => { toast.style.display = 'none'; }, duration);
     }
+
+    function buildClienteMap() {
       const map = {};
       allAgendamentos.forEach(a => {
         const key = (a.telefone || '').replace(/\D/g, '') || a.cliente || 'desconhecido';
