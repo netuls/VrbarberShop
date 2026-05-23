@@ -238,7 +238,6 @@ window.openMyBookings = async function() {
     const snap = await firebase.firestore().collection('agendamentos')
       .where('telefone', '==', key)
       .where('status', 'in', ['pendente','confirmado'])
-      .orderBy('data', 'asc')
       .get();
 
     if (snap.empty) {
@@ -246,9 +245,14 @@ window.openMyBookings = async function() {
       return;
     }
 
-    // Filtra apenas agendamentos futuros (hoje em diante)
+    // Filtra futuros e ordena por data+horario no JS (evita índice composto no Firestore)
     const hoje = new Date().toISOString().split('T')[0];
-    const docs = snap.docs.filter(d => d.data().data >= hoje);
+    const docs = snap.docs
+      .filter(d => d.data().data >= hoje)
+      .sort((a, b) => {
+        const da = a.data(), db = b.data();
+        return (da.data + da.horario).localeCompare(db.data + db.horario);
+      });
 
     if (!docs.length) {
       list.innerHTML = '<p class="mybookings-empty">Nenhum agendamento futuro.</p>';
