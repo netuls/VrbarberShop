@@ -206,6 +206,15 @@
           <input type="text" id="login-name-input" placeholder="Nome e sobrenome"
             autocomplete="name" autocorrect="off" autocapitalize="words"/>
         </div>
+        <div class="form-group" style="text-align:left;margin-top:12px;">
+          <label style="display:flex;align-items:center;gap:6px;">
+            Data de Nascimento
+            <span style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:1px;color:#555;text-transform:uppercase;background:#1a1a1a;padding:2px 8px;border-radius:3px;">opcional</span>
+          </label>
+          <input type="date" id="login-birth-input"
+            style="color-scheme:dark;"
+            placeholder="dd/mm/aaaa"/>
+        </div>
         <p class="login-error" id="login-error"></p>
         <button class="btn-confirm" id="btn-login-register" onclick="loginRegister()" style="margin-top:8px;width:100%;">Cadastrar →</button>
         <button class="btn-back" onclick="closeLoginModal()" style="margin-top:8px;width:100%;">Fechar</button>
