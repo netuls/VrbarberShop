@@ -214,6 +214,11 @@
       sessionStorage.removeItem('vr_admin');
       document.getElementById('login-screen').style.cssText = 'display:flex!important;visibility:visible!important;z-index:999!important;';
       document.getElementById('admin-panel').style.cssText = 'display:none!important;visibility:hidden!important;';
+      document.getElementById('login-pass').value = '';
+      document.getElementById('login-error').textContent = '';
+      const btn = document.querySelector('.btn-login');
+      btn.textContent = 'Entrar';
+      btn.disabled = false;
     }
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none') {
