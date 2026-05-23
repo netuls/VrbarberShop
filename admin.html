@@ -1240,8 +1240,11 @@
               ${anivAmanha ? '🎂' : (c.nome || '?')[0].toUpperCase()}
             </div>
             <div style="flex:1;min-width:120px;">
-              <div style="font-family:'Oswald',sans-serif;font-size:15px;font-weight:500;color:#f5f0e8;">${c.nome}${anivAmanha ? ' <span style="font-size:10px;color:#c8a96e;letter-spacing:1px;">· ANIVER. AMANHÃ</span>' : ''}</div>
-              <div style="font-family:'Roboto',sans-serif;font-size:11px;color:#555;margin-top:2px;">${c.telefone}${nascFmt ? ' · ' + nascFmt : ''}</div>
+              <div style="font-family:'Oswald',sans-serif;font-size:15px;font-weight:500;color:#f5f0e8;">${c.nome}${anivAmanha ? ' <span style="font-size:10px;background:#2a1e00;color:#c8a96e;letter-spacing:1px;padding:2px 7px;border-radius:4px;border:1px solid #4a3800;">\uD83C\uDF82 ANIVER. AMANH\u00c3</span>' : ''}</div>
+              <div style="font-family:'Roboto',sans-serif;font-size:11px;color:#555;margin-top:3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <span>${c.telefone}</span>
+                ${nascFmt ? `<span style="color:${anivAmanha ? '#c8a96e' : '#444'};display:inline-flex;align-items:center;gap:3px;">\uD83C\uDF82 ${nascFmt}</span>` : ''}
+              </div>
             </div>
             <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:center;">
               <div style="text-align:center;">
@@ -1384,11 +1387,81 @@
         });
         if (aniversariantes.length) {
           const nomes = aniversariantes.map(c => c.nome.split(' ')[0]).join(', ');
-          // Notificação via toast no painel
           setTimeout(() => {
-            showAdminToast('🎂 Aniversário amanhã: ' + nomes + '! Acesse Clientes para enviar mensagem.', 8000);
-          }, 2000);
+            showAniversarioAlert(aniversariantes);
+            enviarNotificacaoBrowser(nomes);
+          }, 1500);
         }
+      } catch(e) {}
+    }
+
+    function showAniversarioAlert(aniversariantes) {
+      // Adiciona animação CSS se não existir
+      if (!document.getElementById('aniv-alert-style')) {
+        const s = document.createElement('style');
+        s.id = 'aniv-alert-style';
+        s.textContent = '@keyframes slideInRight { from { opacity:0; transform:translateX(40px); } to { opacity:1; transform:none; } }';
+        document.head.appendChild(s);
+      }
+      let el = document.getElementById('admin-aniv-alert');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'admin-aniv-alert';
+        el.style.cssText = 'position:fixed;top:20px;right:20px;z-index:99999;max-width:360px;width:calc(100vw - 40px);animation:slideInRight .35s ease;';
+        document.body.appendChild(el);
+      }
+      const lista = aniversariantes.map(c => {
+        const tel = (c.telefone || '').replace(/\D/g, '');
+        const msg = encodeURIComponent('Ol\u00e1 ' + c.nome.split(' ')[0] + '! Amanh\u00e3 \u00e9 seu anivers\u00e1rio e n\u00f3s da VR Barber Shop queremos te desejar um dia incr\u00edvel! Que tal comemorar com um corte novo? Feliz Anivers\u00e1rio! \uD83C\uDF89');
+        return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(200,169,110,0.15);">
+          <span style="font-size:20px;">\uD83C\uDF82</span>
+          <div style="flex:1;">
+            <div style="font-family:'Oswald',sans-serif;font-size:13px;color:#f5f0e8;letter-spacing:.5px;">${c.nome}</div>
+            <div style="font-family:'Roboto',sans-serif;font-size:11px;color:#c8a96e;">Anivers\u00e1rio amanh\u00e3!</div>
+          </div>
+          ${tel ? `<a href="https://wa.me/55${tel}?text=${msg}" target="_blank"
+            style="background:#1a2e1a;border:1px solid #2a4a2a;color:#4caf50;padding:6px 12px;border-radius:5px;font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:1px;text-transform:uppercase;text-decoration:none;white-space:nowrap;flex-shrink:0;">
+            WhatsApp \u2192
+          </a>` : ''}
+        </div>`;
+      }).join('');
+      el.innerHTML = `
+        <div style="background:#1a1208;border:1px solid #c8a96e;border-radius:10px;padding:18px 20px;box-shadow:0 8px 40px rgba(0,0,0,0.8);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <span style="font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:2px;color:#c8a96e;text-transform:uppercase;">\uD83C\uDF89 Anivers\u00e1rios Amanh\u00e3</span>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <button onclick="showTab('clientes',null);syncBottomNav('bnav-clientes');document.getElementById('admin-aniv-alert').style.display='none';"
+                style="background:#c8a96e;border:none;color:#0a0a0a;padding:5px 12px;border-radius:5px;font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-weight:700;">
+                Ver Clientes
+              </button>
+              <button onclick="document.getElementById('admin-aniv-alert').style.display='none';"
+                style="background:none;border:none;color:#666;font-size:18px;cursor:pointer;line-height:1;padding:0 2px;">&times;</button>
+            </div>
+          </div>
+          <div>${lista}</div>
+        </div>
+      `;
+      el.style.display = 'block';
+    }
+
+    async function enviarNotificacaoBrowser(nomes) {
+      if (!('Notification' in window)) return;
+      try {
+        let perm = Notification.permission;
+        if (perm === 'default') perm = await Notification.requestPermission();
+        if (perm !== 'granted') return;
+        const n = new Notification('\uD83C\uDF82 VR Barber — Anivers\u00e1rio Amanh\u00e3!', {
+          body: nomes + (nomes.includes(',') ? ' fazem' : ' faz') + ' anivers\u00e1rio amanh\u00e3. Envie uma mensagem de parab\u00e9ns!',
+          icon: 'logo.png',
+          tag: 'aniversario-vr',
+          requireInteraction: true,
+        });
+        n.onclick = () => {
+          window.focus();
+          showTab('clientes', null);
+          syncBottomNav('bnav-clientes');
+          n.close();
+        };
       } catch(e) {}
     }
 
