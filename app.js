@@ -169,9 +169,10 @@ async function carregarSlotsParaData(dataSelecionada) {
   select.disabled = true;
 
   try {
-    // Busca config de horários e agendamentos já existentes em paralelo
-    const [configDoc, agendSnap] = await Promise.all([
+    // Busca config de horários, datas especiais e agendamentos em paralelo
+    const [configDoc, datasDoc, agendSnap] = await Promise.all([
       firebase.firestore().collection('config').doc('horarios').get(),
+      firebase.firestore().collection('config').doc('datas_especiais').get(),
       firebase.firestore().collection('agendamentos')
         .where('data', '==', dataSelecionada)
         .where('status', 'in', ['pendente', 'confirmado'])
@@ -181,13 +182,37 @@ async function carregarSlotsParaData(dataSelecionada) {
     // Horários já ocupados nesse dia
     const ocupados = new Set(agendSnap.docs.map(d => d.data().horario));
 
-    const config = configDoc.exists ? configDoc.data() : null;
-    if (!config) { preencherSelectPadrao(select, dataSelecionada, ocupados); return; }
+    // Verifica se há data especial cadastrada para esse dia
+    const datasEspeciais = datasDoc.exists ? (datasDoc.data() || {}) : {};
+    const dataEspecial   = datasEspeciais[dataSelecionada];
 
-    const [y, mo, d] = dataSelecionada.split('-').map(Number);
-    const diaSemana = new Date(y, mo - 1, d).getDay();
-    const diaKey = DIAS_KEY[diaSemana];
-    const cfg = config[diaKey];
+    let cfg;
+
+    if (dataEspecial) {
+      // Data especial tem prioridade total sobre a grade semanal
+      if (dataEspecial.tipo === 'fechado') {
+        select.innerHTML = '<option value="">Sem atendimento neste dia</option>';
+        select.disabled = false;
+        return;
+      }
+      // Aberto com horário especial
+      cfg = {
+        ativo:         true,
+        inicio:        dataEspecial.inicio,
+        fim:           dataEspecial.fim,
+        almoco:        dataEspecial.almoco,
+        almoco_inicio: dataEspecial.almoco_inicio,
+        almoco_fim:    dataEspecial.almoco_fim,
+      };
+    } else {
+      const config = configDoc.exists ? configDoc.data() : null;
+      if (!config) { preencherSelectPadrao(select, dataSelecionada, ocupados); return; }
+
+      const [y, mo, d] = dataSelecionada.split('-').map(Number);
+      const diaSemana = new Date(y, mo - 1, d).getDay();
+      const diaKey = DIAS_KEY[diaSemana];
+      cfg = config[diaKey];
+    }
 
     if (!cfg || !cfg.ativo) {
       select.innerHTML = '<option value="">Sem atendimento neste dia</option>';
