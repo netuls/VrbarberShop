@@ -134,14 +134,25 @@ function renderServiceOptions() {
     </div>`).join('');
 }
 
-// ─── Gera slots de horário ─────────────────────────
-function gerarSlots(inicio, fim) {
+// ─── Gera slots de horário (respeita almoço) ──────
+function gerarSlots(inicio, fim, almoco, almoco_inicio, almoco_fim) {
   const slots = [];
   let [h, m] = inicio.split(':').map(Number);
   const [hf, mf] = fim.split(':').map(Number);
   const fimMin = hf * 60 + mf;
+  const almocoInicioMin = almoco && almoco_inicio
+    ? parseInt(almoco_inicio.split(':')[0]) * 60 + parseInt(almoco_inicio.split(':')[1])
+    : -1;
+  const almocoFimMin = almoco && almoco_fim
+    ? parseInt(almoco_fim.split(':')[0]) * 60 + parseInt(almoco_fim.split(':')[1])
+    : -1;
+
   while (h * 60 + m < fimMin) {
-    slots.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+    const cur = h * 60 + m;
+    // Pula horários dentro do intervalo de almoço
+    if (!almoco || cur < almocoInicioMin || cur >= almocoFimMin) {
+      slots.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+    }
     m += 30;
     if (m >= 60) { h++; m -= 60; }
   }
@@ -158,17 +169,23 @@ async function carregarSlotsParaData(dataSelecionada) {
   select.disabled = true;
 
   try {
-    const doc = await firebase.firestore().collection('config').doc('horarios').get();
-    const config = doc.exists ? doc.data() : null;
+    // Busca config de horários e agendamentos já existentes em paralelo
+    const [configDoc, agendSnap] = await Promise.all([
+      firebase.firestore().collection('config').doc('horarios').get(),
+      firebase.firestore().collection('agendamentos')
+        .where('data', '==', dataSelecionada)
+        .where('status', 'in', ['pendente', 'confirmado'])
+        .get()
+    ]);
 
-    if (!config) {
-      preencherSelectPadrao(select);
-      return;
-    }
+    // Horários já ocupados nesse dia
+    const ocupados = new Set(agendSnap.docs.map(d => d.data().horario));
 
-    // Descobre o dia da semana da data selecionada
+    const config = configDoc.exists ? configDoc.data() : null;
+    if (!config) { preencherSelectPadrao(select, dataSelecionada, ocupados); return; }
+
     const [y, mo, d] = dataSelecionada.split('-').map(Number);
-    const diaSemana = new Date(y, mo - 1, d).getDay(); // 0=dom
+    const diaSemana = new Date(y, mo - 1, d).getDay();
     const diaKey = DIAS_KEY[diaSemana];
     const cfg = config[diaKey];
 
@@ -178,21 +195,45 @@ async function carregarSlotsParaData(dataSelecionada) {
       return;
     }
 
-    const slots = gerarSlots(cfg.inicio, cfg.fim);
+    // Se for hoje, filtra horários que já passaram
+    const hoje = new Date().toISOString().split('T')[0];
+    const agora = new Date();
+    const agoraMin = dataSelecionada === hoje ? agora.getHours() * 60 + agora.getMinutes() : -1;
+
+    const slots = gerarSlots(cfg.inicio, cfg.fim, cfg.almoco, cfg.almoco_inicio, cfg.almoco_fim)
+      .filter(s => {
+        const [sh, sm] = s.split(':').map(Number);
+        const slotMin = sh * 60 + sm;
+        return slotMin > agoraMin && !ocupados.has(s);
+      });
+
+    if (!slots.length) {
+      select.innerHTML = '<option value="">Nenhum horário disponível</option>';
+      select.disabled = false;
+      return;
+    }
+
     select.innerHTML = '<option value="">Selecione...</option>' +
       slots.map(s => `<option>${s}</option>`).join('');
     select.disabled = false;
   } catch(e) {
-    preencherSelectPadrao(select);
+    preencherSelectPadrao(select, dataSelecionada, new Set());
   }
 }
 
-function preencherSelectPadrao(select) {
+function preencherSelectPadrao(select, data, ocupados) {
+  const hoje = new Date().toISOString().split('T')[0];
+  const agora = new Date();
+  const agoraMin = data === hoje ? agora.getHours() * 60 + agora.getMinutes() : -1;
   const horarios = ['08:00','08:30','09:00','09:30','10:00','10:30','11:00','11:30',
     '13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30',
     '17:00','17:30','18:00','18:30'];
+  const filtrados = horarios.filter(h => {
+    const [hh, mm] = h.split(':').map(Number);
+    return hh * 60 + mm > agoraMin && !(ocupados && ocupados.has(h));
+  });
   select.innerHTML = '<option value="">Selecione...</option>' +
-    horarios.map(h => `<option>${h}</option>`).join('');
+    filtrados.map(h => `<option>${h}</option>`).join('');
   select.disabled = false;
 }
 
