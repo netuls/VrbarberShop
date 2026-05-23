@@ -11,9 +11,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <style>
-    .btn-excluir { background: #7b1e1e !important; color: #f5f0e8 !important; }
-    .btn-excluir:hover { background: #c0392b !important; }
-    #dash-filter-date::-webkit-calendar-picker-indicator { filter: invert(1) sepia(1) saturate(2) hue-rotate(5deg); cursor: pointer; }
+    #dash-filter-date::-webkit-calendar-picker-indicator { filter: invert(0.6); cursor: pointer; }
     #dash-filter-date { color-scheme: dark; }
     input[type="time"] { color-scheme: dark; }
     .toggle-slider {
@@ -24,6 +22,29 @@
       width: 18px; height: 18px; border-radius: 50%; background: #fff;
       position: absolute; top: 3px; transition: left .2s;
     }
+    /* Inputs inline nos painéis de horários e datas */
+    #horarios-grid input[type="time"],
+    #de-data, #de-desc, #de-tipo, #de-inicio, #de-fim,
+    #de-almoco-inicio, #de-almoco-fim {
+      background: #1e1e1e !important;
+      border: 1px solid #333 !important;
+      color: #f5f0e8 !important;
+    }
+    /* Botão salvar horários */
+    #btn-salvar-horarios {
+      background: #2a2a2a !important;
+      border: 1px solid #444 !important;
+      color: #f5f0e8 !important;
+      font-family: 'Oswald', sans-serif !important;
+      font-size: 12px !important;
+      letter-spacing: 2px !important;
+      text-transform: uppercase !important;
+      padding: 13px 32px !important;
+      border-radius: 6px !important;
+      cursor: pointer !important;
+      transition: background .2s !important;
+    }
+    #btn-salvar-horarios:hover { background: #333 !important; }
   </style>
 </head>
 <body class="admin-body">
@@ -114,13 +135,13 @@
         <div class="recent-section">
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:24px;">
             <h3 style="margin:0;">Agendamentos Recentes</h3>
-            <div style="display:flex;align-items:center;gap:12px;background:#1a1a1a;border:1px solid #c9a84c55;border-radius:12px;padding:10px 18px;">
-              <span style="color:#c9a84c;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;white-space:nowrap;">📅 Filtrar por data</span>
+            <div style="display:flex;align-items:center;gap:12px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;padding:10px 18px;">
+              <span style="color:#aaa;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;white-space:nowrap;">📅 Filtrar por data</span>
               <div style="width:1px;height:20px;background:#333;"></div>
               <input type="date" id="dash-filter-date" onchange="renderDashboard()"
                 style="background:transparent;border:none;outline:none;color:#f5f0e8;font-family:'Roboto',sans-serif;font-size:14px;cursor:pointer;padding:0;min-width:130px;"/>
               <button onclick="clearDashFilter()"
-                style="background:#c9a84c;border:none;color:#0a0a0a;padding:6px 14px;border-radius:6px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:1px;font-weight:700;">
+                style="background:#2a2a2a;border:1px solid #444;color:#f5f0e8;padding:6px 14px;border-radius:4px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:1px;font-weight:700;">
                 LIMPAR
               </button>
             </div>
@@ -169,13 +190,13 @@
           <div id="horarios-grid" style="display:flex;flex-direction:column;gap:10px;margin-bottom:32px;"></div>
           <div style="display:flex;gap:12px;align-items:center;">
             <button onclick="salvarHorarios()" id="btn-salvar-horarios"
-              style="background:#c9a84c;border:none;color:#0a0a0a;padding:14px 36px;font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:4px;font-weight:700;">
+              id="btn-salvar-horarios" style="background:#2a2a2a;border:1px solid #444;color:#f5f0e8;padding:14px 36px;font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:4px;font-weight:700;">
               Salvar Horários
             </button>
             <span id="horarios-status" style="font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:1px;color:#888;"></span>
           </div>
-          <div style="margin-top:36px;padding:20px;background:#161616;border:1px solid #2a2a2a;border-radius:6px;">
-            <p style="font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px;">Como funciona</p>
+          <div style="margin-top:36px;padding:20px;background:#161616;border:1px solid #222;border-radius:6px;">
+            <p style="font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:2px;color:#aaa;text-transform:uppercase;margin-bottom:8px;">Como funciona</p>
             <p style="font-size:13px;color:#888;line-height:1.7;">Ao salvar, os horários ficam disponíveis no site para agendamento. Dias desativados não aparecem para o cliente. Quando o intervalo de almoço está ativo, os horários durante aquele período ficam bloqueados. O intervalo entre horários é sempre de 30 minutos.</p>
           </div>
         </div>
@@ -186,12 +207,12 @@
         <div style="max-width:800px;">
           <div style="margin-bottom:28px;">
             <h3 style="font-family:'Oswald',sans-serif;letter-spacing:2px;text-transform:uppercase;color:#f5f0e8;font-size:16px;margin-bottom:6px;">Datas Especiais de Atendimento</h3>
-            <p style="color:#888;font-size:13px;font-family:'Roboto',sans-serif;line-height:1.6;">Cadastre feriados ou datas específicas com horários diferenciados. Essas datas <strong style="color:#c9a84c;">substituem</strong> a configuração semanal naquele dia — útil para feriados em que você vai abrir, ou dias normais que você vai fechar.</p>
+            <p style="color:#888;font-size:13px;font-family:'Roboto',sans-serif;line-height:1.6;">Cadastre feriados ou datas específicas com horários diferenciados. Essas datas <strong style="color:#f5f0e8;">substituem</strong> a configuração semanal naquele dia — útil para feriados em que você vai abrir, ou dias normais que você vai fechar.</p>
           </div>
 
           <!-- Formulário para adicionar data -->
-          <div style="background:#161616;border:1px solid #c9a84c44;border-radius:8px;padding:24px;margin-bottom:28px;">
-            <p style="font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:18px;">➕ Adicionar Data Especial</p>
+          <div style="background:#161616;border:1px solid #2a2a2a;border-radius:8px;padding:24px;margin-bottom:28px;">
+            <p style="font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:2px;color:#aaa;text-transform:uppercase;margin-bottom:18px;">➕ Adicionar Data Especial</p>
             <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;">
               <div style="display:flex;flex-direction:column;gap:4px;">
                 <span style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;color:#666;text-transform:uppercase;">Data</span>
@@ -250,7 +271,7 @@
             </div>
 
             <button onclick="adicionarDataEspecial()"
-              style="margin-top:20px;background:#c9a84c;border:none;color:#0a0a0a;padding:12px 28px;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:4px;font-weight:700;">
+              style="margin-top:20px;background:#2a2a2a;border:1px solid #444;color:#f5f0e8;padding:12px 28px;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:4px;font-weight:700;">
               Adicionar Data
             </button>
           </div>
@@ -261,10 +282,10 @@
             <div id="datas-list" style="display:flex;flex-direction:column;gap:8px;"></div>
           </div>
 
-          <div style="margin-top:36px;padding:20px;background:#161616;border:1px solid #2a2a2a;border-radius:6px;">
-            <p style="font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px;">Como funciona</p>
+          <div style="margin-top:36px;padding:20px;background:#161616;border:1px solid #222;border-radius:6px;">
+            <p style="font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:2px;color:#aaa;text-transform:uppercase;margin-bottom:8px;">Como funciona</p>
             <p style="font-size:13px;color:#888;line-height:1.7;">As datas especiais têm <strong style="color:#f5f0e8;">prioridade total</strong> sobre a grade semanal. Se você marcar um feriado como <em>Fechado</em>, o cliente não verá horários naquele dia mesmo que seja um dia normalmente ativo. Se marcar como <em>Aberto</em>, o cliente verá os horários especiais que você definir.</p>
-            <p style="font-size:12px;color:#666;line-height:1.7;margin-top:10px;">⚠️ Se aparecer "Erro ao salvar", acesse o <strong style="color:#f5f0e8;">Firebase Console → Firestore → Regras</strong> e certifique-se que a coleção <code style="background:#1a1a1a;padding:2px 6px;border-radius:3px;color:#c9a84c;">config</code> tem permissão de escrita.</p>
+            <p style="font-size:12px;color:#666;line-height:1.7;margin-top:10px;">⚠️ Se aparecer "Erro ao salvar", acesse o <strong style="color:#f5f0e8;">Firebase Console → Firestore → Regras</strong> e certifique-se que a coleção <code style="background:#1a1a1a;padding:2px 6px;border-radius:3px;color:#aaa;">config</code> tem permissão de escrita.</p>
           </div>
         </div>
       </div>
@@ -460,28 +481,39 @@
     function updateStatus(id, status) {
       db.collection('agendamentos').doc(id).update({ status, atualizadoEm: firebase.firestore.FieldValue.serverTimestamp() })
         .then(() => {
+          const ag = allAgendamentos.find(a => a.id === id);
+          if (!ag || !ag.telefone) return;
+          const primeiroNome = (ag.cliente || 'Cliente').split(' ')[0];
+          const phone = ag.telefone.replace(/\D/g, '');
+
           if (status === 'confirmado') {
-            // Busca os dados do agendamento para montar a mensagem ao cliente
-            const ag = allAgendamentos.find(a => a.id === id);
-            if (ag && ag.telefone) {
-              const primeiroNome = (ag.cliente || 'Cliente').split(' ')[0];
-              const lines = [
-                `Olá, *${primeiroNome}*! ✅`,
-                '',
-                'Seu agendamento na *VR Barber Shop* foi *confirmado*!',
-                '',
-                '📋 *Detalhes:*',
-                '*Serviço:* ' + (ag.servico || '--'),
-                '*Data:* ' + (ag.data ? formatDate(ag.data) : '--'),
-                '*Horário:* ' + (ag.horario || '--'),
-                '*Valor:* R$' + (ag.preco || 0).toFixed(2).replace('.', ','),
-                '',
-                'Te esperamos! Qualquer dúvida é só chamar. ✂️',
-              ];
-              const phone = ag.telefone.replace(/\D/g, '');
-              const msg = encodeURIComponent(lines.join('\n'));
-              window.open(`https://wa.me/55${phone}?text=${msg}`, '_blank');
-            }
+            const lines = [
+              `Olá, *${primeiroNome}*! ✅`,
+              '',
+              'Seu agendamento na *VR Barber Shop* foi *confirmado*!',
+              '',
+              '📋 *Detalhes:*',
+              '*Serviço:* ' + (ag.servico || '--'),
+              '*Data:* ' + (ag.data ? formatDate(ag.data) : '--'),
+              '*Horário:* ' + (ag.horario || '--'),
+              '*Valor:* R$' + (ag.preco || 0).toFixed(2).replace('.', ','),
+              '',
+              'Te esperamos! Qualquer dúvida é só chamar. ✂️',
+            ];
+            window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(lines.join('\n'))}`, '_blank');
+          }
+
+          if (status === 'concluido') {
+            const lines = [
+              `Olá, *${primeiroNome}*! 🙏`,
+              '',
+              'Obrigado por visitar a *VR Barber Shop* hoje!',
+              '',
+              'Esperamos que tenha gostado do serviço. Quando precisar, estamos aqui.',
+              '',
+              '✂️ Até a próxima!',
+            ];
+            window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(lines.join('\n'))}`, '_blank');
           }
         })
         .catch(() => alert('Erro ao atualizar status.'));
@@ -574,14 +606,14 @@
         const on  = cfg.ativo;
         const alOn = cfg.almoco || false;
         return `<div style="
-            background:#161616; border:1px solid ${on ? '#c9a84c55' : '#252525'};
+            background:#161616; border:1px solid ${on ? '#444' : '#252525'};
             border-radius:6px; padding:16px 20px;
             display:flex; flex-direction:column; gap:14px; transition:border .2s;">
 
           <!-- Linha principal: toggle + horários de atendimento -->
           <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
             <label style="display:flex;align-items:center;gap:10px;cursor:pointer;min-width:170px;" onclick="toggleDia('${dia.key}')">
-              <div style="width:44px;height:24px;border-radius:12px;background:${on ? '#c9a84c' : '#333'};position:relative;transition:background .2s;flex-shrink:0;">
+              <div style="width:44px;height:24px;border-radius:12px;background:${on ? '#555' : '#2a2a2a'};position:relative;transition:background .2s;flex-shrink:0;">
                 <div style="width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:3px;left:${on ? '23px' : '3px'};transition:left .2s;"></div>
               </div>
               <span style="font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:1px;color:${on ? '#f5f0e8' : '#555'};transition:color .2s;">${dia.label}</span>
@@ -605,17 +637,17 @@
 
             <div style="margin-left:auto;${on ? '' : 'opacity:.3;'}">
               <span style="font-size:11px;color:#666;font-family:'Oswald',sans-serif;letter-spacing:1px;">Horarios: </span>
-              <span style="font-size:12px;color:#c9a84c;font-family:'Roboto',sans-serif;" id="preview-${dia.key}">${previewSlots(cfg.inicio, cfg.fim, cfg.almoco, cfg.almoco_inicio, cfg.almoco_fim)}</span>
+              <span style="font-size:12px;color:#aaa;font-family:'Roboto',sans-serif;" id="preview-${dia.key}">${previewSlots(cfg.inicio, cfg.fim, cfg.almoco, cfg.almoco_inicio, cfg.almoco_fim)}</span>
             </div>
           </div>
 
           <!-- Linha de almoço -->
-          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:12px 14px;border-radius:5px;background:#111;border:1px solid ${alOn ? '#c9a84c33' : '#1e1e1e'};${on ? '' : 'opacity:.3;pointer-events:none;'}">
+          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:12px 14px;border-radius:5px;background:#111;border:1px solid ${alOn ? '#333' : '#1e1e1e'};${on ? '' : 'opacity:.3;pointer-events:none;'}">
             <label style="display:flex;align-items:center;gap:9px;cursor:pointer;min-width:170px;" onclick="toggleAlmoco('${dia.key}')">
-              <div style="width:36px;height:20px;border-radius:10px;background:${alOn ? '#c9a84c' : '#333'};position:relative;transition:background .2s;flex-shrink:0;">
+              <div style="width:36px;height:20px;border-radius:10px;background:${alOn ? '#555' : '#2a2a2a'};position:relative;transition:background .2s;flex-shrink:0;">
                 <div style="width:14px;height:14px;border-radius:50%;background:#fff;position:absolute;top:3px;left:${alOn ? '19px' : '3px'};transition:left .2s;"></div>
               </div>
-              <span style="font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:1px;color:${alOn ? '#c9a84c' : '#555'};transition:color .2s;">🍽 Intervalo de Almoço</span>
+              <span style="font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:1px;color:${alOn ? '#f5f0e8' : '#555'};transition:color .2s;">🍽 Intervalo de Almoço</span>
             </label>
 
             <div style="display:flex;align-items:center;gap:10px;${alOn ? '' : 'opacity:.3;pointer-events:none;'}">
@@ -671,7 +703,7 @@
       try {
         await db.collection('config').doc('horarios').set(horariosConfig);
         st.textContent = 'Salvo com sucesso!';
-        st.style.color = '#c9a84c';
+        st.style.color = '#f5f0e8';
         setTimeout(() => { st.textContent = ''; }, 3000);
       } catch(e) {
         st.textContent = 'Erro ao salvar.';
@@ -706,7 +738,7 @@
       const toggle = document.getElementById('de-almoco-toggle');
       const knob   = document.getElementById('de-almoco-knob');
       const wrap   = document.getElementById('de-almoco-wrap');
-      toggle.style.background = deAlmocoAtivo ? '#c9a84c' : '#333';
+      toggle.style.background = deAlmocoAtivo ? '#555' : '#2a2a2a';
       knob.style.left         = deAlmocoAtivo ? '19px' : '3px';
       wrap.style.opacity      = deAlmocoAtivo ? '1' : '.3';
       wrap.style.pointerEvents = deAlmocoAtivo ? 'auto' : 'none';
@@ -737,7 +769,7 @@
         const dataFmt = day + '/' + m + '/' + y;
         let horarioInfo = isFechado ? 'Fechado' : (d.inicio + ' → ' + d.fim);
         if (!isFechado && d.almoco) horarioInfo += ' | Almoço: ' + d.almoco_inicio + '→' + d.almoco_fim;
-        return `<div style="background:#161616;border:1px solid #252525;border-radius:6px;padding:14px 18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        return `<div style="background:#161616;border:1px solid #222;border-radius:6px;padding:14px 18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
           <span style="font-family:'Oswald',sans-serif;font-size:15px;color:#f5f0e8;letter-spacing:1px;min-width:100px;">${dataFmt}</span>
           <span style="font-family:'Roboto',sans-serif;font-size:13px;color:#aaa;flex:1;">${d.desc || '—'}</span>
           <span style="font-family:'Roboto',sans-serif;font-size:12px;color:${cor};">${icone} ${horarioInfo}</span>
