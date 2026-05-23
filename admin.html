@@ -48,6 +48,9 @@
         <a href="#" class="nav-item" onclick="showTab('agendamentos', this)">
           <span class="nav-icon">📅</span> <span>Agendamentos</span>
         </a>
+        <a href="#" class="nav-item" onclick="showTab('horarios', this)">
+          <span class="nav-icon">🕐</span> <span>Horários</span>
+        </a>
       </nav>
       <div class="sidebar-bottom">
         <button class="btn-logout" onclick="doLogout()">Sair</button>
@@ -147,8 +150,30 @@
       </div>
 
 
-    </main>
-  </div>
+      <!-- HORÁRIOS -->
+      <div class="tab-content" id="tab-horarios">
+        <div style="max-width:780px;">
+          <div style="margin-bottom:28px;">
+            <h3 style="font-family:'Oswald',sans-serif;letter-spacing:2px;text-transform:uppercase;color:#f5f0e8;font-size:16px;margin-bottom:6px;">Configurar Horários de Atendimento</h3>
+            <p style="color:#888;font-size:13px;font-family:'Roboto',sans-serif;">Ative os dias e defina o horário. Os horários disponíveis no site são gerados automaticamente com intervalos de 30 minutos.</p>
+          </div>
+
+          <div id="horarios-grid" style="display:flex;flex-direction:column;gap:12px;margin-bottom:32px;"></div>
+
+          <div style="display:flex;gap:12px;align-items:center;">
+            <button onclick="salvarHorarios()" id="btn-salvar-horarios" style="background:#c9a84c;border:none;color:#0a0a0a;padding:14px 36px;font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:4px;font-weight:700;transition:all .2s;">Salvar Horários</button>
+            <span id="horarios-status" style="font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:1px;color:#888;"></span>
+          </div>
+
+          <div style="margin-top:40px;padding:20px;background:#161616;border:1px solid #333;border-radius:6px;">
+            <p style="font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:10px;">Como funciona</p>
+            <p style="font-size:13px;color:#888;line-height:1.7;">Ao salvar, os horários ficam disponíveis automaticamente no site para os clientes agendarem. Se um dia estiver desativado, nenhum horário aparece para aquele dia. O intervalo entre horários é sempre de 30 minutos.</p>
+          </div>
+        </div>
+      </div>
+
+
+
 
   <script>
     // ── Firebase config ──────────────────────────────
@@ -264,8 +289,9 @@
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
       document.getElementById('tab-' + tab).classList.add('active');
       el.classList.add('active');
-      const titles = { dashboard: 'Dashboard', agendamentos: 'Agendamentos', servicos: 'Tabela de Serviços' };
+      const titles = { dashboard: 'Dashboard', agendamentos: 'Agendamentos', horarios: 'Horarios de Atendimento' };
       document.getElementById('page-title').textContent = titles[tab];
+      if (tab === 'horarios') carregarHorarios();
     }
 
     function loadAgendamentos() {
@@ -426,7 +452,161 @@
       URL.revokeObjectURL(url);
     }
 
-    function formatDate(d) {
+
+    // ══════════════════════════════════════════════
+    //  HORÁRIOS DE ATENDIMENTO
+    // ══════════════════════════════════════════════
+
+    const DIAS_SEMANA = [
+      { key: 'domingo',    label: 'Domingo' },
+      { key: 'segunda',    label: 'Segunda-feira' },
+      { key: 'terca',      label: 'Terça-feira' },
+      { key: 'quarta',     label: 'Quarta-feira' },
+      { key: 'quinta',     label: 'Quinta-feira' },
+      { key: 'sexta',      label: 'Sexta-feira' },
+      { key: 'sabado',     label: 'Sábado' },
+    ];
+
+    // Config padrão
+    const DEFAULT_CONFIG = {
+      domingo:  { ativo: false, inicio: '08:00', fim: '18:00' },
+      segunda:  { ativo: true,  inicio: '08:00', fim: '19:00' },
+      terca:    { ativo: true,  inicio: '08:00', fim: '19:00' },
+      quarta:   { ativo: true,  inicio: '08:00', fim: '19:00' },
+      quinta:   { ativo: true,  inicio: '08:00', fim: '19:00' },
+      sexta:    { ativo: true,  inicio: '08:00', fim: '19:00' },
+      sabado:   { ativo: true,  inicio: '08:00', fim: '17:00' },
+    };
+
+    let horariosConfig = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+
+    async function carregarHorarios() {
+      try {
+        const doc = await db.collection('config').doc('horarios').get();
+        if (doc.exists) {
+          horariosConfig = { ...DEFAULT_CONFIG, ...doc.data() };
+        }
+      } catch(e) {}
+      renderHorariosGrid();
+    }
+
+    function renderHorariosGrid() {
+      const grid = document.getElementById('horarios-grid');
+      if (!grid) return;
+
+      grid.innerHTML = DIAS_SEMANA.map(dia => {
+        const cfg = horariosConfig[dia.key] || DEFAULT_CONFIG[dia.key];
+        const ativo = cfg.ativo;
+        return `
+        <div class="horario-row" id="row-${dia.key}" style="
+          background:#161616;
+          border:1px solid ${ativo ? '#c9a84c44' : '#2a2a2a'};
+          border-radius:6px;
+          padding:18px 24px;
+          display:flex;
+          align-items:center;
+          gap:20px;
+          flex-wrap:wrap;
+          transition:all .2s;
+        ">
+          <!-- Toggle -->
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;min-width:160px;">
+            <div class="toggle-wrap" onclick="toggleDia('${dia.key}')" style="
+              width:44px;height:24px;border-radius:12px;
+              background:${ativo ? '#c9a84c' : '#333'};
+              position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;
+            ">
+              <div style="
+                width:18px;height:18px;border-radius:50%;background:#fff;
+                position:absolute;top:3px;
+                left:${ativo ? '23px' : '3px'};
+                transition:left .2s;
+              "></div>
+            </div>
+            <span style="font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:1px;color:${ativo ? '#f5f0e8' : '#555'};transition:color .2s;">${dia.label}</span>
+          </label>
+
+          <!-- Horários -->
+          <div style="display:flex;align-items:center;gap:12px;${ativo ? '' : 'opacity:.35;pointer-events:none;'}">
+            <div style="display:flex;flex-direction:column;gap:4px;">
+              <span style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;color:#888;text-transform:uppercase;">Abertura</span>
+              <input type="time" id="inicio-${dia.key}" value="${cfg.inicio}"
+                style="background:#1e1e1e;border:1px solid #333;border-radius:4px;padding:8px 12px;color:#f5f0e8;font-family:'Roboto',sans-serif;font-size:14px;outline:none;color-scheme:dark;"
+                onchange="updateHorario('${dia.key}')"/>
+            </div>
+            <span style="color:#555;font-size:18px;margin-top:16px;">→</span>
+            <div style="display:flex;flex-direction:column;gap:4px;">
+              <span style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;color:#888;text-transform:uppercase;">Fechamento</span>
+              <input type="time" id="fim-${dia.key}" value="${cfg.fim}"
+                style="background:#1e1e1e;border:1px solid #333;border-radius:4px;padding:8px 12px;color:#f5f0e8;font-family:'Roboto',sans-serif;font-size:14px;outline:none;color-scheme:dark;"
+                onchange="updateHorario('${dia.key}')"/>
+            </div>
+          </div>
+
+          <!-- Preview dos horários gerados -->
+          <div style="margin-left:auto;${ativo ? '' : 'opacity:.35;'}">
+            <span style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;color:#888;text-transform:uppercase;">Horários gerados: </span>
+            <span style="font-family:'Roboto',sans-serif;font-size:12px;color:#c9a84c;" id="preview-${dia.key}">${previewHorarios(cfg.inicio, cfg.fim)}</span>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function previewHorarios(inicio, fim) {
+      const slots = gerarSlots(inicio, fim);
+      if (!slots.length) return '—';
+      if (slots.length <= 4) return slots.join(' · ');
+      return `${slots[0]} · ${slots[1]} · ... · ${slots[slots.length-1]} (${slots.length} horários)`;
+    }
+
+    function gerarSlots(inicio, fim) {
+      const slots = [];
+      let [h, m] = inicio.split(':').map(Number);
+      const [hf, mf] = fim.split(':').map(Number);
+      const fimMin = hf * 60 + mf;
+      while (h * 60 + m < fimMin) {
+        slots.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+        m += 30;
+        if (m >= 60) { h++; m -= 60; }
+      }
+      return slots;
+    }
+
+    function toggleDia(key) {
+      horariosConfig[key].ativo = !horariosConfig[key].ativo;
+      renderHorariosGrid();
+    }
+
+    function updateHorario(key) {
+      const inicio = document.getElementById('inicio-' + key).value;
+      const fim    = document.getElementById('fim-' + key).value;
+      horariosConfig[key].inicio = inicio;
+      horariosConfig[key].fim    = fim;
+      const prev = document.getElementById('preview-' + key);
+      if (prev) prev.textContent = previewHorarios(inicio, fim);
+    }
+
+    async function salvarHorarios() {
+      const btn = document.getElementById('btn-salvar-horarios');
+      const status = document.getElementById('horarios-status');
+      btn.textContent = 'Salvando...';
+      btn.disabled = true;
+      try {
+        await db.collection('config').doc('horarios').set(horariosConfig);
+        status.textContent = 'Salvo com sucesso!';
+        status.style.color = '#c9a84c';
+        setTimeout(() => { status.textContent = ''; }, 3000);
+      } catch(e) {
+        status.textContent = 'Erro ao salvar.';
+        status.style.color = '#c0392b';
+      }
+      btn.textContent = 'Salvar Horários';
+      btn.disabled = false;
+    }
+
+    // Carrega horários quando entra na aba
+    const _origShowTab = showTab;
+  
       const [y, m, day] = d.split('-');
       return `${day}/${m}/${y}`;
     }
