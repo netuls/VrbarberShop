@@ -2,7 +2,15 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json"/>
+  <meta name="theme-color" content="#0a0a0a"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="VR Admin"/>
+  <link rel="apple-touch-icon" href="logo.png"/>
   <title>Admin — VR Barber Shop</title>
   <link rel="icon" type="image/png" href="logo.png"/>
   <link rel="stylesheet" href="admin.css"/>
@@ -16,6 +24,22 @@
     #stat-card-receita-dia { animation: fadeInCard .35s ease; }
     @keyframes fadeInCard { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
     #dash-date-filter-bar input[type="date"]:focus { border-color: #c8a96e !important; box-shadow: 0 0 0 2px rgba(200,169,110,.15); }
+
+    /* ── iOS PWA Safe Area ── */
+    @supports (padding-bottom: env(safe-area-inset-bottom)) {
+      .bottom-nav {
+        height: calc(62px + env(safe-area-inset-bottom)) !important;
+        padding-bottom: env(safe-area-inset-bottom) !important;
+      }
+      .admin-main {
+        padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important;
+      }
+    }
+    /* Evita que conteudo fique atras do notch lateral */
+    body {
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+    }
     input[type="time"] { color-scheme: dark; }
     .toggle-slider {
       width: 44px; height: 24px; border-radius: 12px;
@@ -693,20 +717,20 @@
             if (!ag || !ag.telefone) return;
             const primeiroNome = (ag.cliente || 'Cliente').split(' ')[0];
             const phone = ag.telefone.replace(/\D/g, '');
-            const lines = [
-              `Olá, *${primeiroNome}*! ✅`,
+            const msg = [
+              'Ola, *' + primeiroNome + '*!',
               '',
               'Seu agendamento na *VR Barber Shop* foi *confirmado*!',
               '',
-              '📋 *Detalhes:*',
-              '*Serviço:* ' + (ag.servico || '--'),
+              '*Detalhes:*',
+              '*Servico:* ' + (ag.servico || '--'),
               '*Data:* ' + (ag.data ? formatDate(ag.data) : '--'),
-              '*Horário:* ' + (ag.horario || '--'),
+              '*Horario:* ' + (ag.horario || '--'),
               '*Valor:* R$' + (ag.preco || 0).toFixed(2).replace('.', ','),
               '',
-              'Te esperamos! Qualquer dúvida é só chamar. ✂️',
-            ];
-            window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(lines.join('\n'))}`, '_blank');
+              'Te esperamos! Qualquer duvida e so chamar.',
+            ].join('\n');
+            window.open('https://wa.me/55' + phone + '?text=' + encodeURIComponent(msg), '_blank');
           }
         })
         .catch(() => alert('Erro ao atualizar status.'));
@@ -1089,5 +1113,15 @@
     </a>
   </nav>
 
+  <script>
+    // Registro do Service Worker (PWA)
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js")
+          .then(reg => console.log("SW registrado:", reg.scope))
+          .catch(err => console.warn("SW falhou:", err));
+      });
+    }
+  </script>
 </body>
 </html>
