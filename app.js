@@ -137,20 +137,28 @@ function renderServiceOptions() {
 // ─── Gera slots de horário (respeita almoço) ──────
 function gerarSlots(inicio, fim, almoco, almoco_inicio, almoco_fim) {
   const slots = [];
+  if (!inicio || !fim) return slots;
   let [h, m] = inicio.split(':').map(Number);
   const [hf, mf] = fim.split(':').map(Number);
   const fimMin = hf * 60 + mf;
-  const almocoInicioMin = almoco && almoco_inicio
+
+  // Só calcula pausa se almoco===true E os campos existem no formato HH:MM
+  const pausaAtiva = almoco === true
+    && typeof almoco_inicio === 'string' && almoco_inicio.includes(':')
+    && typeof almoco_fim    === 'string' && almoco_fim.includes(':');
+
+  const pausaInicio = pausaAtiva
     ? parseInt(almoco_inicio.split(':')[0]) * 60 + parseInt(almoco_inicio.split(':')[1])
     : -1;
-  const almocoFimMin = almoco && almoco_fim
+  const pausaFim = pausaAtiva
     ? parseInt(almoco_fim.split(':')[0]) * 60 + parseInt(almoco_fim.split(':')[1])
     : -1;
 
   while (h * 60 + m < fimMin) {
     const cur = h * 60 + m;
-    // Pula horários dentro do intervalo de almoço
-    if (!almoco || cur < almocoInicioMin || cur >= almocoFimMin) {
+    // Bloqueia horários dentro da pausa de almoço
+    const naPausa = pausaAtiva && cur >= pausaInicio && cur < pausaFim;
+    if (!naPausa) {
       slots.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
     }
     m += 30;
@@ -225,7 +233,7 @@ async function carregarSlotsParaData(dataSelecionada) {
     const agora = new Date();
     const agoraMin = dataSelecionada === hoje ? agora.getHours() * 60 + agora.getMinutes() : -1;
 
-    const slots = gerarSlots(cfg.inicio, cfg.fim, cfg.almoco, cfg.almoco_inicio, cfg.almoco_fim)
+    const slots = gerarSlots(cfg.inicio, cfg.fim, cfg.almoco === true, cfg.almoco_inicio || '', cfg.almoco_fim || '')
       .filter(s => {
         const [sh, sm] = s.split(':').map(Number);
         const slotMin = sh * 60 + sm;
