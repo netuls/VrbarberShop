@@ -8,8 +8,6 @@
   <link rel="stylesheet" href="admin.css"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Bebas+Neue&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet"/>
-
-  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <style>
@@ -17,6 +15,15 @@
     .btn-excluir:hover { background: #c0392b !important; }
     #dash-filter-date::-webkit-calendar-picker-indicator { filter: invert(1) sepia(1) saturate(2) hue-rotate(5deg); cursor: pointer; }
     #dash-filter-date { color-scheme: dark; }
+    input[type="time"] { color-scheme: dark; }
+    .toggle-slider {
+      width: 44px; height: 24px; border-radius: 12px;
+      position: relative; cursor: pointer; transition: background .2s; flex-shrink: 0; display:inline-block;
+    }
+    .toggle-knob {
+      width: 18px; height: 18px; border-radius: 50%; background: #fff;
+      position: absolute; top: 3px; transition: left .2s;
+    }
   </style>
 </head>
 <body class="admin-body">
@@ -102,15 +109,15 @@
           </div>
         </div>
         <div class="recent-section">
-          <div style="display:flex!important;align-items:center!important;justify-content:space-between!important;flex-wrap:wrap!important;gap:16px!important;margin-bottom:24px!important;">
-            <h3 style="margin:0!important;padding:0!important;">Agendamentos Recentes</h3>
-            <div style="display:flex!important;align-items:center!important;gap:12px!important;background:#1a1a1a!important;border:1px solid #c9a84c55!important;border-radius:12px!important;padding:10px 18px!important;">
-              <span style="color:#c9a84c!important;font-family:'Oswald',sans-serif!important;font-size:12px!important;letter-spacing:2px!important;text-transform:uppercase!important;white-space:nowrap!important;">📅 Filtrar por data</span>
-              <div style="width:1px!important;height:20px!important;background:#333!important;"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:24px;">
+            <h3 style="margin:0;">Agendamentos Recentes</h3>
+            <div style="display:flex;align-items:center;gap:12px;background:#1a1a1a;border:1px solid #c9a84c55;border-radius:12px;padding:10px 18px;">
+              <span style="color:#c9a84c;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;white-space:nowrap;">📅 Filtrar por data</span>
+              <div style="width:1px;height:20px;background:#333;"></div>
               <input type="date" id="dash-filter-date" onchange="renderDashboard()"
-                style="background:transparent!important;border:none!important;outline:none!important;color:#f5f0e8!important;font-family:'Roboto',sans-serif!important;font-size:14px!important;cursor:pointer!important;padding:0!important;min-width:130px!important;"/>
+                style="background:transparent;border:none;outline:none;color:#f5f0e8;font-family:'Roboto',sans-serif;font-size:14px;cursor:pointer;padding:0;min-width:130px;"/>
               <button onclick="clearDashFilter()"
-                style="background:#c9a84c!important;border:none!important;color:#0a0a0a!important;padding:6px 14px!important;border-radius:6px!important;cursor:pointer!important;font-family:'Oswald',sans-serif!important;font-size:12px!important;letter-spacing:1px!important;font-weight:700!important;">
+                style="background:#c9a84c;border:none;color:#0a0a0a;padding:6px 14px;border-radius:6px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:1px;font-weight:700;">
                 LIMPAR
               </button>
             </div>
@@ -149,34 +156,33 @@
         </div>
       </div>
 
-
       <!-- HORÁRIOS -->
       <div class="tab-content" id="tab-horarios">
-        <div style="max-width:780px;">
+        <div style="max-width:800px;">
           <div style="margin-bottom:28px;">
             <h3 style="font-family:'Oswald',sans-serif;letter-spacing:2px;text-transform:uppercase;color:#f5f0e8;font-size:16px;margin-bottom:6px;">Configurar Horários de Atendimento</h3>
-            <p style="color:#888;font-size:13px;font-family:'Roboto',sans-serif;">Ative os dias e defina o horário. Os horários disponíveis no site são gerados automaticamente com intervalos de 30 minutos.</p>
+            <p style="color:#888;font-size:13px;font-family:'Roboto',sans-serif;line-height:1.6;">Ative os dias e defina o horário de abertura e fechamento. Os horários aparecem automaticamente no site com intervalos de 30 minutos.</p>
           </div>
-
-          <div id="horarios-grid" style="display:flex;flex-direction:column;gap:12px;margin-bottom:32px;"></div>
-
+          <div id="horarios-grid" style="display:flex;flex-direction:column;gap:10px;margin-bottom:32px;"></div>
           <div style="display:flex;gap:12px;align-items:center;">
-            <button onclick="salvarHorarios()" id="btn-salvar-horarios" style="background:#c9a84c;border:none;color:#0a0a0a;padding:14px 36px;font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:4px;font-weight:700;transition:all .2s;">Salvar Horários</button>
+            <button onclick="salvarHorarios()" id="btn-salvar-horarios"
+              style="background:#c9a84c;border:none;color:#0a0a0a;padding:14px 36px;font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:4px;font-weight:700;">
+              Salvar Horários
+            </button>
             <span id="horarios-status" style="font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:1px;color:#888;"></span>
           </div>
-
-          <div style="margin-top:40px;padding:20px;background:#161616;border:1px solid #333;border-radius:6px;">
-            <p style="font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:10px;">Como funciona</p>
-            <p style="font-size:13px;color:#888;line-height:1.7;">Ao salvar, os horários ficam disponíveis automaticamente no site para os clientes agendarem. Se um dia estiver desativado, nenhum horário aparece para aquele dia. O intervalo entre horários é sempre de 30 minutos.</p>
+          <div style="margin-top:36px;padding:20px;background:#161616;border:1px solid #2a2a2a;border-radius:6px;">
+            <p style="font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px;">Como funciona</p>
+            <p style="font-size:13px;color:#888;line-height:1.7;">Ao salvar, os horários ficam disponíveis no site para agendamento. Dias desativados não aparecem para o cliente. O intervalo entre horários é sempre de 30 minutos.</p>
           </div>
         </div>
       </div>
 
-
-
+    </main>
+  </div>
 
   <script>
-    // ── Firebase config ──────────────────────────────
+    // ── Firebase ─────────────────────────────────────
     const firebaseConfig = {
       apiKey: "AIzaSyAI6Z4Ay6atavjrsBAfc0XWndjeAX8zbCM",
       authDomain: "admin-restaurante-ebc77.firebaseapp.com",
@@ -185,58 +191,47 @@
       messagingSenderId: "883332092146",
       appId: "1:883332092146:web:43af09519de61e87f1006b"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // ── Login simples (sem Firebase Auth) ────────────
-    const ADMIN_PASS = '59360102'; // ← troque aqui quando quiser
+    // ── Login ────────────────────────────────────────
+    const ADMIN_PASS = '59360102';
 
-    // ── Dados de serviços e planos ───────────────────
     const SERVICES = [
       { id: 'corte',             name: 'Corte',                        price: 25 },
       { id: 'corte_sobrancelha', name: 'Corte + Sobrancelha',         price: 30 },
       { id: 'corte_barba',       name: 'Corte + Barba',                price: 45 },
       { id: 'corte_barba_sob',   name: 'Corte + Barba + Sobrancelha', price: 45 },
       { id: 'barba',             name: 'Barba',                        price: 20 },
-      { id: 'sobrancelha',       name: 'Sobrancelha',                  price: 5 },
+      { id: 'sobrancelha',       name: 'Sobrancelha',                  price: 5  },
       { id: 'nevou_corte',       name: 'Nevou + Corte',                price: 90 },
       { id: 'luzes_corte',       name: 'Luzes + Corte',                price: 75 },
-      { id: 'hidratacao',        name: 'Hidratação',                   price: 10 }
+      { id: 'hidratacao',        name: 'Hidratacao',                   price: 10 }
     ];
 
     const PLANS = [
-      { name: 'Básico',    price: 80,  features: ['4 cortes por mês','Prioridade na marcação','5% desconto antecipado'] },
-      { name: 'Essencial', price: 105, features: ['Corte + Sobrancelha ilimitado','Prioridade na marcação','5% desconto antecipado'] },
-      { name: 'Premium',   price: 135, features: ['Corte + Barba + Sobrancelha ilimitado','Prioridade na marcação','Brinde: lavagem inclusa','10% desconto antecipado'] }
+      { name: 'Basico',    price: 80,  features: ['4 cortes por mes','Prioridade na marcacao','5% desconto antecipado'] },
+      { name: 'Essencial', price: 105, features: ['Corte + Sobrancelha ilimitado','Prioridade na marcacao','5% desconto antecipado'] },
+      { name: 'Premium',   price: 135, features: ['Corte + Barba + Sobrancelha ilimitado','Prioridade na marcacao','Brinde: lavagem inclusa','10% desconto antecipado'] }
     ];
 
-    // ── Estado ───────────────────────────────────────
     let allAgendamentos = [];
     let unsubscribe = null;
 
-    // ── Auth simples ──────────────────────────────────
+    // ── Auth ─────────────────────────────────────────
     function doLogin() {
       const pass  = document.getElementById('login-pass').value;
       const errEl = document.getElementById('login-error');
       errEl.textContent = '';
-
-      if (!pass) {
-        errEl.textContent = 'Digite a senha.';
-        return;
-      }
-
+      if (!pass) { errEl.textContent = 'Digite a senha.'; return; }
       const btn = document.querySelector('.btn-login');
       btn.textContent = 'Entrando...';
       btn.disabled = true;
-
       setTimeout(() => {
         if (pass === ADMIN_PASS) {
           sessionStorage.setItem('vr_admin', '1');
-          const loginScreen = document.getElementById('login-screen');
-          const adminPanel = document.getElementById('admin-panel');
-          loginScreen.style.cssText = 'display:none!important;visibility:hidden!important;z-index:-1!important;';
-          adminPanel.style.cssText = 'display:flex!important;visibility:visible!important;opacity:1!important;';
+          document.getElementById('login-screen').style.cssText = 'display:none!important;';
+          document.getElementById('admin-panel').style.cssText = 'display:flex!important;';
           initAdmin();
         } else {
           errEl.textContent = 'Senha incorreta.';
@@ -249,54 +244,45 @@
     function doLogout() {
       if (unsubscribe) unsubscribe();
       sessionStorage.removeItem('vr_admin');
-      document.getElementById('login-screen').style.cssText = 'display:flex!important;visibility:visible!important;z-index:999!important;';
-      document.getElementById('admin-panel').style.cssText = 'display:none!important;visibility:hidden!important;';
+      document.getElementById('login-screen').style.cssText = 'display:flex!important;';
+      document.getElementById('admin-panel').style.cssText = 'display:none!important;';
       document.getElementById('login-pass').value = '';
       document.getElementById('login-error').textContent = '';
       const btn = document.querySelector('.btn-login');
       btn.textContent = 'Entrar';
       btn.disabled = false;
     }
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none') {
-        doLogin();
-      }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none') doLogin();
     });
 
-    // Verifica se já estava logado na sessão
     if (sessionStorage.getItem('vr_admin') === '1') {
-      document.getElementById('login-screen').style.cssText = 'display:none!important;visibility:hidden!important;z-index:-1!important;';
-      document.getElementById('admin-panel').style.cssText = 'display:flex!important;visibility:visible!important;opacity:1!important;';
+      document.getElementById('login-screen').style.cssText = 'display:none!important;';
+      document.getElementById('admin-panel').style.cssText = 'display:flex!important;';
       initAdmin();
     }
 
     function initAdmin() {
       const el = document.getElementById('admin-date');
-      if (el) {
-        el.textContent = new Date().toLocaleDateString('pt-BR', {
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        });
-      }
-      renderServicesTab();
+      if (el) el.textContent = new Date().toLocaleDateString('pt-BR', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
       loadAgendamentos();
     }
 
+    // ── Tabs ─────────────────────────────────────────
     function showTab(tab, el) {
       document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
       document.getElementById('tab-' + tab).classList.add('active');
       el.classList.add('active');
       const titles = { dashboard: 'Dashboard', agendamentos: 'Agendamentos', horarios: 'Horarios de Atendimento' };
-      document.getElementById('page-title').textContent = titles[tab];
+      document.getElementById('page-title').textContent = titles[tab] || tab;
       if (tab === 'horarios') carregarHorarios();
     }
 
+    // ── Agendamentos ─────────────────────────────────
     function loadAgendamentos() {
-      const q = db.collection('agendamentos').orderBy('criadoEm', 'desc');
-      unsubscribe = q.onSnapshot(snapshot => {
+      unsubscribe = db.collection('agendamentos').orderBy('criadoEm', 'desc').onSnapshot(snapshot => {
         allAgendamentos = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
         renderDashboard();
         renderAgendamentosTable(allAgendamentos);
@@ -311,7 +297,7 @@
     function renderDashboard() {
       const hoje = new Date().toISOString().split('T')[0];
       const mesAtual = new Date().toISOString().slice(0, 7);
-      const filterDate = document.getElementById('dash-filter-date') ? document.getElementById('dash-filter-date').value : '';
+      const filterDate = document.getElementById('dash-filter-date').value;
 
       document.getElementById('stat-hoje').textContent = allAgendamentos.filter(a => a.data === hoje).length;
       document.getElementById('stat-pendentes').textContent = allAgendamentos.filter(a => a.status === 'pendente').length;
@@ -322,241 +308,115 @@
         .reduce((acc, a) => acc + (a.preco || 0), 0);
       document.getElementById('stat-receita').textContent = 'R$' + receita.toFixed(2).replace('.', ',');
 
-      let recent = filterDate
-        ? allAgendamentos.filter(a => a.data === filterDate)
-        : allAgendamentos.slice(0, 8);
-
+      const recent = filterDate ? allAgendamentos.filter(a => a.data === filterDate) : allAgendamentos.slice(0, 8);
       const el = document.getElementById('recent-list');
       if (!recent.length) {
-        el.innerHTML = '<p style="color:var(--gray);padding:20px;font-family:var(--font-head);letter-spacing:1px;">Nenhum agendamento encontrado.</p>';
+        el.innerHTML = '<p style="color:#555;padding:20px;font-family:Oswald,sans-serif;letter-spacing:1px;">Nenhum agendamento encontrado.</p>';
         return;
       }
-
-      el.innerHTML = `
-        <table class="admin-table">
-          <thead><tr><th>Cliente</th><th>Serviço</th><th>Data</th><th>Horário</th><th>Valor</th><th>Status</th></tr></thead>
-          <tbody>
-            ${recent.map(a => `
-              <tr>
-                <td>${a.cliente || '—'}</td>
-                <td>${a.servico || '—'}</td>
-                <td>${a.data ? formatDate(a.data) : '—'}</td>
-                <td>${a.horario || '—'}</td>
-                <td style="color:var(--gold);font-family:var(--font-display);font-size:16px;">R$${(a.preco || 0).toFixed(2).replace('.', ',')}</td>
-                <td>${badgeHTML(a.status)}</td>
-              </tr>`).join('')}
-          </tbody>
-        </table>`;
+      el.innerHTML = `<table class="admin-table">
+        <thead><tr><th>Cliente</th><th>Servico</th><th>Data</th><th>Horario</th><th>Valor</th><th>Status</th></tr></thead>
+        <tbody>${recent.map(a => `<tr>
+          <td>${a.cliente||'--'}</td>
+          <td>${a.servico||'--'}</td>
+          <td>${a.data ? formatDate(a.data) : '--'}</td>
+          <td>${a.horario||'--'}</td>
+          <td style="color:var(--gold);font-family:var(--font-display);font-size:16px;">R$${(a.preco||0).toFixed(2).replace('.',',')}</td>
+          <td>${badgeHTML(a.status)}</td>
+        </tr>`).join('')}</tbody>
+      </table>`;
     }
 
     function renderAgendamentosTable(data) {
       const tbody = document.getElementById('agendamentos-body');
       if (!tbody) return;
-      
       if (!data.length) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--gray);padding:32px;">Nenhum agendamento encontrado.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#555;padding:32px;">Nenhum agendamento encontrado.</td></tr>';
         return;
       }
-      
-      tbody.innerHTML = data.map(a => `
-        <tr>
-          <td><strong style="color:var(--white)">${a.cliente || '—'}</strong></td>
-          <td><a href="https://wa.me/55${(a.telefone || '').replace(/\D/g, '')}" target="_blank" style="color:var(--gold);text-decoration:none;">${a.telefone || '—'}</a></td>
-          <td>${a.servico || '—'}</td>
-          <td>${a.data ? formatDate(a.data) : '—'}</td>
-          <td>${a.horario || '—'}</td>
-          <td style="color:var(--gold);font-family:var(--font-display);font-size:18px;">R$${(a.preco || 0).toFixed(2).replace('.', ',')}</td>
-          <td>${badgeHTML(a.status)}</td>
-          <td>
-            <div class="action-btns">
-              ${a.status === 'pendente' ? `<button class="btn-action btn-confirmar" onclick="updateStatus('${a.id}','confirmado')">Confirmar</button>` : ''}
-              ${a.status === 'confirmado' ? `<button class="btn-action btn-concluir" onclick="updateStatus('${a.id}','concluido')">Concluir</button>` : ''}
-              ${['pendente', 'confirmado'].includes(a.status) ? `<button class="btn-action btn-cancelar" onclick="updateStatus('${a.id}','cancelado')">Cancelar</button>` : ''}
-              <a class="btn-action btn-whats" href="https://wa.me/55${(a.telefone || '').replace(/\D/g, '')}" target="_blank">WhatsApp</a>
-              <button class="btn-action btn-excluir" onclick="deleteAgendamento('${a.id}')">🗑 Excluir</button>
-            </div>
-          </td>
-        </tr>`).join('');
+      tbody.innerHTML = data.map(a => `<tr>
+        <td><strong style="color:var(--white)">${a.cliente||'--'}</strong></td>
+        <td><a href="https://wa.me/55${(a.telefone||'').replace(/\D/g,'')}" target="_blank" style="color:var(--gold);text-decoration:none;">${a.telefone||'--'}</a></td>
+        <td>${a.servico||'--'}</td>
+        <td>${a.data ? formatDate(a.data) : '--'}</td>
+        <td>${a.horario||'--'}</td>
+        <td style="color:var(--gold);font-family:var(--font-display);font-size:18px;">R$${(a.preco||0).toFixed(2).replace('.',',')}</td>
+        <td>${badgeHTML(a.status)}</td>
+        <td>
+          <div class="action-btns">
+            ${a.status==='pendente' ? `<button class="btn-action btn-confirmar" onclick="updateStatus('${a.id}','confirmado')">Confirmar</button>` : ''}
+            ${a.status==='confirmado' ? `<button class="btn-action btn-concluir" onclick="updateStatus('${a.id}','concluido')">Concluir</button>` : ''}
+            ${['pendente','confirmado'].includes(a.status) ? `<button class="btn-action btn-cancelar" onclick="updateStatus('${a.id}','cancelado')">Cancelar</button>` : ''}
+            <a class="btn-action btn-whats" href="https://wa.me/55${(a.telefone||'').replace(/\D/g,'')}" target="_blank">WhatsApp</a>
+            <button class="btn-action btn-excluir" onclick="deleteAgendamento('${a.id}')">Excluir</button>
+          </div>
+        </td>
+      </tr>`).join('');
     }
 
     function applyFilters() {
       const status = document.getElementById('filter-status').value;
-      const date = document.getElementById('filter-date').value;
+      const date   = document.getElementById('filter-date').value;
       const search = document.getElementById('filter-search').value.toLowerCase();
-      
       let f = allAgendamentos;
       if (status) f = f.filter(a => a.status === status);
-      if (date) f = f.filter(a => a.data === date);
-      if (search) f = f.filter(a => (a.cliente || '').toLowerCase().includes(search) || (a.servico || '').toLowerCase().includes(search));
-      
+      if (date)   f = f.filter(a => a.data === date);
+      if (search) f = f.filter(a => (a.cliente||'').toLowerCase().includes(search) || (a.servico||'').toLowerCase().includes(search));
       renderAgendamentosTable(f);
     }
 
-    function deleteAgendamento(id) {
-      if (!confirm('Tem certeza que deseja excluir este agendamento? Esta ação não pode ser desfeita.')) return;
-      db.collection('agendamentos').doc(id).delete()
-        .catch(() => alert('Erro ao excluir agendamento.'));
-    }
-
     function updateStatus(id, status) {
-      db.collection('agendamentos').doc(id).update({
-        status,
-        atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
-      }).catch(() => alert('Erro ao atualizar status.'));
+      db.collection('agendamentos').doc(id).update({ status, atualizadoEm: firebase.firestore.FieldValue.serverTimestamp() })
+        .catch(() => alert('Erro ao atualizar status.'));
     }
 
-    function renderServicesTab() {
-      const grid = document.getElementById('services-admin-grid');
-      if (!grid) return;
-      
-      grid.innerHTML = SERVICES.map(s => `
-        <div class="service-admin-card">
-          <span class="service-admin-name">${s.name}</span>
-          <span class="service-admin-price">R$${s.price.toFixed(2).replace('.', ',')}</span>
-        </div>`).join('') + `
-        <div style="grid-column:1/-1;margin-top:24px;">
-          <h3 style="font-family:var(--font-head);letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:16px;">Planos</h3>
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">
-            ${PLANS.map(p => `
-              <div class="service-admin-card" style="flex-direction:column;align-items:flex-start;gap:8px;">
-                <span class="service-admin-name">${p.name}</span>
-                <span class="service-admin-price">R$${p.price},00<span style="font-size:14px;color:var(--gray);font-family:var(--font-head)">/mês</span></span>
-                <ul style="list-style:none;margin-top:4px;">
-                  ${p.features.map(f => `<li style="font-size:12px;color:var(--gray);padding:2px 0;">• ${f}</li>`).join('')}
-                </ul>
-              </div>`).join('')}
-          </div>
-        </div>`;
+    function deleteAgendamento(id) {
+      if (!confirm('Excluir este agendamento? Nao pode ser desfeito.')) return;
+      db.collection('agendamentos').doc(id).delete().catch(() => alert('Erro ao excluir.'));
     }
 
     function exportCSV() {
-      const rows = [['Cliente', 'WhatsApp', 'Serviço', 'Data', 'Horário', 'Valor (R$)', 'Status', 'Obs']];
-      allAgendamentos.forEach(a => rows.push([
-        a.cliente || '',
-        a.telefone || '',
-        a.servico || '',
-        a.data || '',
-        a.horario || '',
-        (a.preco || 0).toFixed(2).replace('.', ','),
-        a.status || '',
-        a.obs || ''
-      ]));
-      
-      const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
-      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+      const rows = [['Cliente','WhatsApp','Servico','Data','Horario','Valor (R$)','Status','Obs']];
+      allAgendamentos.forEach(a => rows.push([a.cliente||'',a.telefone||'',a.servico||'',a.data||'',a.horario||'',(a.preco||0).toFixed(2).replace('.',','),a.status||'',a.obs||'']));
+      const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+      const blob = new Blob(['\uFEFF'+csv], { type:'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `agendamentos_vr_${new Date().toISOString().slice(0, 10)}.csv`;
+      link.download = `agendamentos_vr_${new Date().toISOString().slice(0,10)}.csv`;
       link.click();
       URL.revokeObjectURL(url);
     }
 
-
-    // ══════════════════════════════════════════════
-    //  HORÁRIOS DE ATENDIMENTO
-    // ══════════════════════════════════════════════
-
+    // ── Horários ─────────────────────────────────────
     const DIAS_SEMANA = [
-      { key: 'domingo',    label: 'Domingo' },
-      { key: 'segunda',    label: 'Segunda-feira' },
-      { key: 'terca',      label: 'Terça-feira' },
-      { key: 'quarta',     label: 'Quarta-feira' },
-      { key: 'quinta',     label: 'Quinta-feira' },
-      { key: 'sexta',      label: 'Sexta-feira' },
-      { key: 'sabado',     label: 'Sábado' },
+      { key:'domingo', label:'Domingo' },
+      { key:'segunda', label:'Segunda-feira' },
+      { key:'terca',   label:'Terca-feira' },
+      { key:'quarta',  label:'Quarta-feira' },
+      { key:'quinta',  label:'Quinta-feira' },
+      { key:'sexta',   label:'Sexta-feira' },
+      { key:'sabado',  label:'Sabado' },
     ];
 
-    // Config padrão
-    const DEFAULT_CONFIG = {
-      domingo:  { ativo: false, inicio: '08:00', fim: '18:00' },
-      segunda:  { ativo: true,  inicio: '08:00', fim: '19:00' },
-      terca:    { ativo: true,  inicio: '08:00', fim: '19:00' },
-      quarta:   { ativo: true,  inicio: '08:00', fim: '19:00' },
-      quinta:   { ativo: true,  inicio: '08:00', fim: '19:00' },
-      sexta:    { ativo: true,  inicio: '08:00', fim: '19:00' },
-      sabado:   { ativo: true,  inicio: '08:00', fim: '17:00' },
+    const DEFAULT_HORARIOS = {
+      domingo: { ativo:false, inicio:'08:00', fim:'18:00' },
+      segunda: { ativo:true,  inicio:'08:00', fim:'19:00' },
+      terca:   { ativo:true,  inicio:'08:00', fim:'19:00' },
+      quarta:  { ativo:true,  inicio:'08:00', fim:'19:00' },
+      quinta:  { ativo:true,  inicio:'08:00', fim:'19:00' },
+      sexta:   { ativo:true,  inicio:'08:00', fim:'19:00' },
+      sabado:  { ativo:true,  inicio:'08:00', fim:'17:00' },
     };
 
-    let horariosConfig = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+    let horariosConfig = JSON.parse(JSON.stringify(DEFAULT_HORARIOS));
 
     async function carregarHorarios() {
       try {
         const doc = await db.collection('config').doc('horarios').get();
-        if (doc.exists) {
-          horariosConfig = { ...DEFAULT_CONFIG, ...doc.data() };
-        }
+        if (doc.exists) horariosConfig = Object.assign({}, DEFAULT_HORARIOS, doc.data());
       } catch(e) {}
       renderHorariosGrid();
-    }
-
-    function renderHorariosGrid() {
-      const grid = document.getElementById('horarios-grid');
-      if (!grid) return;
-
-      grid.innerHTML = DIAS_SEMANA.map(dia => {
-        const cfg = horariosConfig[dia.key] || DEFAULT_CONFIG[dia.key];
-        const ativo = cfg.ativo;
-        return `
-        <div class="horario-row" id="row-${dia.key}" style="
-          background:#161616;
-          border:1px solid ${ativo ? '#c9a84c44' : '#2a2a2a'};
-          border-radius:6px;
-          padding:18px 24px;
-          display:flex;
-          align-items:center;
-          gap:20px;
-          flex-wrap:wrap;
-          transition:all .2s;
-        ">
-          <!-- Toggle -->
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;min-width:160px;">
-            <div class="toggle-wrap" onclick="toggleDia('${dia.key}')" style="
-              width:44px;height:24px;border-radius:12px;
-              background:${ativo ? '#c9a84c' : '#333'};
-              position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;
-            ">
-              <div style="
-                width:18px;height:18px;border-radius:50%;background:#fff;
-                position:absolute;top:3px;
-                left:${ativo ? '23px' : '3px'};
-                transition:left .2s;
-              "></div>
-            </div>
-            <span style="font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:1px;color:${ativo ? '#f5f0e8' : '#555'};transition:color .2s;">${dia.label}</span>
-          </label>
-
-          <!-- Horários -->
-          <div style="display:flex;align-items:center;gap:12px;${ativo ? '' : 'opacity:.35;pointer-events:none;'}">
-            <div style="display:flex;flex-direction:column;gap:4px;">
-              <span style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;color:#888;text-transform:uppercase;">Abertura</span>
-              <input type="time" id="inicio-${dia.key}" value="${cfg.inicio}"
-                style="background:#1e1e1e;border:1px solid #333;border-radius:4px;padding:8px 12px;color:#f5f0e8;font-family:'Roboto',sans-serif;font-size:14px;outline:none;color-scheme:dark;"
-                onchange="updateHorario('${dia.key}')"/>
-            </div>
-            <span style="color:#555;font-size:18px;margin-top:16px;">→</span>
-            <div style="display:flex;flex-direction:column;gap:4px;">
-              <span style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;color:#888;text-transform:uppercase;">Fechamento</span>
-              <input type="time" id="fim-${dia.key}" value="${cfg.fim}"
-                style="background:#1e1e1e;border:1px solid #333;border-radius:4px;padding:8px 12px;color:#f5f0e8;font-family:'Roboto',sans-serif;font-size:14px;outline:none;color-scheme:dark;"
-                onchange="updateHorario('${dia.key}')"/>
-            </div>
-          </div>
-
-          <!-- Preview dos horários gerados -->
-          <div style="margin-left:auto;${ativo ? '' : 'opacity:.35;'}">
-            <span style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;color:#888;text-transform:uppercase;">Horários gerados: </span>
-            <span style="font-family:'Roboto',sans-serif;font-size:12px;color:#c9a84c;" id="preview-${dia.key}">${previewHorarios(cfg.inicio, cfg.fim)}</span>
-          </div>
-        </div>`;
-      }).join('');
-    }
-
-    function previewHorarios(inicio, fim) {
-      const slots = gerarSlots(inicio, fim);
-      if (!slots.length) return '—';
-      if (slots.length <= 4) return slots.join(' · ');
-      return `${slots[0]} · ${slots[1]} · ... · ${slots[slots.length-1]} (${slots.length} horários)`;
     }
 
     function gerarSlots(inicio, fim) {
@@ -565,11 +425,59 @@
       const [hf, mf] = fim.split(':').map(Number);
       const fimMin = hf * 60 + mf;
       while (h * 60 + m < fimMin) {
-        slots.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
-        m += 30;
-        if (m >= 60) { h++; m -= 60; }
+        slots.push(String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0'));
+        m += 30; if (m >= 60) { h++; m -= 60; }
       }
       return slots;
+    }
+
+    function previewSlots(inicio, fim) {
+      const s = gerarSlots(inicio, fim);
+      if (!s.length) return '--';
+      if (s.length <= 3) return s.join(' - ');
+      return s[0] + ' - ' + s[1] + ' - ... - ' + s[s.length-1] + ' (' + s.length + ' horarios)';
+    }
+
+    function renderHorariosGrid() {
+      const grid = document.getElementById('horarios-grid');
+      if (!grid) return;
+      grid.innerHTML = DIAS_SEMANA.map(dia => {
+        const cfg = horariosConfig[dia.key];
+        const on  = cfg.ativo;
+        return `<div style="
+            background:#161616; border:1px solid ${on ? '#c9a84c55' : '#252525'};
+            border-radius:6px; padding:16px 20px;
+            display:flex; align-items:center; gap:20px; flex-wrap:wrap; transition:border .2s;">
+
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;min-width:170px;" onclick="toggleDia('${dia.key}')">
+            <div style="width:44px;height:24px;border-radius:12px;background:${on ? '#c9a84c' : '#333'};position:relative;transition:background .2s;flex-shrink:0;">
+              <div style="width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:3px;left:${on ? '23px' : '3px'};transition:left .2s;"></div>
+            </div>
+            <span style="font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:1px;color:${on ? '#f5f0e8' : '#555'};transition:color .2s;">${dia.label}</span>
+          </label>
+
+          <div style="display:flex;align-items:center;gap:12px;${on ? '' : 'opacity:.3;pointer-events:none;'}">
+            <div style="display:flex;flex-direction:column;gap:3px;">
+              <span style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;color:#666;text-transform:uppercase;">Abertura</span>
+              <input type="time" id="inicio-${dia.key}" value="${cfg.inicio}"
+                style="background:#1e1e1e;border:1px solid #333;border-radius:4px;padding:8px 12px;color:#f5f0e8;font-size:14px;outline:none;"
+                onchange="updateHorario('${dia.key}')"/>
+            </div>
+            <span style="color:#444;font-size:20px;margin-top:14px;">&#8594;</span>
+            <div style="display:flex;flex-direction:column;gap:3px;">
+              <span style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;color:#666;text-transform:uppercase;">Fechamento</span>
+              <input type="time" id="fim-${dia.key}" value="${cfg.fim}"
+                style="background:#1e1e1e;border:1px solid #333;border-radius:4px;padding:8px 12px;color:#f5f0e8;font-size:14px;outline:none;"
+                onchange="updateHorario('${dia.key}')"/>
+            </div>
+          </div>
+
+          <div style="margin-left:auto;${on ? '' : 'opacity:.3;'}">
+            <span style="font-size:11px;color:#666;font-family:'Oswald',sans-serif;letter-spacing:1px;">Horarios: </span>
+            <span style="font-size:12px;color:#c9a84c;font-family:'Roboto',sans-serif;" id="preview-${dia.key}">${previewSlots(cfg.inicio, cfg.fim)}</span>
+          </div>
+        </div>`;
+      }).join('');
     }
 
     function toggleDia(key) {
@@ -583,37 +491,36 @@
       horariosConfig[key].inicio = inicio;
       horariosConfig[key].fim    = fim;
       const prev = document.getElementById('preview-' + key);
-      if (prev) prev.textContent = previewHorarios(inicio, fim);
+      if (prev) prev.textContent = previewSlots(inicio, fim);
     }
 
     async function salvarHorarios() {
       const btn = document.getElementById('btn-salvar-horarios');
-      const status = document.getElementById('horarios-status');
+      const st  = document.getElementById('horarios-status');
       btn.textContent = 'Salvando...';
       btn.disabled = true;
       try {
         await db.collection('config').doc('horarios').set(horariosConfig);
-        status.textContent = 'Salvo com sucesso!';
-        status.style.color = '#c9a84c';
-        setTimeout(() => { status.textContent = ''; }, 3000);
+        st.textContent = 'Salvo com sucesso!';
+        st.style.color = '#c9a84c';
+        setTimeout(() => { st.textContent = ''; }, 3000);
       } catch(e) {
-        status.textContent = 'Erro ao salvar.';
-        status.style.color = '#c0392b';
+        st.textContent = 'Erro ao salvar.';
+        st.style.color = '#c0392b';
       }
-      btn.textContent = 'Salvar Horários';
+      btn.textContent = 'Salvar Horarios';
       btn.disabled = false;
     }
 
-    // Carrega horários quando entra na aba
-    const _origShowTab = showTab;
-  
+    // ── Utilitários ──────────────────────────────────
+    function formatDate(d) {
       const [y, m, day] = d.split('-');
-      return `${day}/${m}/${y}`;
+      return day + '/' + m + '/' + y;
     }
 
     function badgeHTML(status) {
-      const labels = { pendente: 'Pendente', confirmado: 'Confirmado', concluido: 'Concluído', cancelado: 'Cancelado' };
-      return `<span class="badge badge-${status || 'pendente'}">${labels[status] || status}</span>`;
+      const labels = { pendente:'Pendente', confirmado:'Confirmado', concluido:'Concluido', cancelado:'Cancelado' };
+      return '<span class="badge badge-' + (status||'pendente') + '">' + (labels[status]||status) + '</span>';
     }
   </script>
 </body>
