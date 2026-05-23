@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin — VR Barber Shop</title>
+  <link rel="icon" type="image/png" href="logo.png"/>
+  <link rel="stylesheet" href="admin.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Bebas+Neue&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet"/>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+</head>
+<body class="admin-body">
+
+  <!-- LOGIN -->
+  <div id="login-screen" class="login-screen">
+    <div class="login-card">
+      <h2>Painel Administrativo</h2>
+      <p>Faça login para acessar</p>
+      <div class="form-group">
+        <label>E-mail</label>
+        <input type="email" id="login-email" placeholder="admin@vrbarbershop.com"/>
+      </div>
+      <div class="form-group">
+        <label>Senha</label>
+        <input type="password" id="login-pass" placeholder="••••••••"/>
+      </div>
+      <button class="btn-login" onclick="doLogin()">Entrar</button>
+      <p class="login-error" id="login-error"></p>
+    </div>
+  </div>
+
+  <!-- PAINEL -->
+  <div id="admin-panel" class="admin-panel" style="display:none;">
+    <aside class="sidebar">
+      <div class="sidebar-top">
+        <div class="sidebar-brand">VR BARBER</div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" onclick="showTab('dashboard', this)">
+          <span class="nav-icon">📊</span> <span>Dashboard</span>
+        </a>
+        <a href="#" class="nav-item" onclick="showTab('agendamentos', this)">
+          <span class="nav-icon">📅</span> <span>Agendamentos</span>
+        </a>
+        <a href="#" class="nav-item" onclick="showTab('servicos', this)">
+          <span class="nav-icon">✂️</span> <span>Serviços</span>
+        </a>
+      </nav>
+      <div class="sidebar-bottom">
+        <button class="btn-logout" onclick="doLogout()">Sair</button>
+        <a href="index.html" class="btn-site" target="_blank">Ver Site ↗</a>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <div>
+          <h1 id="page-title">Dashboard</h1>
+          <p id="admin-date"></p>
+        </div>
+        <div class="header-actions">
+          <span class="badge-status">● Online</span>
+        </div>
+      </header>
+
+      <!-- DASHBOARD -->
+      <div class="tab-content active" id="tab-dashboard">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">📅</div>
+            <div class="stat-info">
+              <span class="stat-value" id="stat-hoje">0</span>
+              <span class="stat-label">Agendamentos Hoje</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-info">
+              <span class="stat-value" id="stat-pendentes">0</span>
+              <span class="stat-label">Pendentes</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-info">
+              <span class="stat-value" id="stat-confirmados">0</span>
+              <span class="stat-label">Confirmados</span>
+            </div>
+          </div>
+          <div class="stat-card gold">
+            <div class="stat-icon">💰</div>
+            <div class="stat-info">
+              <span class="stat-value" id="stat-receita">R$0</span>
+              <span class="stat-label">Receita do Mês</span>
+            </div>
+          </div>
+        </div>
+        <div class="recent-section">
+          <h3>Agendamentos Recentes</h3>
+          <div class="table-wrap" id="recent-list"></div>
+        </div>
+      </div>
+
+      <!-- AGENDAMENTOS -->
+      <div class="tab-content" id="tab-agendamentos">
+        <div class="tab-toolbar">
+          <div class="filter-group">
+            <select id="filter-status" onchange="applyFilters()">
+              <option value="">Todos os Status</option>
+              <option value="pendente">Pendente</option>
+              <option value="confirmado">Confirmado</option>
+              <option value="concluido">Concluído</option>
+              <option value="cancelado">Cancelado</option>
+            </select>
+            <input type="date" id="filter-date" onchange="applyFilters()"/>
+            <input type="text" id="filter-search" oninput="applyFilters()" placeholder="🔍 Buscar cliente..."/>
+          </div>
+          <button class="btn-export" onclick="exportCSV()">⬇ Exportar CSV</button>
+        </div>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Cliente</th><th>WhatsApp</th><th>Serviço</th>
+                <th>Data</th><th>Horário</th>
+                <th>Valor</th><th>Status</th><th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="agendamentos-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SERVIÇOS -->
+      <div class="tab-content" id="tab-servicos">
+        <div class="services-admin-grid" id="services-admin-grid"></div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // ── Firebase config ──────────────────────────────
+    const firebaseConfig = {
+      apiKey: "AIzaSyAI6Z4Ay6atavjrsBAfc0XWndjeAX8zbCM",
+      authDomain: "admin-restaurante-ebc77.firebaseapp.com",
+      projectId: "admin-restaurante-ebc77",
+      storageBucket: "admin-restaurante-ebc77.firebasestorage.app",
+      messagingSenderId: "883332092146",
+      appId: "1:883332092146:web:43af09519de61e87f1006b"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // ── Login simples (sem Firebase Auth) ────────────
+    const ADMIN_EMAIL = 'vrbarbershop@gmail.com';
+    const ADMIN_PASS  = '59360102'; // ← troque aqui quando quiser
+
+    // ── Dados de serviços e planos ───────────────────
+    const SERVICES = [
+      { id: 'corte',             name: 'Corte',                        price: 25 },
+      { id: 'corte_sobrancelha', name: 'Corte + Sobrancelha',         price: 30 },
+      { id: 'corte_barba',       name: 'Corte + Barba',                price: 45 },
+      { id: 'corte_barba_sob',   name: 'Corte + Barba + Sobrancelha', price: 45 },
+      { id: 'barba',             name: 'Barba',                        price: 20 },
+      { id: 'sobrancelha',       name: 'Sobrancelha',                  price: 5 },
+      { id: 'nevou_corte',       name: 'Nevou + Corte',                price: 90 },
+      { id: 'luzes_corte',       name: 'Luzes + Corte',                price: 75 },
+      { id: 'hidratacao',        name: 'Hidratação',                   price: 10 }
+    ];
+
+    const PLANS = [
+      { name: 'Básico',    price: 80,  features: ['4 cortes por mês','Prioridade na marcação','5% desconto antecipado'] },
+      { name: 'Essencial', price: 105, features: ['Corte + Sobrancelha ilimitado','Prioridade na marcação','5% desconto antecipado'] },
+      { name: 'Premium',   price: 135, features: ['Corte + Barba + Sobrancelha ilimitado','Prioridade na marcação','Brinde: lavagem inclusa','10% desconto antecipado'] }
+    ];
+
+    // ── Estado ───────────────────────────────────────
+    let allAgendamentos = [];
+    let unsubscribe = null;
+
+    // ── Auth simples ──────────────────────────────────
+    function doLogin() {
+      const email = document.getElementById('login-email').value.trim();
+      const pass  = document.getElementById('login-pass').value;
+      const errEl = document.getElementById('login-error');
+      errEl.textContent = '';
+
+      if (!email || !pass) {
+        errEl.textContent = 'Preencha e-mail e senha.';
+        return;
+      }
+
+      const btn = document.querySelector('.btn-login');
+      btn.textContent = 'Entrando...';
+      btn.disabled = true;
+
+      setTimeout(() => {
+        if (email === ADMIN_EMAIL && pass === ADMIN_PASS) {
+          sessionStorage.setItem('vr_admin', '1');
+          document.getElementById('login-screen').style.display = 'none';
+          document.getElementById('admin-panel').style.display = 'flex';
+          initAdmin();
+        } else {
+          errEl.textContent = 'E-mail ou senha incorretos.';
+          btn.textContent = 'Entrar';
+          btn.disabled = false;
+        }
+      }, 600);
+    }
+
+    function doLogout() {
+      if (unsubscribe) unsubscribe();
+      sessionStorage.removeItem('vr_admin');
+      document.getElementById('login-screen').style.display = 'flex';
+      document.getElementById('admin-panel').style.display = 'none';
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none') {
+        doLogin();
+      }
+    });
+
+    // Verifica se já estava logado na sessão
+    if (sessionStorage.getItem('vr_admin') === '1') {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('admin-panel').style.display = 'flex';
+      initAdmin();
+    }
+
+    function initAdmin() {
+      const el = document.getElementById('admin-date');
+      if (el) {
+        el.textContent = new Date().toLocaleDateString('pt-BR', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+      }
+      renderServicesTab();
+      loadAgendamentos();
+    }
+
+    function showTab(tab, el) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.getElementById('tab-' + tab).classList.add('active');
+      el.classList.add('active');
+      const titles = { dashboard: 'Dashboard', agendamentos: 'Agendamentos', servicos: 'Tabela de Serviços' };
+      document.getElementById('page-title').textContent = titles[tab];
+    }
+
+    function loadAgendamentos() {
+      const q = db.collection('agendamentos').orderBy('criadoEm', 'desc');
+      unsubscribe = q.onSnapshot(snapshot => {
+        allAgendamentos = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderDashboard();
+        renderAgendamentosTable(allAgendamentos);
+      });
+    }
+
+    function renderDashboard() {
+      const hoje = new Date().toISOString().split('T')[0];
+      const mesAtual = new Date().toISOString().slice(0, 7);
+      document.getElementById('stat-hoje').textContent = allAgendamentos.filter(a => a.data === hoje).length;
+      document.getElementById('stat-pendentes').textContent = allAgendamentos.filter(a => a.status === 'pendente').length;
+      document.getElementById('stat-confirmados').textContent = allAgendamentos.filter(a => a.status === 'confirmado').length;
+      
+      const receita = allAgendamentos
+        .filter(a => a.status === 'concluido' && (a.data || '').startsWith(mesAtual))
+        .reduce((acc, a) => acc + (a.preco || 0), 0);
+      
+      document.getElementById('stat-receita').textContent = 'R$' + receita.toFixed(2).replace('.', ',');
+
+      const recent = allAgendamentos.slice(0, 8);
+      const el = document.getElementById('recent-list');
+      
+      if (!recent.length) {
+        el.innerHTML = '<p style="color:var(--gray);padding:20px;font-family:var(--font-head);letter-spacing:1px;">Nenhum agendamento ainda.</p>';
+        return;
+      }
+      
+      el.innerHTML = `
+        <table class="admin-table">
+          <thead><tr><th>Cliente</th><th>Serviço</th><th>Data</th><th>Horário</th><th>Valor</th><th>Status</th></tr></thead>
+          <tbody>
+            ${recent.map(a => `
+              <tr>
+                <td>${a.cliente || '—'}</td>
+                <td>${a.servico || '—'}</td>
+                <td>${a.data ? formatDate(a.data) : '—'}</td>
+                <td>${a.horario || '—'}</td>
+                <td style="color:var(--gold);font-family:var(--font-display);font-size:16px;">R$${(a.preco || 0).toFixed(2).replace('.', ',')}</td>
+                <td>${badgeHTML(a.status)}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>`;
+    }
+
+    function renderAgendamentosTable(data) {
+      const tbody = document.getElementById('agendamentos-body');
+      if (!tbody) return;
+      
+      if (!data.length) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--gray);padding:32px;">Nenhum agendamento encontrado.</td></tr>';
+        return;
+      }
+      
+      tbody.innerHTML = data.map(a => `
+        <tr>
+          <td><strong style="color:var(--white)">${a.cliente || '—'}</strong></td>
+          <td><a href="https://wa.me/55${(a.telefone || '').replace(/\D/g, '')}" target="_blank" style="color:var(--gold);text-decoration:none;">${a.telefone || '—'}</a></td>
+          <td>${a.servico || '—'}</td>
+          <td>${a.data ? formatDate(a.data) : '—'}</td>
+          <td>${a.horario || '—'}</td>
+          <td style="color:var(--gold);font-family:var(--font-display);font-size:18px;">R$${(a.preco || 0).toFixed(2).replace('.', ',')}</td>
+          <td>${badgeHTML(a.status)}</td>
+          <td>
+            <div class="action-btns">
+              ${a.status === 'pendente' ? `<button class="btn-action btn-confirmar" onclick="updateStatus('${a.id}','confirmado')">Confirmar</button>` : ''}
+              ${a.status === 'confirmado' ? `<button class="btn-action btn-concluir" onclick="updateStatus('${a.id}','concluido')">Concluir</button>` : ''}
+              ${['pendente', 'confirmado'].includes(a.status) ? `<button class="btn-action btn-cancelar" onclick="updateStatus('${a.id}','cancelado')">Cancelar</button>` : ''}
+              <a class="btn-action btn-whats" href="https://wa.me/55${(a.telefone || '').replace(/\D/g, '')}" target="_blank">WhatsApp</a>
+            </div>
+          </td>
+        </tr>`).join('');
+    }
+
+    function applyFilters() {
+      const status = document.getElementById('filter-status').value;
+      const date = document.getElementById('filter-date').value;
+      const search = document.getElementById('filter-search').value.toLowerCase();
+      
+      let f = allAgendamentos;
+      if (status) f = f.filter(a => a.status === status);
+      if (date) f = f.filter(a => a.data === date);
+      if (search) f = f.filter(a => (a.cliente || '').toLowerCase().includes(search) || (a.servico || '').toLowerCase().includes(search));
+      
+      renderAgendamentosTable(f);
+    }
+
+    function updateStatus(id, status) {
+      db.collection('agendamentos').doc(id).update({
+        status,
+        atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(() => alert('Erro ao atualizar status.'));
+    }
+
+    function renderServicesTab() {
+      const grid = document.getElementById('services-admin-grid');
+      if (!grid) return;
+      
+      grid.innerHTML = SERVICES.map(s => `
+        <div class="service-admin-card">
+          <span class="service-admin-name">${s.name}</span>
+          <span class="service-admin-price">R$${s.price.toFixed(2).replace('.', ',')}</span>
+        </div>`).join('') + `
+        <div style="grid-column:1/-1;margin-top:24px;">
+          <h3 style="font-family:var(--font-head);letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:16px;">Planos</h3>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">
+            ${PLANS.map(p => `
+              <div class="service-admin-card" style="flex-direction:column;align-items:flex-start;gap:8px;">
+                <span class="service-admin-name">${p.name}</span>
+                <span class="service-admin-price">R$${p.price},00<span style="font-size:14px;color:var(--gray);font-family:var(--font-head)">/mês</span></span>
+                <ul style="list-style:none;margin-top:4px;">
+                  ${p.features.map(f => `<li style="font-size:12px;color:var(--gray);padding:2px 0;">• ${f}</li>`).join('')}
+                </ul>
+              </div>`).join('')}
+          </div>
+        </div>`;
+    }
+
+    function exportCSV() {
+      const rows = [['Cliente', 'WhatsApp', 'Serviço', 'Data', 'Horário', 'Valor (R$)', 'Status', 'Obs']];
+      allAgendamentos.forEach(a => rows.push([
+        a.cliente || '',
+        a.telefone || '',
+        a.servico || '',
+        a.data || '',
+        a.horario || '',
+        (a.preco || 0).toFixed(2).replace('.', ','),
+        a.status || '',
+        a.obs || ''
+      ]));
+      
+      const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `agendamentos_vr_${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function formatDate(d) {
+      const [y, m, day] = d.split('-');
+      return `${day}/${m}/${y}`;
+    }
+
+    function badgeHTML(status) {
+      const labels = { pendente: 'Pendente', confirmado: 'Confirmado', concluido: 'Concluído', cancelado: 'Cancelado' };
+      return `<span class="badge badge-${status || 'pendente'}">${labels[status] || status}</span>`;
+    }
+  </script>
+</body>
+</html>
