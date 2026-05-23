@@ -1,0 +1,25 @@
+{
+  "name": "VR Barber Shop — Admin",
+  "short_name": "VR Admin",
+  "description": "Painel administrativo da VR Barber Shop",
+  "start_url": "./admin.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
