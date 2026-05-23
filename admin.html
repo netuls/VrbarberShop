@@ -9,10 +9,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Bebas+Neue&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet"/>
 
-  <!-- Firebase Realtime Database -->
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 </head>
 <body class="admin-body">
 
@@ -155,8 +154,11 @@
     };
 
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
     const db = firebase.firestore();
+
+    // ── Login simples (sem Firebase Auth) ────────────
+    const ADMIN_EMAIL = 'vrbarbershop@gmail.com';
+    const ADMIN_PASS  = '59360102'; // ← troque aqui quando quiser
 
     // ── Dados de serviços e planos ───────────────────
     const SERVICES = [
@@ -181,10 +183,10 @@
     let allAgendamentos = [];
     let unsubscribe = null;
 
-    // ── Auth ─────────────────────────────────────────
+    // ── Auth simples ──────────────────────────────────
     function doLogin() {
       const email = document.getElementById('login-email').value.trim();
-      const pass = document.getElementById('login-pass').value;
+      const pass  = document.getElementById('login-pass').value;
       const errEl = document.getElementById('login-error');
       errEl.textContent = '';
 
@@ -197,28 +199,25 @@
       btn.textContent = 'Entrando...';
       btn.disabled = true;
 
-      auth.signInWithEmailAndPassword(email, pass)
-        .then(() => {
-          console.log('Login bem-sucedido');
-        })
-        .catch(e => {
-          console.error('Erro:', e.code, e.message);
-          const msgs = {
-            'auth/invalid-credential': 'E-mail ou senha incorretos.',
-            'auth/user-not-found': 'Usuário não encontrado.',
-            'auth/wrong-password': 'Senha incorreta.',
-            'auth/too-many-requests': 'Muitas tentativas. Aguarde.',
-            'auth/invalid-email': 'E-mail inválido.'
-          };
-          errEl.textContent = msgs[e.code] || ('Erro: ' + e.message);
+      setTimeout(() => {
+        if (email === ADMIN_EMAIL && pass === ADMIN_PASS) {
+          sessionStorage.setItem('vr_admin', '1');
+          document.getElementById('login-screen').style.display = 'none';
+          document.getElementById('admin-panel').style.display = 'flex';
+          initAdmin();
+        } else {
+          errEl.textContent = 'E-mail ou senha incorretos.';
           btn.textContent = 'Entrar';
           btn.disabled = false;
-        });
+        }
+      }, 600);
     }
 
     function doLogout() {
       if (unsubscribe) unsubscribe();
-      auth.signOut();
+      sessionStorage.removeItem('vr_admin');
+      document.getElementById('login-screen').style.display = 'flex';
+      document.getElementById('admin-panel').style.display = 'none';
     }
 
     document.addEventListener('keydown', (e) => {
@@ -227,21 +226,12 @@
       }
     });
 
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('admin-panel').style.display = 'flex';
-        initAdmin();
-      } else {
-        document.getElementById('login-screen').style.display = 'flex';
-        document.getElementById('admin-panel').style.display = 'none';
-        const btn = document.querySelector('.btn-login');
-        if (btn) {
-          btn.textContent = 'Entrar';
-          btn.disabled = false;
-        }
-      }
-    });
+    // Verifica se já estava logado na sessão
+    if (sessionStorage.getItem('vr_admin') === '1') {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('admin-panel').style.display = 'flex';
+      initAdmin();
+    }
 
     function initAdmin() {
       const el = document.getElementById('admin-date');
