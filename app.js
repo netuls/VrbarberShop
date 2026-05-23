@@ -467,6 +467,28 @@ function sendWhatsAppNotification() {
   window.open(`https://wa.me/${WHATSAPP_NOTIFY}?text=${msg}`, '_blank');
 }
 
+// ─── Envia mensagem de confirmação ao cliente ──────
+function sendClientConfirmation() {
+  const sel = state.selected;
+  const primeiroNome = state.name.split(' ')[0];
+  const lines = [
+    `Olá, *${primeiroNome}*! 👋`,
+    '',
+    'Recebemos seu agendamento na *VR Barber Shop* e em breve entraremos em contato para confirmar o horário.',
+    '',
+    '📋 *Resumo do seu agendamento:*',
+    '*Serviço:* ' + sel.name,
+    '*Data:* ' + formatDate(state.date),
+    '*Horário:* ' + state.time,
+    '*Valor:* R$' + Number(sel.price).toFixed(2).replace('.', ','),
+    '',
+    'Qualquer dúvida, é só responder esta mensagem. Te esperamos! ✂️',
+  ];
+  const clientPhone = state.phone.replace(/\D/g, '');
+  const msg = encodeURIComponent(lines.join('\n'));
+  window.open(`https://wa.me/55${clientPhone}?text=${msg}`, '_blank');
+}
+
 // ─── Salva no Firebase ─────────────────────────────
 window.submitBooking = async function() {
   const btn = document.querySelector('.btn-confirm');
@@ -488,6 +510,9 @@ window.submitBooking = async function() {
 
     // Abre WhatsApp com notificação para o dono
     sendWhatsAppNotification();
+
+    // Abre WhatsApp com mensagem de confirmação para o cliente
+    sendClientConfirmation();
 
     document.getElementById('success-modal').classList.add('open');
     state = { selected: null, name: '', phone: '', date: '', time: '', obs: '' };
