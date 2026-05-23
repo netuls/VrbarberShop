@@ -517,7 +517,7 @@ async function carregarSlotsParaData(dataSelecionada) {
       const diaKey = DIAS_KEY[diaSemana];
       const horarios = configDoc.exists ? (configDoc.data() || {}) : {};
       cfg = horarios[diaKey];
-      if (!cfg || cfg.fechado) {
+      if (!cfg || cfg.ativo === false || cfg.fechado) {
         select.innerHTML = '<option value="">Sem atendimento neste dia</option>';
         return;
       }
@@ -548,7 +548,35 @@ async function carregarSlotsParaData(dataSelecionada) {
 
 // ─── Calendário ────────────────────────────────────
 let calAno, calMes;
+let _calHorarios = null;      // cache dos horários do Firestore
+let _calDatasEsp = null;      // cache das datas especiais
 const mesNomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+async function carregarConfigCalendario() {
+  if (_calHorarios && _calDatasEsp) return; // já carregado
+  try {
+    const [hDoc, dDoc] = await Promise.all([
+      firebase.firestore().collection('config').doc('horarios').get(),
+      firebase.firestore().collection('config').doc('datas_especiais').get(),
+    ]);
+    _calHorarios = hDoc.exists ? (hDoc.data() || {}) : {};
+    _calDatasEsp = dDoc.exists ? (dDoc.data() || {}) : {};
+  } catch(e) {
+    _calHorarios = {};
+    _calDatasEsp = {};
+  }
+}
+
+function isDiaDisponivel(dateStr) {
+  if (!_calHorarios) return true; // ainda carregando, permite clicar
+  const dataEsp = _calDatasEsp && _calDatasEsp[dateStr];
+  if (dataEsp) return dataEsp.tipo !== 'fechado';
+  const diaSemana = new Date(dateStr + 'T12:00:00').getDay();
+  const diaKey = DIAS_KEY[diaSemana];
+  const cfg = _calHorarios[diaKey];
+  if (!cfg) return false;
+  return cfg.ativo !== false && !cfg.fechado;
+}
 
 function renderCalendario() {
   const wrap = document.getElementById('cal-wrap');
@@ -566,8 +594,9 @@ function renderCalendario() {
     const dayDate = new Date(calAno, calMes, d);
     const isPast  = dayDate < hoje;
     const isSel   = dateStr === state.date;
-    if (isPast) {
-      cells += `<div style="text-align:center;padding:8px 4px;font-family:'Roboto',sans-serif;font-size:13px;color:#2a2a2a;border:1px solid #1a1a1a;border-radius:4px;">${d}</div>`;
+    const isFechado = !isPast && !isDiaDisponivel(dateStr);
+    if (isPast || isFechado) {
+      cells += `<div style="text-align:center;padding:8px 4px;font-family:'Roboto',sans-serif;font-size:13px;color:#2a2a2a;border:1px solid #1a1a1a;border-radius:4px;${isFechado && !isPast ? 'text-decoration:line-through;' : ''}">${d}</div>`;
     } else {
       cells += `<div class="cal-dia" onclick="selecionarData('${dateStr}')" style="text-align:center;padding:8px 4px;font-family:'Roboto',sans-serif;font-size:13px;color:${isSel?'#0a0a0a':'#f5f0e8'};background:${isSel?'#c9a84c':'transparent'};border:1px solid ${isSel?'#c9a84c':'#2a2a2a'};border-radius:4px;cursor:pointer;transition:all 0.2s;">${d}</div>`;
     }
@@ -590,7 +619,9 @@ window.mudarMes = function(delta) {
   calMes += delta;
   if (calMes > 11) { calMes = 0; calAno++; }
   if (calMes < 0)  { calMes = 11; calAno--; }
-  renderCalendario();
+  // Invalida cache para buscar datas especiais atualizadas
+  _calDatasEsp = null;
+  carregarConfigCalendario().then(() => renderCalendario());
 };
 
 window.selecionarData = function(dateStr) {
@@ -641,7 +672,7 @@ window.selectService = function(id) {
     preencherDadosAgendamento();
     const now = new Date();
     if (!calAno) { calAno = now.getFullYear(); calMes = now.getMonth(); }
-    renderCalendario();
+    carregarConfigCalendario().then(() => renderCalendario());
   }, 180);
 };
 
