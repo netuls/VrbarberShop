@@ -200,17 +200,18 @@ function renderConfirm() {
 // ─── Envia notificação WhatsApp ao dono ───────────
 function sendWhatsAppNotification() {
   const sel = state.selected;
-  const msg = encodeURIComponent(
-    `🔔 *Novo Agendamento!*\n\n` +
-    `👤 *Cliente:* ${state.name}\n` +
-    `📱 *WhatsApp:* ${state.phone}\n` +
-    `✂️ *Serviço:* ${sel.name}\n` +
-    `📅 *Data:* ${formatDate(state.date)}\n` +
-    `🕐 *Horário:* ${state.time}\n` +
-    `💰 *Valor:* R$${Number(sel.price).toFixed(2).replace('.', ',')}\n` +
-    (state.obs ? `📝 *Obs:* ${state.obs}\n` : '') +
-    `\nAcesse o painel para confirmar.`
-  );
+  const lines = [
+    '*Novo Agendamento!*',
+    '',
+    '*Cliente:* ' + state.name,
+    '*WhatsApp:* ' + state.phone,
+    '*Servico:* ' + sel.name,
+    '*Data:* ' + formatDate(state.date),
+    '*Horario:* ' + state.time,
+    '*Valor:* R$' + Number(sel.price).toFixed(2).replace('.', ','),
+  ];
+  if (state.obs) lines.push('*Obs:* ' + state.obs);
+  const msg = encodeURIComponent(lines.join('\n'));
   window.open(`https://wa.me/${WHATSAPP_NOTIFY}?text=${msg}`, '_blank');
 }
 
