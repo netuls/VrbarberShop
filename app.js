@@ -271,19 +271,130 @@ function preencherSelectPadrao(select, data, ocupados) {
 }
 
 
+// ─── Config cache ─────────────────────────────────
+let _configCache = null;
+let _datasCache  = null;
+
+async function getConfigs() {
+  if (_configCache && _datasCache) return { config: _configCache, datas: _datasCache };
+  const [cDoc, dDoc] = await Promise.all([
+    firebase.firestore().collection('config').doc('horarios').get(),
+    firebase.firestore().collection('config').doc('datas_especiais').get(),
+  ]);
+  _configCache = cDoc.exists ? cDoc.data() : {};
+  _datasCache  = dDoc.exists ? (dDoc.data() || {}) : {};
+  return { config: _configCache, datas: _datasCache };
+}
+
+// Retorna true se a data (YYYY-MM-DD) tem atendimento
+function isDiaAtivo(dateStr, config, datas) {
+  const especial = datas[dateStr];
+  if (especial) return especial.tipo !== 'fechado';
+  const [y, mo, d] = dateStr.split('-').map(Number);
+  const dow = new Date(y, mo - 1, d).getDay();
+  const cfg = config[DIAS_KEY[dow]];
+  return !!(cfg && cfg.ativo);
+}
+
 window.selectService = function(id) {
   state.selected = SERVICES.find(s => s.id === id);
   document.querySelectorAll('.option-item').forEach(el => el.classList.remove('selected'));
   const item = document.getElementById('opt-' + id);
   if (item) item.classList.add('selected');
-  const dateInput = document.getElementById('pref-date');
-  if (dateInput) {
-    dateInput.min = new Date().toISOString().split('T')[0];
-    dateInput.addEventListener('change', function() {
-      if (this.value) carregarSlotsParaData(this.value);
-    });
-  }
+  // Invalida cache para pegar config atualizada
+  _configCache = null; _datasCache = null;
   setTimeout(() => showStep(2), 300);
+  // Renderiza calendário assim que entrar no passo 2
+  setTimeout(() => renderCalendario(), 350);
+};
+
+// ─── Calendário customizado ────────────────────────
+let calAno, calMes;
+
+async function renderCalendario() {
+  const wrap = document.getElementById('cal-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = '<p style="color:#888;font-size:13px;padding:8px 0;">Carregando calendário...</p>';
+
+  const { config, datas } = await getConfigs();
+
+  const hoje = new Date();
+  if (calAno === undefined || calMes === undefined) {
+    calAno = hoje.getFullYear(); calMes = hoje.getMonth();
+  }
+
+  const mesNomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                    'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const primeiroDia = new Date(calAno, calMes, 1).getDay();
+  const diasNoMes   = new Date(calAno, calMes + 1, 0).getDate();
+  const hojeStr     = hoje.toISOString().split('T')[0];
+
+  let cells = '';
+  // Cabeçalho dias da semana
+  ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].forEach(d => {
+    cells += `<div style="font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:1px;color:#555;text-align:center;padding:6px 0;">${d}</div>`;
+  });
+  // Células vazias antes do dia 1
+  for (let i = 0; i < primeiroDia; i++) cells += '<div></div>';
+
+  for (let dia = 1; dia <= diasNoMes; dia++) {
+    const mm   = String(calMes + 1).padStart(2,'0');
+    const dd   = String(dia).padStart(2,'0');
+    const dateStr = `${calAno}-${mm}-${dd}`;
+    const passado = dateStr < hojeStr;
+    const ativo   = !passado && isDiaAtivo(dateStr, config, datas);
+    const selecionado = state.date === dateStr;
+
+    let bg = 'transparent', cor = '#333', cursor = 'default', border = '1px solid transparent';
+    if (passado)    { cor = '#2a2a2a'; }
+    else if (!ativo){ bg = '#111'; cor = '#333'; }
+    else            { cor = '#f5f0e8'; cursor = 'pointer'; border = '1px solid #2a2a2a'; }
+    if (selecionado){ bg = '#c9a84c'; cor = '#0a0a0a'; border = '1px solid #c9a84c'; }
+    if (dateStr === hojeStr && !selecionado && ativo) border = '1px solid #c9a84c66';
+
+    const onclick = ativo ? `selecionarData('${dateStr}')` : '';
+    cells += `<div onclick="${onclick}"
+      style="text-align:center;padding:8px 4px;border-radius:6px;background:${bg};color:${cor};
+             cursor:${cursor};font-family:'Roboto',sans-serif;font-size:14px;border:${border};
+             transition:background .15s;" ${ativo ? 'class="cal-dia"' : ''}>${dia}</div>`;
+  }
+
+  wrap.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <button onclick="mudarMes(-1)" style="background:none;border:1px solid #333;color:#f5f0e8;padding:6px 14px;border-radius:4px;cursor:pointer;font-size:16px;">‹</button>
+      <span style="font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:2px;color:#f5f0e8;text-transform:uppercase;">${mesNomes[calMes]} ${calAno}</span>
+      <button onclick="mudarMes(1)"  style="background:none;border:1px solid #333;color:#f5f0e8;padding:6px 14px;border-radius:4px;cursor:pointer;font-size:16px;">›</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;">${cells}</div>
+    <div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap;">
+      <span style="font-size:11px;color:#555;font-family:'Roboto',sans-serif;">■ <span style="color:#f5f0e8;">Disponível</span></span>
+      <span style="font-size:11px;color:#555;font-family:'Roboto',sans-serif;">■ <span style="color:#333;">Indisponível</span></span>
+      <span style="font-size:11px;color:#c9a84c;font-family:'Roboto',sans-serif;">■ <span style="color:#c9a84c;">Selecionado</span></span>
+    </div>`;
+}
+
+window.mudarMes = function(delta) {
+  calMes += delta;
+  if (calMes > 11) { calMes = 0; calAno++; }
+  if (calMes < 0)  { calMes = 11; calAno--; }
+  renderCalendario();
+};
+
+window.selecionarData = function(dateStr) {
+  state.date = dateStr;
+  // Atualiza visual sem re-renderizar tudo
+  document.querySelectorAll('.cal-dia').forEach(el => {
+    const onclick = el.getAttribute('onclick') || '';
+    const isSelected = onclick.includes(dateStr);
+    el.style.background = isSelected ? '#c9a84c' : 'transparent';
+    el.style.color       = isSelected ? '#0a0a0a' : '#f5f0e8';
+    el.style.border      = isSelected ? '1px solid #c9a84c' : '1px solid #2a2a2a';
+  });
+  // Preenche o input hidden para compatibilidade com o resto do código
+  const inp = document.getElementById('pref-date');
+  if (inp) inp.value = dateStr;
+  // Carrega horários para a data
+  carregarSlotsParaData(dateStr);
 };
 
 // ─── Controle de passos ────────────────────────────
@@ -307,7 +418,7 @@ window.goBack = function(n) { showStep(n); };
 window.goToConfirm = function() {
   const name  = document.getElementById('client-name').value.trim();
   const phone = document.getElementById('client-phone').value.trim();
-  const date  = document.getElementById('pref-date').value;
+  const date  = state.date || document.getElementById('pref-date').value;
   const time  = document.getElementById('pref-time').value;
   if (!name || !phone || !date || !time) {
     alert('Por favor, preencha todos os campos obrigatórios (*).');
@@ -380,11 +491,15 @@ window.submitBooking = async function() {
 
     document.getElementById('success-modal').classList.add('open');
     state = { selected: null, name: '', phone: '', date: '', time: '', obs: '' };
+    calAno = undefined; calMes = undefined;
     ['client-name','client-phone','pref-date','obs'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = '';
     });
-    document.getElementById('pref-time').value = '';
+    document.getElementById('pref-time').innerHTML = '<option value="">Selecione uma data primeiro</option>';
+    document.getElementById('pref-time').disabled = true;
+    const calWrap = document.getElementById('cal-wrap');
+    if (calWrap) calWrap.innerHTML = '';
     renderServiceOptions();
     showStep(1);
   } catch (err) {
