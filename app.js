@@ -48,6 +48,7 @@ const PLANS = [
 
 // ─── Estado global ─────────────────────────────────
 let state = { selected: null, name: '', phone: '', date: '', time: '', obs: '' };
+window.state = state;
 let currentUser = null; // { nome, telefone } — preenchido após login
 
 // ══════════════════════════════════════════════════
@@ -495,7 +496,22 @@ async function carregarSlotsParaData(dataSelecionada) {
         .where('status', 'in', ['agendado', 'confirmado'])
         .get()
     ]);
-    const ocupados = new Set(agendSnap.docs.map(d => d.data().horario));
+    // Monta set de slots ocupados respeitando duração do serviço
+    const SERVICOS_60MIN = ['nevou_corte', 'luzes_corte', 'Nevou + Corte', 'Luzes + Corte'];
+    const ocupados = new Set();
+    agendSnap.docs.forEach(d => {
+      const ag = d.data();
+      ocupados.add(ag.horario);
+      // Se o serviço dura 1h, bloqueia também o slot seguinte (30min depois)
+      const eh60min = SERVICOS_60MIN.includes(ag.servico) || SERVICOS_60MIN.includes(ag.servicoId);
+      if (eh60min && ag.horario) {
+        const [h, m] = ag.horario.split(':').map(Number);
+        const totalMin = h * 60 + m + 30;
+        const proxH = String(Math.floor(totalMin / 60)).padStart(2, '0');
+        const proxM = String(totalMin % 60).padStart(2, '0');
+        ocupados.add(`${proxH}:${proxM}`);
+      }
+    });
     const datasEspeciais = datasDoc.exists ? (datasDoc.data() || {}) : {};
     const dataEspecial   = datasEspeciais[dataSelecionada];
     let cfg;
@@ -519,11 +535,24 @@ async function carregarSlotsParaData(dataSelecionada) {
     const agora = new Date();
     const hoje  = agora.toISOString().split('T')[0];
     const agoraMin = agora.getHours() * 60 + agora.getMinutes();
+    // Verifica se o serviço selecionado dura 1h
+    const SERVICOS_60MIN = ['nevou_corte', 'luzes_corte', 'Nevou + Corte', 'Luzes + Corte'];
+    const servicoAtual = state && state.selected ? state.selected : null;
+    const servico60min = servicoAtual &&
+      (SERVICOS_60MIN.includes(servicoAtual.id) || SERVICOS_60MIN.includes(servicoAtual.name));
+
     const livres = slots.filter(s => {
       if (ocupados.has(s)) return false;
       if (dataSelecionada === hoje) {
         const [sh, sm] = s.split(':').map(Number);
         if (sh * 60 + sm <= agoraMin + 30) return false;
+      }
+      // Se serviço dura 1h, verifica se o próximo slot também está livre
+      if (servico60min) {
+        const [sh, sm] = s.split(':').map(Number);
+        const totalMin = sh * 60 + sm + 30;
+        const prox = `${String(Math.floor(totalMin/60)).padStart(2,'0')}:${String(totalMin%60).padStart(2,'0')}`;
+        if (ocupados.has(prox) || !slots.includes(prox)) return false;
       }
       return true;
     });
@@ -755,6 +784,7 @@ window.submitBooking = async function() {
     sendWhatsAppNotification();
     document.getElementById('success-modal').classList.add('open');
     state = { selected: null, name: '', phone: '', date: '', time: '', obs: '' };
+    window.state = state;
     calAno = undefined; calMes = undefined;
     ['client-name','client-phone','pref-date','obs'].forEach(id => {
       const el = document.getElementById(id); if (el) el.value = '';
