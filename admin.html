@@ -109,51 +109,6 @@
       transition: background .2s !important;
     }
     #btn-salvar-horarios:hover { background: #333 !important; }
-
-    /* ═══ CLIENTES — lista mobile responsiva ═══ */
-    /* Linha de cliente: no mobile vira card empilhado */
-    @media (max-width: 768px) {
-      /* Resumo: 2 colunas */
-      #clientes-resumo {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-      }
-      /* Cada linha de cliente vira coluna */
-      #clientes-lista [data-cliente-row] {
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        gap: 12px !important;
-        padding: 14px 14px !important;
-      }
-      #clientes-lista [data-cliente-row] > [data-stats] {
-        width: 100% !important;
-        display: grid !important;
-        grid-template-columns: repeat(3, 1fr) !important;
-        border-top: 1px solid rgba(255,255,255,0.04) !important;
-        padding-top: 10px !important;
-        gap: 0 !important;
-      }
-      /* Drawer full-screen no mobile */
-      #cliente-drawer-box {
-        width: 100vw !important;
-        border-left: none !important;
-        top: auto !important;
-        bottom: 0 !important;
-        max-height: 90vh !important;
-        border-radius: 12px 12px 0 0 !important;
-        border-top: 1px solid #2a2a2a !important;
-      }
-      /* Busca em coluna */
-      #clientes-search { width: 100% !important; }
-    }
-
-    /* ═══ CLIENTES — resumo desktop: 4 colunas grid ═══ */
-    @media (min-width: 769px) {
-      #clientes-resumo {
-        display: grid !important;
-        grid-template-columns: repeat(4, 1fr) !important;
-      }
-    }
   </style>
 </head>
 <body class="admin-body">
@@ -334,9 +289,13 @@
             <input type="date" id="filter-date" onchange="applyFilters()"/>
             <input type="text" id="filter-search" oninput="applyFilters()" placeholder="Buscar cliente..."/>
           </div>
-          <div style="display:flex;gap:10px;">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
             <button class="btn-export" onclick="exportCSV()">Exportar CSV</button>
             <button class="btn-export" onclick="abrirModalConcluirTodos()" style="border-color:#1f9e54;color:#2db866;">Concluir Todos</button>
+            <button class="btn-export" onclick="abrirModalAvulso()" style="border-color:#c8a96e;color:#c8a96e;display:flex;align-items:center;gap:7px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+              Atendimento Avulso
+            </button>
           </div>
         </div>
         <div class="table-wrap">
@@ -789,6 +748,7 @@
       if (tab === 'horarios') carregarHorarios();
       if (tab === 'datas') carregarDatasEspeciais();
       if (tab === 'clientes') renderClientes();
+      gerenciarFab(tab);
       // Scroll para o topo no mobile
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -963,8 +923,8 @@
         tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#555;padding:32px;">Nenhum agendamento encontrado.</td></tr>';
         return;
       }
-      tbody.innerHTML = data.map(a => `<tr>
-        <td data-label="Cliente"><strong style="color:var(--white)">${a.cliente||'--'}</strong></td>
+      tbody.innerHTML = data.map(a => `<tr ${a.origem === 'avulso' ? 'style="border-left:2px solid rgba(200,169,110,0.3);"' : ''}>
+        <td data-label="Cliente"><strong style="color:var(--white)">${a.cliente||'--'}</strong>${a.origem==='avulso' ? ' <span style="font-family:\'Oswald\',sans-serif;font-size:8px;letter-spacing:1.5px;background:rgba(200,169,110,0.1);color:#c8a96e;border:1px solid rgba(200,169,110,0.25);padding:2px 6px;border-radius:3px;vertical-align:middle;">AVULSO</span>' : ''}</td>
         <td data-label="WhatsApp"><a href="https://wa.me/55${(a.telefone||'').replace(/\D/g,'')}" target="_blank" style="color:var(--gold);text-decoration:none;">${a.telefone||'--'}</a></td>
         <td data-label="Serviço">${a.servico||'--'}</td>
         <td data-label="Data">${a.data ? formatDate(a.data) : '--'}</td>
@@ -1389,22 +1349,16 @@
       const clienteTop    = [...clientes].sort((a, b) => b.stats.gastoTotal - a.stats.gastoTotal)[0];
 
       const resumoEl = document.getElementById('clientes-resumo');
-      const resumoIcons = {
-        clientes: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>`,
-        receita:  `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>`,
-        ticket:   `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,
-        top:      `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`,
-      };
       if (resumoEl) resumoEl.innerHTML = [
-        { icon: resumoIcons.clientes, val: totalClientes, label: 'Total de Clientes' },
-        { icon: resumoIcons.receita,  val: 'R$' + totalGasto.toFixed(2).replace('.', ','), label: 'Receita Total' },
-        { icon: resumoIcons.ticket,   val: isNaN(ticketMedio) || !isFinite(ticketMedio) ? 'R$0,00' : 'R$' + ticketMedio.toFixed(2).replace('.', ','), label: 'Ticket Médio Geral' },
-        { icon: resumoIcons.top,      val: clienteTop ? clienteTop.nome.split(' ')[0] : '—', label: 'Maior Gastador' },
+        { icon: 'cli', val: totalClientes, label: 'Total de Clientes' },
+        { icon: 'R$', val: 'R$' + totalGasto.toFixed(2).replace('.', ','), label: 'Receita Total' },
+        { icon: '~', val: isNaN(ticketMedio) || !isFinite(ticketMedio) ? 'R$0,00' : 'R$' + ticketMedio.toFixed(2).replace('.', ','), label: 'Ticket Médio Geral' },
+        { icon: 'top', val: clienteTop ? clienteTop.nome.split(' ')[0] : '—', label: 'Maior Gastador' },
       ].map(c => `
-        <div style="flex:1;min-width:120px;background:#141414;padding:18px 20px;">
-          <div style="color:#3a3a3a;margin-bottom:10px;display:flex;align-items:center;">${c.icon}</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:#f0ece4;letter-spacing:1px;line-height:1;">${c.val}</div>
-          <div style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:2px;color:#555;text-transform:uppercase;margin-top:6px;">${c.label}</div>
+        <div style="flex:1;min-width:130px;background:#141414;padding:18px 20px;">
+          <div style="font-size:20px;margin-bottom:6px;">${c.icon}</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#f0ece4;letter-spacing:1px;">${c.val}</div>
+          <div style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;color:#555;text-transform:uppercase;margin-top:2px;">${c.label}</div>
         </div>
       `).join('');
 
@@ -1441,45 +1395,41 @@
           const nascFmt    = c.nascimento ? fmtNascimento(c.nascimento) : '';
           const anivAmanha = isAniversarioAmanha(c.nascimento);
           return `<div onclick="abrirClienteDrawer('${encodeURIComponent(JSON.stringify({ nome: c.nome, telefone: c.telefone, nascimento: c.nascimento || '', agendamentos: c.agendamentos }))}')"
-            style="background:#141414;padding:14px 20px;display:flex;align-items:center;gap:16px;cursor:pointer;transition:background .15s;${anivAmanha ? 'border-left:3px solid #c8a96e;' : 'border-left:3px solid transparent;'}"
-            onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background='#141414'">
-            <!-- Avatar -->
-            <div style="width:40px;height:40px;border-radius:50%;background:${anivAmanha ? '#2a1e00' : '#1e1e1e'};border:1px solid ${anivAmanha ? '#c8a96e' : '#2a2a2a'};display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:17px;color:${anivAmanha ? '#c8a96e' : '#555'};flex-shrink:0;">
+            style="background:#141414;padding:16px 20px;display:flex;align-items:center;gap:16px;cursor:pointer;transition:background .2s;flex-wrap:wrap;${anivAmanha ? 'border-left:3px solid #c8a96e;' : ''}"
+            onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background='#161616'">
+            <div style="width:42px;height:42px;border-radius:50%;background:${anivAmanha ? '#2a1e00' : '#222'};border:1px solid ${anivAmanha ? '#c8a96e' : '#2a2a2a'};display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:${anivAmanha ? '#c8a96e' : '#555'};flex-shrink:0;">
               ${(c.nome || '?')[0].toUpperCase()}
             </div>
-            <!-- Nome + telefone -->
-            <div style="flex:1;min-width:0;">
-              <div style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:500;color:#f0ece4;letter-spacing:0.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.nome}${anivAmanha ? ' <span style="font-size:9px;background:#2a1e00;color:#c8a96e;letter-spacing:1px;padding:2px 6px;border-radius:3px;border:1px solid #4a3800;vertical-align:middle;">\uD83C\uDF82 ANIVER. AMANH\u00c3</span>' : ''}</div>
-              <div style="font-family:'Roboto',sans-serif;font-size:11px;color:#4a4a4a;margin-top:3px;display:flex;align-items:center;gap:8px;">
+            <div style="flex:1;min-width:120px;">
+              <div style="font-family:'Oswald',sans-serif;font-size:15px;font-weight:500;color:#f0ece4;">${c.nome}${anivAmanha ? ' <span style="font-size:10px;background:#2a1e00;color:#c8a96e;letter-spacing:1px;padding:2px 7px;border-radius:4px;border:1px solid #4a3800;">\uD83C\uDF82 ANIVER. AMANH\u00c3</span>' : ''}</div>
+              <div style="font-family:'Roboto',sans-serif;font-size:11px;color:#555;margin-top:3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                 <span>${c.telefone}</span>
-                ${nascFmt ? `<span style="color:${anivAmanha ? '#c8a96e' : '#3a3a3a'};">\uD83C\uDF82 ${nascFmt}</span>` : ''}
+                ${nascFmt ? `<span style="color:${anivAmanha ? '#c8a96e' : '#444'};display:inline-flex;align-items:center;gap:3px;">\uD83C\uDF82 ${nascFmt}</span>` : ''}
               </div>
             </div>
-            <!-- Stats: visitas / ticket / gasto / favorito / última visita -->
-            <div style="display:flex;align-items:center;gap:0;flex-shrink:0;">
-              <div style="text-align:center;width:64px;padding:0 6px;border-right:1px solid #1e1e1e;">
-                <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#f0ece4;line-height:1.1;">${s.total}</div>
-                <div style="font-family:'Oswald',sans-serif;font-size:8px;letter-spacing:1.5px;color:#3a3a3a;text-transform:uppercase;margin-top:2px;">Visitas</div>
+            <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:center;">
+              <div style="text-align:center;">
+                <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#f0ece4;">${s.total}</div>
+                <div style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:2px;color:#444;text-transform:uppercase;">Visitas</div>
               </div>
-              <div style="text-align:center;width:70px;padding:0 6px;border-right:1px solid #1e1e1e;">
-                <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#c8a96e;line-height:1.1;">R$${s.ticket.toFixed(0)}</div>
-                <div style="font-family:'Oswald',sans-serif;font-size:8px;letter-spacing:1.5px;color:#3a3a3a;text-transform:uppercase;margin-top:2px;">Ticket</div>
+              <div style="text-align:center;">
+                <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#c8a96e;">R$${s.ticket.toFixed(0)}</div>
+                <div style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:2px;color:#444;text-transform:uppercase;">Ticket</div>
               </div>
-              <div style="text-align:center;width:72px;padding:0 6px;border-right:1px solid #1e1e1e;">
-                <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#f0ece4;line-height:1.1;">R$${s.gastoTotal.toFixed(0)}</div>
-                <div style="font-family:'Oswald',sans-serif;font-size:8px;letter-spacing:1.5px;color:#3a3a3a;text-transform:uppercase;margin-top:2px;">Total</div>
+              <div style="text-align:center;">
+                <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#f0ece4;">R$${s.gastoTotal.toFixed(0)}</div>
+                <div style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:2px;color:#444;text-transform:uppercase;">Total Gasto</div>
               </div>
-              <div style="text-align:center;width:100px;padding:0 10px;border-right:1px solid #1e1e1e;">
-                <div style="font-family:'Roboto',sans-serif;font-size:11px;color:#777;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;">${favorito}</div>
-                <div style="font-family:'Oswald',sans-serif;font-size:8px;letter-spacing:1.5px;color:#3a3a3a;text-transform:uppercase;margin-top:2px;">Favorito</div>
+              <div style="text-align:center;max-width:110px;">
+                <div style="font-family:'Roboto',sans-serif;font-size:11px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${favorito}</div>
+                <div style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:2px;color:#444;text-transform:uppercase;">Favorito</div>
               </div>
-              <div style="text-align:center;width:90px;padding:0 10px;">
-                <div style="font-family:'Roboto',sans-serif;font-size:11px;color:#666;line-height:1.3;">${ultimaFmt}</div>
-                <div style="font-family:'Oswald',sans-serif;font-size:8px;letter-spacing:1.5px;color:#3a3a3a;text-transform:uppercase;margin-top:2px;">Última visita</div>
+              <div style="text-align:center;">
+                <div style="font-family:'Roboto',sans-serif;font-size:11px;color:#666;">${ultimaFmt}</div>
+                <div style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:2px;color:#444;text-transform:uppercase;">Última Visita</div>
               </div>
             </div>
-            <!-- Seta -->
-            <div style="color:#2a2a2a;font-size:16px;flex-shrink:0;margin-left:4px;">›</div>
+            <div style="color:#333;font-size:14px;flex-shrink:0;">›</div>
           </div>`;
         }).join('')}
       </div>`;
@@ -1513,16 +1463,17 @@
 
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.06);border-radius:8px;overflow:hidden;margin-bottom:24px;">
           ${[
-            { val: s.total,                                                                    label: 'Visitas' },
-            { val: s.concluidos,                                                               label: 'Concluídos' },
-            { val: 'R$' + s.gastoTotal.toFixed(2).replace('.', ','),                           label: 'Total Gasto' },
-            { val: 'R$' + s.ticket.toFixed(2).replace('.', ','),                               label: 'Ticket Médio' },
-            { val: s.ultimaVisita ? s.ultimaVisita.split('-').reverse().join('/') : '—',       label: 'Última Visita' },
-            { val: s.servicoFavorito ? s.servicoFavorito[0].split('+')[0].trim() : '—',       label: 'Serviço Favorito' },
+            { icon: 'svc', val: s.total,                                                                     label: 'Visitas' },
+            { icon: 'ok', val: s.concluidos,                                                                 label: 'Concluídos' },
+            { icon: 'R$', val: 'R$' + s.gastoTotal.toFixed(2).replace('.', ','),                             label: 'Total Gasto' },
+            { icon: '~', val: 'R$' + s.ticket.toFixed(2).replace('.', ','),                                 label: 'Ticket Médio' },
+            { icon: 'dt', val: s.ultimaVisita ? s.ultimaVisita.split('-').reverse().join('/') : '—',         label: 'Última Visita' },
+            { icon: 'top', val: s.servicoFavorito ? s.servicoFavorito[0].split('+')[0].trim() : '—',          label: 'Serviço Favorito' },
           ].map(m => `
-            <div style="background:#141414;padding:16px 12px;text-align:center;">
-              <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#f0ece4;letter-spacing:1px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${m.val}</div>
-              <div style="font-family:'Oswald',sans-serif;font-size:8px;letter-spacing:1.5px;color:#444;text-transform:uppercase;margin-top:5px;">${m.label}</div>
+            <div style="background:#141414;padding:14px 16px;text-align:center;">
+              <div style="font-size:16px;margin-bottom:4px;">${m.icon}</div>
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#f0ece4;letter-spacing:1px;">${m.val}</div>
+              <div style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:1.5px;color:#444;text-transform:uppercase;margin-top:2px;">${m.label}</div>
             </div>
           `).join('')}
         </div>
@@ -2121,6 +2072,225 @@
       }
     }
 
+    // ── ATENDIMENTO AVULSO (walk-in) ─────────────────────────────────────
+
+    async function abrirModalAvulso() {
+      // Garante que os clientes estejam carregados para o autocomplete
+      if (!Object.keys(_clientesFirestore).length) {
+        try { await carregarClientesFirestore(); } catch(e) {}
+      }
+
+      const modal = document.getElementById('avulso-modal');
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+
+      // Preenche o select de serviços
+      const sel = document.getElementById('avulso-servico');
+      if (sel.options.length <= 1) {
+        SERVICES.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s.id;
+          opt.textContent = s.name + ' — R$' + s.price.toFixed(2).replace('.', ',');
+          opt.dataset.price = s.price;
+          opt.dataset.name  = s.name;
+          sel.appendChild(opt);
+        });
+      }
+
+      // Data e hora padrão = agora
+      const now  = new Date();
+      const yyyy = now.getFullYear();
+      const mm   = String(now.getMonth() + 1).padStart(2, '0');
+      const dd   = String(now.getDate()).padStart(2, '0');
+      const hh   = String(now.getHours()).padStart(2, '0');
+      const mi   = String(now.getMinutes()).padStart(2, '0');
+      document.getElementById('avulso-data').value = yyyy + '-' + mm + '-' + dd;
+      document.getElementById('avulso-hora').value = hh + ':' + mi;
+
+      // Limpa campos
+      document.getElementById('avulso-cliente').value = '';
+      document.getElementById('avulso-tel').value     = '';
+      document.getElementById('avulso-preco').value   = '';
+      document.getElementById('avulso-obs').value     = '';
+      document.getElementById('avulso-servico').value = '';
+      document.getElementById('avulso-sugestoes').style.display = 'none';
+      document.getElementById('avulso-preview').style.display   = 'none';
+      document.getElementById('avulso-status').style.display    = 'none';
+
+      const btn = document.getElementById('avulso-btn-salvar');
+      btn.textContent = 'Registrar Atendimento';
+      btn.disabled = false;
+
+      setTimeout(() => document.getElementById('avulso-cliente').focus(), 100);
+    }
+
+    function fecharModalAvulso() {
+      document.getElementById('avulso-modal').style.display = 'none';
+      document.body.style.overflow = '';
+    }
+
+    // Fecha modal ao clicar no backdrop
+    document.getElementById('avulso-modal') && document.getElementById('avulso-modal').addEventListener('click', function(e) {
+      if (e.target === this) fecharModalAvulso();
+    });
+
+    function avulsoBuscarCliente(q) {
+      const sug = document.getElementById('avulso-sugestoes');
+      if (!q || q.length < 2) { sug.style.display = 'none'; return; }
+      const lower = q.toLowerCase();
+      const matches = Object.values(_clientesFirestore)
+        .filter(c => c.nome && c.nome.toLowerCase().includes(lower))
+        .slice(0, 6);
+      if (!matches.length) { sug.style.display = 'none'; return; }
+      sug.style.display = 'block';
+      sug.innerHTML = matches.map(c => `
+        <div onclick="avulsoSelecionarCliente('${encodeURIComponent(c.nome)}','${(c.telefone||'').replace(/\D/g,'')}' )"
+          style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:background .15s;"
+          onmouseover="this.style.background='#202020'" onmouseout="this.style.background='transparent'">
+          <div style="width:30px;height:30px;border-radius:50%;background:#1e1e1e;border:1px solid #2a2a2a;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:14px;color:#555;flex-shrink:0;">${(c.nome||'?')[0].toUpperCase()}</div>
+          <div>
+            <div style="font-family:'Oswald',sans-serif;font-size:13px;color:#f0ece4;">${c.nome}</div>
+            <div style="font-family:'Roboto',sans-serif;font-size:11px;color:#444;">${c.telefone || ''}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function avulsoSelecionarCliente(nomeEnc, tel) {
+      const nome = decodeURIComponent(nomeEnc);
+      document.getElementById('avulso-cliente').value = nome;
+      document.getElementById('avulso-tel').value     = tel;
+      document.getElementById('avulso-sugestoes').style.display = 'none';
+      avulsoAtualizarPreview();
+    }
+
+    function avulsoPreencherPreco() {
+      const sel = document.getElementById('avulso-servico');
+      const opt = sel.options[sel.selectedIndex];
+      if (opt && opt.dataset.price) {
+        document.getElementById('avulso-preco').value = opt.dataset.price;
+      }
+      avulsoAtualizarPreview();
+    }
+
+    function avulsoAtualizarPreview() {
+      const nome    = document.getElementById('avulso-cliente').value.trim();
+      const sel     = document.getElementById('avulso-servico');
+      const svcName = sel.options[sel.selectedIndex]?.dataset?.name || sel.value;
+      const preco   = parseFloat(document.getElementById('avulso-preco').value) || 0;
+      const data    = document.getElementById('avulso-data').value;
+      const hora    = document.getElementById('avulso-hora').value;
+      const obs     = document.getElementById('avulso-obs').value.trim();
+
+      const preview = document.getElementById('avulso-preview');
+      if (!nome && !svcName) { preview.style.display = 'none'; return; }
+
+      preview.style.display = 'block';
+      const dataFmt = data ? data.split('-').reverse().join('/') : '--';
+      const items = [
+        { l: 'Cliente',  v: nome   || '--' },
+        { l: 'Serviço',  v: svcName || '--' },
+        { l: 'Valor',    v: preco ? 'R$' + preco.toFixed(2).replace('.', ',') : '--' },
+        { l: 'Data',     v: dataFmt + (hora ? ' às ' + hora : '') },
+        ...(obs ? [{ l: 'Obs', v: obs }] : []),
+      ];
+      document.getElementById('avulso-preview-body').innerHTML = items.map(i => `
+        <div>
+          <div style="font-family:'Oswald',sans-serif;font-size:8px;letter-spacing:2px;color:#444;text-transform:uppercase;margin-bottom:2px;">${i.l}</div>
+          <div style="font-family:'Roboto',sans-serif;font-size:12px;color:#aaa;">${i.v}</div>
+        </div>
+      `).join('');
+    }
+
+    // Atualiza preview em tempo real nos outros campos
+    ['avulso-cliente','avulso-preco','avulso-data','avulso-hora','avulso-obs'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', avulsoAtualizarPreview);
+    });
+
+    async function salvarAtendimentoAvulso() {
+      const nome   = document.getElementById('avulso-cliente').value.trim();
+      const tel    = document.getElementById('avulso-tel').value.trim();
+      const sel    = document.getElementById('avulso-servico');
+      const svcOpt = sel.options[sel.selectedIndex];
+      const svcName = svcOpt?.dataset?.name || sel.value;
+      const preco   = parseFloat(document.getElementById('avulso-preco').value) || 0;
+      const data    = document.getElementById('avulso-data').value;
+      const hora    = document.getElementById('avulso-hora').value;
+      const obs     = document.getElementById('avulso-obs').value.trim();
+
+      const statusEl = document.getElementById('avulso-status');
+      function mostrarErro(msg) {
+        statusEl.style.display = 'block';
+        statusEl.style.background = 'rgba(176,48,48,0.1)';
+        statusEl.style.color = '#d45a5a';
+        statusEl.style.border = '1px solid rgba(176,48,48,0.25)';
+        statusEl.textContent = msg;
+      }
+
+      if (!nome)    { mostrarErro('Informe o nome do cliente.'); return; }
+      if (!svcName) { mostrarErro('Selecione um serviço.'); return; }
+      if (!data)    { mostrarErro('Informe a data do atendimento.'); return; }
+
+      const btn = document.getElementById('avulso-btn-salvar');
+      btn.textContent = 'Salvando...';
+      btn.disabled = true;
+      statusEl.style.display = 'none';
+
+      try {
+        const payload = {
+          cliente:     nome,
+          telefone:    tel || '',
+          servico:     svcName,
+          preco:       preco,
+          data:        data,
+          horario:     hora || '',
+          status:      'concluido',
+          origem:      'avulso',
+          obs:         obs,
+          criadoEm:    firebase.firestore.FieldValue.serverTimestamp(),
+          atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+        };
+
+        await db.collection('agendamentos').add(payload);
+
+        // Atualiza histórico do cliente no Firestore (se tiver telefone)
+        if (tel) {
+          const clienteRef = db.collection('clientes').doc(tel);
+          await clienteRef.set({ nome, telefone: tel }, { merge: true });
+        }
+
+        // Feedback de sucesso
+        statusEl.style.display = 'block';
+        statusEl.style.background = 'rgba(31,158,84,0.1)';
+        statusEl.style.color = '#2db866';
+        statusEl.style.border = '1px solid rgba(31,158,84,0.25)';
+        statusEl.textContent = '✓ Atendimento registrado com sucesso!';
+        btn.textContent = '✓ Registrado';
+
+        setTimeout(() => fecharModalAvulso(), 1400);
+
+      } catch(e) {
+        mostrarErro('Erro ao salvar: ' + (e.message || e));
+        btn.textContent = 'Registrar Atendimento';
+        btn.disabled = false;
+      }
+    }
+
+    // Fecha ao pressionar ESC
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        if (document.getElementById('avulso-modal')?.style.display === 'flex') fecharModalAvulso();
+      }
+    });
+
+    // Botão flutuante: aparece só na aba de agendamentos/dashboard no mobile
+    function gerenciarFab(tab) {
+      const fab = document.getElementById('btn-avulso-fab');
+      if (!fab) return;
+      fab.style.display = (tab === 'agendamentos' || tab === 'dashboard') ? 'flex' : 'none';
+    }
+
     // Registro do Service Worker (PWA)
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
@@ -2131,6 +2301,111 @@
     }
   
   </script>
+  <!-- ════════════════════════════════════════════════
+       MODAL — ATENDIMENTO AVULSO (walk-in)
+       ════════════════════════════════════════════════ -->
+  <div id="avulso-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10000;align-items:center;justify-content:center;padding:16px;">
+    <div style="background:#111;border:1px solid #252525;border-radius:8px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;box-shadow:0 40px 100px rgba(0,0,0,0.9);position:relative;">
+
+      <!-- Header -->
+      <div style="padding:24px 28px 18px;border-bottom:1px solid #1e1e1e;display:flex;align-items:flex-start;justify-content:space-between;position:sticky;top:0;background:#111;z-index:1;">
+        <div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:#f0ece4;">Atendimento Avulso</div>
+          <div style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:3px;color:#555;text-transform:uppercase;margin-top:3px;">Cliente sem agendamento · Walk-in</div>
+        </div>
+        <button onclick="fecharModalAvulso()" style="background:none;border:none;color:#444;font-size:20px;cursor:pointer;padding:2px 6px;line-height:1;border-radius:4px;transition:color .2s;" onmouseover="this.style.color='#f0ece4'" onmouseout="this.style.color='#444'">✕</button>
+      </div>
+
+      <!-- Body -->
+      <div style="padding:24px 28px;display:flex;flex-direction:column;gap:18px;">
+
+        <!-- Cliente: busca ou nome livre -->
+        <div>
+          <label style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:3px;color:#555;text-transform:uppercase;display:block;margin-bottom:8px;">Cliente</label>
+          <input type="text" id="avulso-cliente" placeholder="Nome do cliente" autocomplete="off"
+            oninput="avulsoBuscarCliente(this.value)"
+            style="width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:11px 14px;color:#f0ece4;font-family:'Roboto',sans-serif;font-size:14px;outline:none;transition:border-color .2s;"
+            onfocus="this.style.borderColor='#c8a96e'" onblur="this.style.borderColor='#2a2a2a'"/>
+          <!-- Sugestões de clientes cadastrados -->
+          <div id="avulso-sugestoes" style="display:none;background:#161616;border:1px solid #252525;border-top:none;border-radius:0 0 6px 6px;overflow:hidden;max-height:180px;overflow-y:auto;"></div>
+          <input type="hidden" id="avulso-tel"/>
+        </div>
+
+        <!-- Serviço -->
+        <div>
+          <label style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:3px;color:#555;text-transform:uppercase;display:block;margin-bottom:8px;">Serviço</label>
+          <select id="avulso-servico" onchange="avulsoPreencherPreco()"
+            style="width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:11px 14px;color:#f0ece4;font-family:'Roboto',sans-serif;font-size:14px;outline:none;cursor:pointer;color-scheme:dark;transition:border-color .2s;"
+            onfocus="this.style.borderColor='#c8a96e'" onblur="this.style.borderColor='#2a2a2a'">
+            <option value="">Selecionar serviço...</option>
+          </select>
+        </div>
+
+        <!-- Valor + Data + Hora em linha -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+          <div>
+            <label style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:3px;color:#555;text-transform:uppercase;display:block;margin-bottom:8px;">Valor (R$)</label>
+            <input type="number" id="avulso-preco" placeholder="0,00" step="0.01" min="0"
+              style="width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:11px 14px;color:#c8a96e;font-family:'Bebas Neue',sans-serif;font-size:18px;outline:none;letter-spacing:1px;transition:border-color .2s;"
+              onfocus="this.style.borderColor='#c8a96e'" onblur="this.style.borderColor='#2a2a2a'"/>
+          </div>
+          <div>
+            <label style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:3px;color:#555;text-transform:uppercase;display:block;margin-bottom:8px;">Data</label>
+            <input type="date" id="avulso-data"
+              style="width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:11px 10px;color:#f0ece4;font-family:'Roboto',sans-serif;font-size:13px;outline:none;color-scheme:dark;transition:border-color .2s;"
+              onfocus="this.style.borderColor='#c8a96e'" onblur="this.style.borderColor='#2a2a2a'"/>
+          </div>
+          <div>
+            <label style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:3px;color:#555;text-transform:uppercase;display:block;margin-bottom:8px;">Hora</label>
+            <input type="time" id="avulso-hora"
+              style="width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:11px 10px;color:#f0ece4;font-family:'Roboto',sans-serif;font-size:13px;outline:none;color-scheme:dark;transition:border-color .2s;"
+              onfocus="this.style.borderColor='#c8a96e'" onblur="this.style.borderColor='#2a2a2a'"/>
+          </div>
+        </div>
+
+        <!-- Observação -->
+        <div>
+          <label style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:3px;color:#555;text-transform:uppercase;display:block;margin-bottom:8px;">Observação <span style="color:#333;">(opcional)</span></label>
+          <input type="text" id="avulso-obs" placeholder="Ex: Pagamento em dinheiro, desconto aplicado..."
+            style="width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:11px 14px;color:#f0ece4;font-family:'Roboto',sans-serif;font-size:13px;outline:none;transition:border-color .2s;"
+            onfocus="this.style.borderColor='#c8a96e'" onblur="this.style.borderColor='#2a2a2a'"/>
+        </div>
+
+        <!-- Preview do registro -->
+        <div id="avulso-preview" style="display:none;background:#0d0d0d;border:1px solid #1e1e1e;border-radius:6px;padding:14px 16px;">
+          <div style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:3px;color:#444;text-transform:uppercase;margin-bottom:10px;">Resumo do Atendimento</div>
+          <div id="avulso-preview-body" style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;"></div>
+        </div>
+
+        <!-- Feedback -->
+        <div id="avulso-status" style="display:none;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:1px;text-align:center;padding:10px;border-radius:4px;"></div>
+
+        <!-- Ações -->
+        <div style="display:flex;gap:10px;margin-top:4px;">
+          <button onclick="fecharModalAvulso()"
+            style="flex:1;padding:13px;background:transparent;border:1px solid #2a2a2a;border-radius:6px;color:#666;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;"
+            onmouseover="this.style.borderColor='#444';this.style.color='#aaa'" onmouseout="this.style.borderColor='#2a2a2a';this.style.color='#666'">
+            Cancelar
+          </button>
+          <button id="avulso-btn-salvar" onclick="salvarAtendimentoAvulso()"
+            style="flex:2;padding:13px;background:#c8a96e;border:none;border-radius:6px;color:#0a0a0a;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:2.5px;text-transform:uppercase;font-weight:700;cursor:pointer;transition:all .2s;"
+            onmouseover="this.style.background='#d4b87a'" onmouseout="this.style.background='#c8a96e'">
+            Registrar Atendimento
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botão flutuante no dashboard -->
+  <button id="btn-avulso-fab" onclick="abrirModalAvulso()"
+    style="display:none;position:fixed;bottom:80px;right:20px;z-index:500;background:#c8a96e;border:none;border-radius:50px;padding:12px 20px;color:#0a0a0a;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:700;cursor:pointer;box-shadow:0 8px 32px rgba(200,169,110,.35);display:flex;align-items:center;gap:8px;transition:all .2s;"
+    onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 12px 40px rgba(200,169,110,.5)'"
+    onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 8px 32px rgba(200,169,110,.35)'">
+    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Avulso
+  </button>
+
   <!-- BOTTOM NAV MOBILE -->
   <nav class="bottom-nav" id="bottom-nav">
     <a class="bottom-nav-item active" id="bnav-dashboard" onclick="showTab('dashboard', this); syncBottomNav('bnav-dashboard')">
