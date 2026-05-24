@@ -1,423 +1,119 @@
-// ─── ESTADO GLOBAL ───────────────────────────────────────────────────
-let MOCK_DATABASE = JSON.parse(localStorage.getItem('barber_db')) || {
-  users: [],
-  appointments: [],
-  services: [
-    { id: 'corte',             name: 'Corte',                        price: 25,  duration: '30 min', icon: '✂️' },
-    { id: 'corte_sobrancelha', name: 'Corte + Sobrancelha',          price: 30,  duration: '45 min', icon: '✂️' },
-    { id: 'corte_barba',       name: 'Corte + Barba',                price: 45,  duration: '60 min', icon: '💈' },
-    { id: 'corte_barba_sob',   name: 'Corte + Barba + Sobrancelha', price: 45,  duration: '75 min', icon: '💈' },
-    { id: 'barba',             name: 'Barba',                        price: 20,  duration: '30 min', icon: '🪒' },
-    { id: 'sobrancelha',       name: 'Sobrancelha',                  price: 5,   duration: '15 min', icon: '👁️' },
-    { id: 'nevou_corte',       name: 'Nevou + Corte',                price: 90,  duration: '60 min', icon: '❄️' },
-    { id: 'luzes_corte',       name: 'Luzes + Corte',                price: 75,  duration: '60 min', icon: '✨' },
-    { id: 'hidratacao',        name: 'Hidratação',                   price: 10,  duration: '20 min', icon: '💧' }
-  ],
-  plans: [
-    { id: 'basico',    name: 'Plano Básico',    price: 80,  description: '4 cortes por mês',                          perks: ['4 cortes/mês', 'Prioridade na marcação', '5% desconto antecipado'] },
-    { id: 'essencial', name: 'Plano Essencial', price: 105, description: 'Corte + Sobrancelha ilimitado',             perks: ['Corte + Sobrancelha ilimitado', 'Prioridade na marcação', '5% desconto antecipado'] },
-    { id: 'premium',   name: 'Plano Premium',   price: 135, description: 'Corte + Barba + Sobrancelha ilimitado',    perks: ['Corte + Barba + Sobrancelha ilimitado', 'Prioridade na marcação', 'Brinde: lavagem inclusa', '10% desconto antecipado'] }
-  ],
-  workingHours: [
-    '09:00','09:30','10:00','10:30','11:00','11:30',
-    '13:00','13:30','14:00','14:30','15:00','15:30',
-    '16:00','16:30','17:00','17:30','18:00','18:30','19:00'
-  ]
-};
+// ================================================
+//  VR BARBER SHOP — App Principal (Cliente)
+// ================================================
 
-let currentUser   = null;
-let currentStep   = 1;
-let selectedDate  = null;
-let selectedTime  = null;
-let selectedService = null; // objeto completo
-let calYear, calMonth;
+const WHATSAPP_NUMBER = '5585994044941';
+const WHATSAPP_NOTIFY = '5585994044941';
 
-const MONTH_NAMES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho",
-                     "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+// ─── Serviços ─────────────────────────────────────
+const SERVICES = [
+  { id: 'corte',             name: 'Corte',                        price: 25 },
+  { id: 'corte_sobrancelha', name: 'Corte + Sobrancelha',         price: 30 },
+  { id: 'corte_barba_sob',   name: 'Corte + Barba + Sobrancelha', price: 45 },
+  { id: 'barba',             name: 'Barba',                        price: 20 },
+  { id: 'sobrancelha',       name: 'Sobrancelha',                  price: 5  },
+  { id: 'nevou_corte',       name: 'Nevou + Corte',                price: 90 },
+  { id: 'luzes_corte',       name: 'Luzes + Corte',                price: 75 },
+  { id: 'hidratacao',        name: 'Hidratação',                   price: 10 },
+];
 
-const WA_NUMBER = '5585994044941'; // ← troque pelo número real da barbearia
+// ─── Planos ────────────────────────────────────────
+const PLANS = [
+  {
+    id: 'basico', name: 'Básico', price: 80, featured: false,
+    features: [
+      '4 cortes por mês',
+      'Prioridade na marcação de horário',
+      '5% de desconto no pagamento antecipado (até 5 dias antes)',
+    ]
+  },
+  {
+    id: 'essencial', name: 'Essencial', price: 105, featured: true, badge: 'POPULAR',
+    features: [
+      'Corte + Sobrancelha uso ilimitado',
+      'Prioridade na marcação de horário',
+      '5% de desconto no pagamento antecipado (até 5 dias antes)',
+    ]
+  },
+  {
+    id: 'premium', name: 'Premium', price: 135, featured: false,
+    features: [
+      'Corte + Barba + Sobrancelha uso ilimitado',
+      'Prioridade na marcação de horário',
+      'Brinde: lavagem inclusa',
+      '10% de desconto no pagamento antecipado (até 5 dias antes)',
+    ]
+  }
+];
 
-// ─── PERSISTÊNCIA ────────────────────────────────────────────────────
-function saveMockDB() {
-  localStorage.setItem('barber_db', JSON.stringify(MOCK_DATABASE));
+// ─── Estado global ─────────────────────────────────
+let state = { selected: null, name: '', phone: '', date: '', time: '', obs: '' };
+let currentUser = null; // { nome, telefone } — preenchido após login
+
+// ══════════════════════════════════════════════════
+//  SISTEMA DE CADASTRO / LOGIN
+// ══════════════════════════════════════════════════
+
+// Formata telefone para chave Firebase (só dígitos, sem 55)
+function phoneKey(phone) {
+  return phone.replace(/\D/g, '').replace(/^55/, '');
 }
+
+// Verifica se cliente existe; se não, cria
+async function loginOrRegister(rawPhone, nome, nascimento) {
+  const key = phoneKey(rawPhone);
+  const db = firebase.firestore();
+  const ref = db.collection('clientes').doc(key);
+  const snap = await ref.get();
+  if (!snap.exists) {
+    const data = {
+      nome: nome,
+      telefone: key,
+      criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    if (nascimento) data.nascimento = nascimento;
+    await ref.set(data);
+    return { nome, telefone: key, nascimento: nascimento || '', novo: true };
+  }
+  return { ...snap.data(), novo: false };
+}
+
+// Salva sessão no sessionStorage (dura enquanto a aba estiver aberta)
 function saveSession(user) {
-  localStorage.setItem('barber_session', JSON.stringify(user));
+  sessionStorage.setItem('vr_user', JSON.stringify(user));
 }
 function loadSession() {
-  return JSON.parse(localStorage.getItem('barber_session'));
+  try { return JSON.parse(sessionStorage.getItem('vr_user')); } catch { return null; }
+}
+function clearSession() {
+  sessionStorage.removeItem('vr_user');
+  currentUser = null;
 }
 
-// ─── RENDER: SERVIÇOS ────────────────────────────────────────────────
-function renderServices() {
-  const grid = document.getElementById('services-grid');
-  if (!grid) return;
-
-  grid.innerHTML = MOCK_DATABASE.services.map(s => `
-    <div class="service-card" onclick="scrollToBooking('${s.id}')">
-      <div class="service-icon">${s.icon}</div>
-      <h3>${s.name}</h3>
-      <p class="service-duration">${s.duration}</p>
-      <p class="service-price">R$ ${s.price.toFixed(2).replace('.',',')}</p>
-      <button class="btn-service-cta">Agendar</button>
-    </div>
-  `).join('');
-}
-
-window.scrollToBooking = function(serviceId) {
-  // pré-seleciona o serviço e rola até a seção
-  const target = MOCK_DATABASE.services.find(s => s.id === serviceId);
-  if (target) {
-    selectedService = target;
-    renderOptionsListHighlight();
-  }
-  document.getElementById('agendar').scrollIntoView({ behavior: 'smooth' });
-};
-
-// ─── RENDER: PLANOS ──────────────────────────────────────────────────
-function renderPlans() {
-  const grid = document.getElementById('plans-grid');
-  if (!grid) return;
-
-  grid.innerHTML = MOCK_DATABASE.plans.map((p, i) => `
-    <div class="plan-card ${i === 1 ? 'plan-featured' : ''}">
-      ${i === 1 ? '<div class="plan-badge">MAIS POPULAR</div>' : ''}
-      <h3>${p.name}</h3>
-      <div class="plan-price">
-        <span class="plan-currency">R$</span>
-        <span class="plan-amount">${p.price}</span>
-        <span class="plan-period">/mês</span>
-      </div>
-      <p class="plan-desc">${p.description}</p>
-      <ul class="plan-perks">
-        ${p.perks.map(pk => `<li>✓ ${pk}</li>`).join('')}
-      </ul>
-      <button class="btn-plan" onclick="openPlanModal('${p.id}')">Contratar</button>
-    </div>
-  `).join('');
-}
-
-// ─── RENDER: OPÇÕES DE SERVIÇO NO PASSO 1 ───────────────────────────
-function renderOptionsList() {
-  const list = document.getElementById('options-list');
-  if (!list) return;
-
-  list.innerHTML = MOCK_DATABASE.services.map(s => `
-    <div class="option-item ${selectedService && selectedService.id === s.id ? 'selected' : ''}"
-         onclick="selectService('${s.id}')">
-      <span class="option-icon">${s.icon}</span>
-      <div class="option-info">
-        <strong>${s.name}</strong>
-        <span>${s.duration}</span>
-      </div>
-      <span class="option-price">R$ ${s.price.toFixed(2).replace('.',',')}</span>
-    </div>
-  `).join('');
-}
-
-function renderOptionsListHighlight() {
-  // apenas atualiza as classes sem recriar tudo
-  document.querySelectorAll('.option-item').forEach(el => el.classList.remove('selected'));
-  if (selectedService) {
-    const items = document.querySelectorAll('.option-item');
-    MOCK_DATABASE.services.forEach((s, i) => {
-      if (s.id === selectedService.id && items[i]) items[i].classList.add('selected');
-    });
-  }
-}
-
-window.selectService = function(serviceId) {
-  selectedService = MOCK_DATABASE.services.find(s => s.id === serviceId) || null;
-  renderOptionsListHighlight();
-};
-
-// ─── RENDER: AUTH BAR ────────────────────────────────────────────────
+// Atualiza a UI do header de login
 function renderAuthBar() {
   const bar = document.getElementById('auth-bar');
   if (!bar) return;
-
   if (currentUser) {
-    const planLabel = currentUser.plan
-      ? MOCK_DATABASE.plans.find(p => p.id === currentUser.plan)?.name || ''
-      : '';
+    const nome = currentUser.nome.split(' ')[0];
     bar.innerHTML = `
-      <div class="user-info-bar">
-        <span>Olá, <strong>${currentUser.name.split(' ')[0]}</strong>${planLabel ? ` &nbsp;<span class="badge-plan">${planLabel}</span>` : ''}</span>
-        <div class="auth-bar-actions">
-          <button class="btn-my-bookings" onclick="openMyBookings()">Meus Agendamentos</button>
-          <button class="btn-logout" onclick="logout()">Sair</button>
-        </div>
-      </div>
-    `;
+      <span class="auth-hello">Olá, <strong>${nome}</strong> ✂️</span>
+      <button class="auth-btn-secondary" onclick="openMyBookings()">Meus Agendamentos</button>
+      <button class="auth-btn-logout" onclick="doLogout()">Sair</button>`;
   } else {
     bar.innerHTML = `
-      <div class="auth-triggers">
-        <span class="auth-hint">Faça login para agilizar seu agendamento</span>
-        <button class="btn-login-trigger" onclick="openLoginModal()">Entrar / Cadastrar</button>
-      </div>
-    `;
+      <span class="auth-msg">Faça login para agendar mais rápido</span>
+      <button class="auth-btn-primary" onclick="openLoginModal()">Entrar / Cadastrar</button>`;
   }
 }
 
-// ─── LOGOUT ──────────────────────────────────────────────────────────
-window.logout = function() {
-  localStorage.removeItem('barber_session');
-  currentUser = null;
-  renderAuthBar();
-  limparCamposUsuario();
-  showStep(1);
-};
-
-function limparCamposUsuario() {
-  const n = document.getElementById('client-name');
-  const p = document.getElementById('client-phone');
-  if (n) { n.value = ''; n.disabled = false; }
-  if (p) { p.value = ''; p.disabled = false; }
-}
-
-function preencherDadosUsuario() {
-  if (!currentUser) return;
-  const n = document.getElementById('client-name');
-  const p = document.getElementById('client-phone');
-  if (n) { n.value = currentUser.name; n.disabled = true; }
-  if (p) { p.value = currentUser.phone; p.disabled = true; }
-}
-
-// ─── FLUXO DE PASSOS DO AGENDAMENTO ─────────────────────────────────
-function showStep(s) {
-  currentStep = s;
-
-  document.querySelectorAll('.form-step').forEach(el => el.classList.remove('active'));
-  const target = document.getElementById(`step-${s}`);
-  if (target) target.classList.add('active');
-
-  // Indicadores
-  for (let i = 1; i <= 3; i++) {
-    const ind = document.getElementById(`step-ind-${i}`);
-    if (!ind) continue;
-    ind.classList.remove('active', 'completed');
-    if (i === s) ind.classList.add('active');
-    else if (i < s) ind.classList.add('completed');
-  }
-
-  // Preenche dados ao entrar no passo 2
-  if (s === 2) {
-    preencherDadosUsuario();
-    generateCalendar();
-    updateTimeOptions();
-  }
-
-  // Monta resumo ao entrar no passo 3
-  if (s === 3) {
-    renderConfirmSummary();
-  }
-}
-
-// Chamado pelo botão "Continuar" do passo 1
-window.goToStep2 = function() {
-  if (!selectedService) {
-    showToast('Selecione um serviço para continuar.');
-    return;
-  }
-  showStep(2);
-};
-
-// Chamado pelo botão "Continuar" do passo 2
-window.goToConfirm = function() {
-  const name  = currentUser ? currentUser.name  : document.getElementById('client-name').value.trim();
-  const phone = currentUser ? currentUser.phone : document.getElementById('client-phone').value.trim();
-
-  if (!name)  { showToast('Informe seu nome.'); return; }
-  if (!phone) { showToast('Informe seu WhatsApp.'); return; }
-  if (!selectedDate) { showToast('Selecione uma data no calendário.'); return; }
-  if (!selectedTime) { showToast('Selecione um horário.'); return; }
-
-  showStep(3);
-};
-
-window.goBack = function(toStep) {
-  showStep(toStep);
-};
-
-// ─── RESUMO DO PASSO 3 ───────────────────────────────────────────────
-function renderConfirmSummary() {
-  const wrap = document.getElementById('confirm-summary');
-  if (!wrap) return;
-
-  const name  = currentUser ? currentUser.name  : document.getElementById('client-name').value.trim();
-  const phone = currentUser ? currentUser.phone : document.getElementById('client-phone').value.trim();
-  const obs   = document.getElementById('obs').value.trim();
-  const parts = selectedDate.split('-');
-  const dateFormatted = `${parts[2]}/${parts[1]}/${parts[0]}`;
-
-  wrap.innerHTML = `
-    <div class="summary-row"><span>Cliente</span><strong>${name}</strong></div>
-    <div class="summary-row"><span>WhatsApp</span><strong>${phone}</strong></div>
-    <div class="summary-row"><span>Serviço</span><strong>${selectedService.name}</strong></div>
-    <div class="summary-row"><span>Duração</span><strong>${selectedService.duration}</strong></div>
-    <div class="summary-row"><span>Data</span><strong>${dateFormatted}</strong></div>
-    <div class="summary-row"><span>Horário</span><strong>${selectedTime}</strong></div>
-    ${obs ? `<div class="summary-row"><span>Obs</span><strong>${obs}</strong></div>` : ''}
-    <div class="summary-total">Total: R$ ${selectedService.price.toFixed(2).replace('.',',')}</div>
-  `;
-}
-
-// ─── ENVIO DO AGENDAMENTO ────────────────────────────────────────────
-window.submitBooking = async function() {
-  const btn = document.querySelector('.btn-confirm');
-  if (btn) { btn.textContent = 'Enviando…'; btn.disabled = true; }
-
-  const name  = currentUser ? currentUser.name  : document.getElementById('client-name').value.trim();
-  const phone = currentUser ? currentUser.phone : document.getElementById('client-phone').value.trim();
-  const obs   = document.getElementById('obs').value.trim();
-
-  const payload = {
-    cliente:   name,
-    telefone:  phone,
-    servico:   selectedService.name,
-    preco:     selectedService.price,
-    duracao:   selectedService.duration,
-    data:      selectedDate,
-    horario:   selectedTime,
-    obs:       obs,
-    status:    'pendente',
-    criadoEm:  new Date().toISOString()
-  };
-
-  // Salva localmente (mock) e tenta enviar para Firestore
-  MOCK_DATABASE.appointments.push({ date: selectedDate, time: selectedTime, client: name, phone });
-  saveMockDB();
-
-  try {
-    const db = firebase.firestore();
-    await db.collection('agendamentos').add(payload);
-  } catch (e) {
-    console.warn('Firestore indisponível, agendamento salvo localmente.', e);
-  }
-
-  // Abre modal de sucesso
-  document.getElementById('success-modal').classList.add('open');
-
-  // Reseta estado
-  selectedDate = null;
-  selectedTime = null;
-  selectedService = null;
-  if (document.getElementById('obs')) document.getElementById('obs').value = '';
-
-  // Monta link WhatsApp para notificação
-  const parts = payload.data.split('-');
-  const dateStr = `${parts[2]}/${parts[1]}/${parts[0]}`;
-  const msg = encodeURIComponent(
-    `Olá! Acabei de agendar pelo site:\n\n` +
-    `👤 ${name}\n📞 ${phone}\n✂️ ${payload.servico}\n📅 ${dateStr} às ${payload.horario}\n\nAguardo confirmação!`
-  );
-  document.getElementById('wa-confirm-link').href = `https://wa.me/${WA_NUMBER}?text=${msg}`;
-
-  if (btn) { btn.textContent = '✓ Confirmar'; btn.disabled = false; }
-  showStep(1);
-  renderOptionsList();
-};
-
-window.closeModal = function() {
-  document.getElementById('success-modal').classList.remove('open');
-};
-
-// ─── CALENDÁRIO ──────────────────────────────────────────────────────
-function generateCalendar() {
-  const now = new Date();
-  if (calYear === undefined) { calYear = now.getFullYear(); calMonth = now.getMonth(); }
-
-  const wrap = document.getElementById('cal-wrap');
-  if (!wrap) return;
-
-  wrap.innerHTML = `
-    <div class="cal-header">
-      <button type="button" onclick="changeMonth(-1)">&#8249;</button>
-      <span>${MONTH_NAMES[calMonth]} ${calYear}</span>
-      <button type="button" onclick="changeMonth(1)">&#8250;</button>
-    </div>
-    <div class="cal-weekdays">
-      <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span>
-      <span>Qui</span><span>Sex</span><span>Sáb</span>
-    </div>
-    <div class="cal-days-grid" id="cal-days-grid"></div>
-  `;
-
-  const grid = wrap.querySelector('#cal-days-grid');
-  const firstDay  = new Date(calYear, calMonth, 1).getDay();
-  const totalDays = new Date(calYear, calMonth + 1, 0).getDate();
-  const todayStr  = now.toISOString().split('T')[0];
-
-  for (let i = 0; i < firstDay; i++) {
-    const sp = document.createElement('span');
-    sp.className = 'cal-empty';
-    grid.appendChild(sp);
-  }
-
-  for (let day = 1; day <= totalDays; day++) {
-    const dObj = new Date(calYear, calMonth, day);
-    const dow  = dObj.getDay();
-    const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-
-    const cell = document.createElement('span');
-    cell.className = 'cal-day-cell';
-    cell.textContent = day;
-
-    const closed = (dow === 0 || dow === 1); // fecha dom e seg
-    const past   = dateStr < todayStr;
-
-    if (closed || past) {
-      cell.classList.add('disabled');
-    } else {
-      if (selectedDate === dateStr) cell.classList.add('selected');
-      cell.onclick = () => selectDateHandler(dateStr);
-    }
-    grid.appendChild(cell);
-  }
-}
-
-window.changeMonth = function(dir) {
-  calMonth += dir;
-  if (calMonth < 0)  { calMonth = 11; calYear--; }
-  if (calMonth > 11) { calMonth = 0;  calYear++; }
-  generateCalendar();
-};
-
-function selectDateHandler(dateStr) {
-  selectedDate = dateStr;
-  selectedTime = null;
-  generateCalendar();
-  updateTimeOptions();
-}
-
-function updateTimeOptions() {
-  const sel = document.getElementById('pref-time');
-  if (!sel) return;
-
-  if (!selectedDate) {
-    sel.innerHTML = '<option value="">Selecione uma data primeiro</option>';
-    sel.disabled = true;
-    return;
-  }
-
-  const taken = MOCK_DATABASE.appointments
-    .filter(a => a.date === selectedDate)
-    .map(a => a.time);
-
-  sel.disabled = false;
-  sel.innerHTML = '<option value="">Escolha o horário</option>' +
-    MOCK_DATABASE.workingHours.map(h => {
-      const busy = taken.includes(h);
-      return `<option value="${h}" ${busy ? 'disabled' : ''}>${h} ${busy ? '(Ocupado)' : ''}</option>`;
-    }).join('');
-
-  sel.onchange = e => { selectedTime = e.target.value; };
-}
-
-// ─── MODAL LOGIN / CADASTRO ──────────────────────────────────────────
+// ─── Modal de Login ────────────────────────────────
 window.openLoginModal = function() {
   document.getElementById('login-modal').classList.add('open');
-  showLoginStep('phone');
+  document.getElementById('login-step-phone').classList.add('active');
+  document.getElementById('login-step-name').classList.remove('active');
+  document.getElementById('login-phone-input').value = '';
+  document.getElementById('login-name-input').value = '';
   document.getElementById('login-error').textContent = '';
 };
 
@@ -425,420 +121,686 @@ window.closeLoginModal = function() {
   document.getElementById('login-modal').classList.remove('open');
 };
 
-function showLoginStep(step) {
-  document.querySelectorAll('.login-step').forEach(el => el.classList.remove('active'));
-  const target = document.getElementById(`login-step-${step}`);
-  if (target) target.classList.add('active');
-}
-
-// Formata telefone no modal de login
-function setupPhoneMask(inputId) {
-  const el = document.getElementById(inputId);
-  if (!el) return;
-  el.addEventListener('input', function() {
-    let v = this.value.replace(/\D/g, '').substring(0, 11);
-    if (v.length > 6) v = `(${v.substring(0,2)}) ${v.substring(2,7)}-${v.substring(7)}`;
-    else if (v.length > 2) v = `(${v.substring(0,2)}) ${v.substring(2)}`;
-    this.value = v;
-  });
-}
-
-window.loginCheckPhone = function() {
-  const raw = document.getElementById('login-phone-input').value.replace(/\D/g, '');
-  if (raw.length < 10) {
-    document.getElementById('login-error').textContent = 'Número inválido.';
+window.loginCheckPhone = async function() {
+  const raw = document.getElementById('login-phone-input').value.trim();
+  const key = phoneKey(raw);
+  if (key.length < 10) {
+    document.getElementById('login-error').textContent = 'Digite um número válido com DDD.';
     return;
   }
-
-  const user = MOCK_DATABASE.users.find(u => u.phone.replace(/\D/g, '') === raw);
-  if (user) {
-    // Usuário já cadastrado → loga direto
-    currentUser = user;
-    saveSession(currentUser);
-    renderAuthBar();
-    preencherDadosUsuario();
-    closeLoginModal();
-    showToast(`Bem-vindo de volta, ${user.name.split(' ')[0]}! 👋`);
-  } else {
-    // Novo usuário → pede nome
-    document.getElementById('login-error').textContent = '';
-    showLoginStep('name');
-  }
-};
-
-window.loginRegister = function() {
-  const name = document.getElementById('login-name-input').value.trim();
-  const raw  = document.getElementById('login-phone-input').value.replace(/\D/g, '');
-  const birth = document.getElementById('login-birth-input').value;
-
-  if (!name) {
-    document.getElementById('login-error').textContent = 'Informe seu nome completo.';
-    return;
-  }
-
-  const phone = document.getElementById('login-phone-input').value.trim();
-  const newUser = {
-    id:    'u_' + Date.now(),
-    name,
-    phone,
-    birth: birth || null,
-    plan:  null
-  };
-
-  MOCK_DATABASE.users.push(newUser);
-  saveMockDB();
-
-  currentUser = newUser;
-  saveSession(currentUser);
-  renderAuthBar();
-  preencherDadosUsuario();
-  closeLoginModal();
-  showToast(`Cadastro realizado! Bem-vindo, ${name.split(' ')[0]}! 🎉`);
-};
-
-// ─── MODAL PLANOS ────────────────────────────────────────────────────
-window.openPlanModal = function(planId) {
-  const plan = MOCK_DATABASE.plans.find(p => p.id === planId);
-  if (!plan) return;
-
-  document.getElementById('plan-modal-title').textContent = plan.name;
-  document.getElementById('plan-modal-desc').innerHTML =
-    `Ótima escolha! Antes de continuar, tem alguma dúvida sobre o <strong>${plan.name}</strong>?
-     Escreva abaixo ou clique em <strong>Falar com a Gente</strong> pelo WhatsApp.`;
-
-  document.getElementById('plan-modal-question').value = '';
-
-  const waLink = document.getElementById('plan-modal-wa');
-  const msg = encodeURIComponent(`Olá! Tenho interesse no ${plan.name} (R$ ${plan.price}/mês). Podem me dar mais informações?`);
-  waLink.href = `https://wa.me/${WA_NUMBER}?text=${msg}`;
-  waLink.onclick = () => {
-    const q = document.getElementById('plan-modal-question').value.trim();
-    if (q) {
-      const fullMsg = encodeURIComponent(`Olá! Tenho interesse no ${plan.name} (R$ ${plan.price}/mês).\n\nDúvida: ${q}`);
-      waLink.href = `https://wa.me/${WA_NUMBER}?text=${fullMsg}`;
+  const btn = document.getElementById('btn-login-next');
+  btn.textContent = 'Verificando...'; btn.disabled = true;
+  try {
+    const snap = await firebase.firestore().collection('clientes').doc(key).get();
+    if (snap.exists) {
+      // Já cadastrado — loga direto
+      currentUser = snap.data();
+      saveSession(currentUser);
+      closeLoginModal();
+      renderAuthBar();
+      preencherDadosAgendamento();
+      showToast('Bem-vindo de volta, ' + currentUser.nome.split(' ')[0] + '! 👋');
+    } else {
+      // Novo cliente — pede nome
+      document.getElementById('login-step-phone').classList.remove('active');
+      document.getElementById('login-step-name').classList.add('active');
+      document.getElementById('login-name-input').focus();
+      document.getElementById('login-error').textContent = '';
     }
-  };
-
-  document.getElementById('plan-modal').classList.add('open');
-};
-
-window.closePlanModal = function() {
-  document.getElementById('plan-modal').classList.remove('open');
-};
-
-// ─── MODAL MEUS AGENDAMENTOS ─────────────────────────────────────────
-window.openMyBookings = function() {
-  const list = document.getElementById('mybookings-list');
-  if (!list) return;
-
-  const mine = MOCK_DATABASE.appointments.filter(a =>
-    currentUser && (a.phone === currentUser.phone || a.client === currentUser.name)
-  );
-
-  if (!mine.length) {
-    list.innerHTML = '<p style="text-align:center;color:#666;padding:20px 0;">Nenhum agendamento encontrado.</p>';
-  } else {
-    list.innerHTML = mine.map(a => {
-      const parts = a.date.split('-');
-      const dt = `${parts[2]}/${parts[1]}/${parts[0]}`;
-      return `
-        <div class="booking-item">
-          <span class="booking-date">${dt} às ${a.time}</span>
-          <span class="booking-client">${a.client}</span>
-        </div>
-      `;
-    }).reverse().join('');
+  } catch (e) {
+    document.getElementById('login-error').textContent = 'Erro de conexão. Tente novamente.';
+  } finally {
+    btn.textContent = 'Continuar →'; btn.disabled = false;
   }
+};
 
-  document.getElementById('mybookings-modal').classList.add('open');
+window.loginRegister = async function() {
+  const raw  = document.getElementById('login-phone-input').value.trim();
+  const nome = document.getElementById('login-name-input').value.trim();
+  const nascimento = (document.getElementById('login-birth-input')?.value || '').trim();
+  if (!nome || nome.split(' ').length < 2) {
+    document.getElementById('login-error').textContent = 'Digite seu nome e sobrenome.';
+    return;
+  }
+  const btn = document.getElementById('btn-login-register');
+  btn.textContent = 'Salvando...'; btn.disabled = true;
+  try {
+    currentUser = await loginOrRegister(raw, nome, nascimento);
+    saveSession(currentUser);
+    closeLoginModal();
+    renderAuthBar();
+    preencherDadosAgendamento();
+    showToast('Cadastro realizado! Bem-vindo, ' + nome.split(' ')[0] + '! ✂️');
+  } catch (e) {
+    document.getElementById('login-error').textContent = 'Erro ao salvar. Tente novamente.';
+  } finally {
+    btn.textContent = 'Cadastrar →'; btn.disabled = false;
+  }
+};
+
+window.doLogout = function() {
+  clearSession();
+  renderAuthBar();
+  // Limpa campos do agendamento
+  const n = document.getElementById('client-name');
+  const p = document.getElementById('client-phone');
+  if (n) n.value = '';
+  if (p) p.value = '';
+  showToast('Até logo! 👋');
+};
+
+// Preenche campos do form de agendamento com dados do usuário logado
+function preencherDadosAgendamento() {
+  if (!currentUser) return;
+  const n = document.getElementById('client-name');
+  const p = document.getElementById('client-phone');
+  if (n) n.value = currentUser.nome || '';
+  if (p) {
+    // Formata o telefone
+    let v = (currentUser.telefone || '').replace(/\D/g, '').substring(0, 11);
+    if (v.length > 6)      v = `(${v.substring(0,2)}) ${v.substring(2,7)}-${v.substring(7)}`;
+    else if (v.length > 2) v = `(${v.substring(0,2)}) ${v.substring(2)}`;
+    p.value = v;
+  }
+}
+
+// ─── Toast ─────────────────────────────────────────
+function showToast(msg) {
+  let t = document.getElementById('vr-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'vr-toast';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+// ══════════════════════════════════════════════════
+//  MEUS AGENDAMENTOS + CANCELAMENTO
+// ══════════════════════════════════════════════════
+
+window.openMyBookings = async function() {
+  if (!currentUser) { openLoginModal(); return; }
+  const modal = document.getElementById('mybookings-modal');
+  const list  = document.getElementById('mybookings-list');
+  modal.classList.add('open');
+  list.innerHTML = '<p class="mybookings-loading">Carregando...</p>';
+
+  try {
+    const key = currentUser.telefone;
+    const snap = await firebase.firestore().collection('agendamentos')
+      .where('telefone', '==', key)
+      .where('status', 'in', ['pendente','confirmado'])
+      .get();
+
+    if (snap.empty) {
+      list.innerHTML = '<p class="mybookings-empty">Nenhum agendamento ativo.</p>';
+      return;
+    }
+
+    // Filtra futuros e ordena por data+horario no JS (evita índice composto no Firestore)
+    const hoje = new Date().toISOString().split('T')[0];
+    const docs = snap.docs
+      .filter(d => d.data().data >= hoje)
+      .sort((a, b) => {
+        const da = a.data(), db = b.data();
+        return (da.data + da.horario).localeCompare(db.data + db.horario);
+      });
+
+    if (!docs.length) {
+      list.innerHTML = '<p class="mybookings-empty">Nenhum agendamento futuro.</p>';
+      return;
+    }
+
+    list.innerHTML = docs.map(d => {
+      const a = d.data();
+      const statusLabel = a.status === 'confirmado'
+        ? '<span class="agd-status confirmado">Confirmado</span>'
+        : '<span class="agd-status pendente">Pendente</span>';
+      return `
+        <div class="agd-card" id="agd-${d.id}">
+          <div class="agd-info">
+            <div class="agd-servico">${a.servico}</div>
+            <div class="agd-detalhe">${formatDate(a.data)} · ${a.horario}</div>
+            <div class="agd-preco">R$${Number(a.preco).toFixed(2).replace('.',',')}</div>
+            ${statusLabel}
+          </div>
+          <button class="btn-cancelar" onclick="cancelarAgendamento('${d.id}', '${a.servico}', '${a.data}', '${a.horario}')">
+            Cancelar
+          </button>
+        </div>`;
+    }).join('');
+  } catch (e) {
+    list.innerHTML = '<p class="mybookings-empty">Erro ao carregar. Tente novamente.</p>';
+  }
 };
 
 window.closeMyBookings = function() {
   document.getElementById('mybookings-modal').classList.remove('open');
 };
 
-// ─── TOAST (NOTIFICAÇÃO RÁPIDA) ───────────────────────────────────────
-function showToast(msg) {
-  let toast = document.getElementById('vr-toast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.id = 'vr-toast';
-    toast.style.cssText = `
-      position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);
-      background:#c8a96e;color:#000;padding:12px 24px;border-radius:8px;
-      font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:.5px;
-      z-index:9999;opacity:0;transition:all .3s ease;pointer-events:none;
-      box-shadow:0 4px 20px rgba(0,0,0,.4);white-space:nowrap;
-    `;
-    document.body.appendChild(toast);
+window.cancelarAgendamento = async function(id, servico, data, horario) {
+  const confirma = confirm(`Cancelar ${servico} em ${formatDate(data)} às ${horario}?`);
+  if (!confirma) return;
+
+  const card = document.getElementById('agd-' + id);
+  if (card) card.style.opacity = '0.4';
+
+  try {
+    await firebase.firestore().collection('agendamentos').doc(id).update({
+      status: 'cancelado',
+      canceladoEm: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    // Notifica dono no WhatsApp
+    const nome = currentUser ? currentUser.nome.split(' ')[0] : 'Cliente';
+    const msg = encodeURIComponent(
+      `❌ *Cancelamento*\n\n*Cliente:* ${currentUser ? currentUser.nome : ''}\n*Serviço:* ${servico}\n*Data:* ${formatDate(data)}\n*Horário:* ${horario}`
+    );
+    window.open(`https://wa.me/${WHATSAPP_NOTIFY}?text=${msg}`, '_blank');
+
+    if (card) card.remove();
+    showToast('Agendamento cancelado.');
+
+    // Se ficou vazio, atualiza mensagem
+    const list = document.getElementById('mybookings-list');
+    if (list && !list.querySelector('.agd-card')) {
+      list.innerHTML = '<p class="mybookings-empty">Nenhum agendamento ativo.</p>';
+    }
+  } catch (e) {
+    if (card) card.style.opacity = '1';
+    alert('Erro ao cancelar. Tente novamente.');
   }
-  toast.textContent = msg;
-  toast.style.opacity = '1';
-  toast.style.transform = 'translateX(-50%) translateY(0)';
-  clearTimeout(toast._timer);
-  toast._timer = setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateX(-50%) translateY(60px)';
-  }, 3000);
+};
+
+// ─── Renderiza cards de serviços ───────────────────
+function renderServices() {
+  const grid = document.getElementById('services-grid');
+  if (!grid) return;
+  grid.innerHTML = SERVICES.map(s => `
+    <div class="service-card" onclick="scrollToBooking('${s.id}')">
+      <span class="service-name">${s.name}</span>
+      <span class="service-price">R$${s.price.toFixed(2).replace('.', ',')}</span>
+    </div>`).join('');
 }
 
-// ─── MÁSCARA DE TELEFONE (CAMPOS DO AGENDAMENTO) ─────────────────────
-function setupAllPhoneMasks() {
-  const ids = ['client-phone', 'login-phone-input'];
-  ids.forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.addEventListener('input', function() {
-      if (currentUser && id === 'client-phone') return;
-      let v = this.value.replace(/\D/g, '').substring(0, 11);
-      if (v.length > 6) v = `(${v.substring(0,2)}) ${v.substring(2,7)}-${v.substring(7)}`;
-      else if (v.length > 2) v = `(${v.substring(0,2)}) ${v.substring(2)}`;
-      this.value = v;
-    });
+// ─── Renderiza planos ──────────────────────────────
+function renderPlans() {
+  const grid = document.getElementById('plans-grid');
+  if (!grid) return;
+  grid.innerHTML = PLANS.map(p => `
+    <div class="plan-card ${p.featured ? 'featured' : ''}">
+      ${p.badge ? `<div class="plan-badge">${p.badge}</div>` : ''}
+      <div class="plan-name">${p.name}</div>
+      <div class="plan-price">R$${p.price}</div>
+      <div class="plan-price-sub">/ MÊS</div>
+      <div class="plan-divider"></div>
+      <ul class="plan-features">
+        ${p.features.map(f => `<li>${f}</li>`).join('')}
+      </ul>
+      <button class="btn-plan" onclick="openPlanModal('${p.id}', '${p.name}', ${p.price})">
+        Tenho Interesse
+      </button>
+    </div>`).join('');
+}
+
+// ─── Modal de interesse no plano ──────────────────
+window.openPlanModal = function(planId, planName, price) {
+  const modal = document.getElementById('plan-modal');
+  document.getElementById('plan-modal-title').textContent = `Plano ${planName} — R$${price}/mês`;
+  document.getElementById('plan-modal-question').value = '';
+  const waBtn = document.getElementById('plan-modal-wa');
+  waBtn.onclick = function(e) {
+    e.preventDefault();
+    const duvida = document.getElementById('plan-modal-question').value.trim();
+    let msg = `Olá! Tenho interesse no *Plano ${planName}* da VR Barber Shop (R$${price}/mês).`;
+    if (duvida) msg += `\n\nMinha dúvida: ${duvida}`;
+    else msg += `\n\nPode me passar mais informações?`;
+    window.open(`https://wa.me/${WHATSAPP_NOTIFY}?text=${encodeURIComponent(msg)}`, '_blank');
+    closePlanModal();
+  };
+  modal.classList.add('open');
+};
+window.closePlanModal = function() {
+  document.getElementById('plan-modal').classList.remove('open');
+};
+
+// ─── Scroll para agendamento ───────────────────────
+window.scrollToBooking = function(serviceId) {
+  document.getElementById('agendar').scrollIntoView({ behavior: 'smooth' });
+  setTimeout(() => preSelectService(serviceId), 600);
+};
+
+function preSelectService(serviceId) {
+  if (!currentUser) {
+    showToast('Faça login para agendar. 👆');
+    openLoginModal();
+    return;
+  }
+  const service = SERVICES.find(s => s.id === serviceId);
+  if (!service) return;
+  state.selected = service;
+  renderServiceOptions();
+  setTimeout(() => {
+    const item = document.getElementById('opt-' + serviceId);
+    if (item) { item.classList.add('selected'); item.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+    showStep(2);
+    preencherDadosAgendamento();
+  }, 50);
+}
+
+// ─── Lista de serviços no formulário ───────────────
+function renderServiceOptions() {
+  const list = document.getElementById('options-list');
+  if (!list) return;
+  list.innerHTML = SERVICES.map(s => `
+    <div class="option-item" id="opt-${s.id}" onclick="selectService('${s.id}')">
+      <span>${s.name}</span>
+      <span class="option-price">R$${s.price.toFixed(2).replace('.', ',')}</span>
+    </div>`).join('');
+}
+
+
+
+// ─── Slideshow Seção Cortes ────────────────────────
+function initSlideshow() {
+  const slider   = document.getElementById('cortes-slider');
+  const dotsWrap = document.getElementById('cortes-dots');
+  if (!slider || !HERO_SLIDES.length) return;
+  const total = HERO_SLIDES.length;
+  let current = 0, autoTimer;
+
+  HERO_SLIDES.forEach(src => {
+    const div = document.createElement('div');
+    div.className = 'cortes-slide';
+    div.style.backgroundImage = 'url(' + src + ')';
+    slider.appendChild(div);
   });
-}
 
-// ─── FECHAR MODAIS AO CLICAR NO OVERLAY ─────────────────────────────
-function setupModalCloseOnOverlay() {
-  ['login-modal', 'mybookings-modal', 'plan-modal', 'success-modal'].forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.addEventListener('click', function(e) {
-      if (e.target === this) this.classList.remove('open');
-    });
+  const wrap = slider.parentElement;
+  const counter = document.createElement('div');
+  counter.className = 'cortes-counter';
+  counter.textContent = '1 / ' + total;
+  wrap.appendChild(counter);
+
+  HERO_SLIDES.forEach((_, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'cortes-dot' + (i === 0 ? ' active' : '');
+    dot.onclick = function() { goTo(i); };
+    dotsWrap.appendChild(dot);
   });
+
+  function goTo(idx) {
+    current = (idx + total) % total;
+    slider.style.transform = 'translateX(-' + (current * 100) + '%)';
+    document.querySelectorAll('.cortes-dot').forEach(function(d, i) { d.classList.toggle('active', i === current); });
+    counter.textContent = (current + 1) + ' / ' + total;
+    resetAuto();
+  }
+  function resetAuto() {
+    clearInterval(autoTimer);
+    autoTimer = setInterval(function() { goTo(current + 1); }, 4500);
+  }
+
+  const prevBtn = document.getElementById('cortes-prev');
+  const nextBtn = document.getElementById('cortes-next');
+  if (prevBtn) prevBtn.onclick = function() { goTo(current - 1); };
+  if (nextBtn) nextBtn.onclick = function() { goTo(current + 1); };
+
+  let startX = 0;
+  slider.addEventListener('touchstart', function(e) { startX = e.touches[0].clientX; }, { passive: true });
+  slider.addEventListener('touchend', function(e) {
+    const diff = startX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) goTo(diff > 0 ? current + 1 : current - 1);
+  });
+  resetAuto();
 }
 
-// ─── STYLES EXTRAS INJETADOS (sem precisar editar o CSS) ─────────────
-function injectExtraStyles() {
-  const style = document.createElement('style');
-  style.textContent = `
-    /* ── Services Grid ── */
-    .services-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 16px;
-      padding: 0 20px 20px;
-      max-width: 960px;
-      margin: 0 auto;
-    }
-    .service-card {
-      background: #111;
-      border: 1px solid #222;
-      border-radius: 12px;
-      padding: 24px 16px;
-      text-align: center;
-      cursor: pointer;
-      transition: border-color .25s, transform .2s;
-    }
-    .service-card:hover { border-color: #c8a96e; transform: translateY(-4px); }
-    .service-icon { font-size: 32px; margin-bottom: 10px; }
-    .service-card h3 { font-family:'Oswald',sans-serif; font-size:16px; margin:0 0 6px; color:#fff; }
-    .service-duration { font-size:12px; color:#666; margin:0 0 8px; }
-    .service-price { font-family:'Oswald',sans-serif; font-size:20px; color:#c8a96e; margin:0 0 14px; }
-    .btn-service-cta {
-      background:#c8a96e; color:#000; border:none; padding:8px 20px;
-      border-radius:6px; font-family:'Oswald',sans-serif; font-size:13px;
-      letter-spacing:1px; cursor:pointer; width:100%;
-    }
-    .btn-service-cta:hover { background:#e0c080; }
-
-    /* ── Plans Grid ── */
-    .plans-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      gap: 20px;
-      padding: 0 20px 20px;
-      max-width: 900px;
-      margin: 0 auto;
-    }
-    .plan-card {
-      background:#111; border:1px solid #222; border-radius:14px;
-      padding:28px 22px; text-align:center; position:relative;
-      transition:border-color .25s, transform .2s;
-    }
-    .plan-card:hover { border-color:#c8a96e; transform:translateY(-4px); }
-    .plan-featured { border-color:#c8a96e; background:#151510; }
-    .plan-badge {
-      position:absolute; top:-12px; left:50%; transform:translateX(-50%);
-      background:#c8a96e; color:#000; font-family:'Oswald',sans-serif;
-      font-size:11px; letter-spacing:2px; padding:4px 14px; border-radius:20px;
-    }
-    .plan-card h3 { font-family:'Oswald',sans-serif; font-size:20px; color:#fff; margin:8px 0 14px; }
-    .plan-price { margin:0 0 8px; }
-    .plan-currency { font-size:16px; color:#c8a96e; vertical-align:top; margin-top:6px; display:inline-block; }
-    .plan-amount { font-family:'Bebas Neue',sans-serif; font-size:48px; color:#c8a96e; line-height:1; }
-    .plan-period { font-size:13px; color:#666; }
-    .plan-desc { font-size:13px; color:#888; margin:0 0 16px; }
-    .plan-perks { list-style:none; padding:0; margin:0 0 20px; text-align:left; }
-    .plan-perks li { font-size:13px; color:#aaa; padding:5px 0; border-bottom:1px solid #1a1a1a; }
-    .btn-plan {
-      background:transparent; color:#c8a96e; border:1px solid #c8a96e;
-      padding:10px 24px; border-radius:6px; font-family:'Oswald',sans-serif;
-      font-size:14px; letter-spacing:1px; cursor:pointer; width:100%;
-      transition:background .2s, color .2s;
-    }
-    .btn-plan:hover, .plan-featured .btn-plan { background:#c8a96e; color:#000; }
-
-    /* ── Option Items (Step 1) ── */
-    .option-item {
-      display:flex; align-items:center; gap:14px;
-      background:#111; border:1px solid #222; border-radius:10px;
-      padding:14px 16px; cursor:pointer; margin-bottom:10px;
-      transition:border-color .2s, background .2s;
-    }
-    .option-item:hover { border-color:#c8a96e; }
-    .option-item.selected { border-color:#c8a96e; background:#151510; }
-    .option-icon { font-size:24px; flex-shrink:0; }
-    .option-info { flex:1; }
-    .option-info strong { display:block; font-family:'Oswald',sans-serif; font-size:15px; color:#fff; }
-    .option-info span { font-size:12px; color:#666; }
-    .option-price { font-family:'Oswald',sans-serif; font-size:18px; color:#c8a96e; flex-shrink:0; }
-
-    /* ── Confirm Summary ── */
-    .summary-row {
-      display:flex; justify-content:space-between; align-items:center;
-      padding:10px 0; border-bottom:1px solid #1e1e1e; font-size:14px; color:#aaa;
-    }
-    .summary-row strong { color:#fff; }
-    .summary-total {
-      text-align:right; font-family:'Oswald',sans-serif; font-size:22px;
-      color:#c8a96e; margin-top:16px; letter-spacing:1px;
-    }
-
-    /* ── Auth Bar ── */
-    .user-info-bar {
-      display:flex; align-items:center; justify-content:space-between;
-      flex-wrap:wrap; gap:10px;
-    }
-    .auth-bar-actions { display:flex; gap:10px; }
-    .badge-plan {
-      background:#c8a96e; color:#000; font-size:11px;
-      padding:2px 8px; border-radius:3px; font-family:'Oswald',sans-serif;
-      letter-spacing:1px;
-    }
-    .btn-my-bookings {
-      background:transparent; color:#c8a96e; border:1px solid #c8a96e;
-      padding:6px 16px; border-radius:5px; font-family:'Oswald',sans-serif;
-      font-size:13px; cursor:pointer; letter-spacing:1px;
-    }
-    .btn-my-bookings:hover { background:#c8a96e; color:#000; }
-    .btn-logout {
-      background:transparent; color:#666; border:1px solid #333;
-      padding:6px 14px; border-radius:5px; font-family:'Oswald',sans-serif;
-      font-size:13px; cursor:pointer;
-    }
-    .btn-logout:hover { border-color:#c00; color:#c00; }
-    .auth-triggers {
-      display:flex; align-items:center; gap:14px; flex-wrap:wrap;
-    }
-    .auth-hint { font-size:13px; color:#555; }
-    .btn-login-trigger {
-      background:#c8a96e; color:#000; border:none; padding:8px 20px;
-      border-radius:6px; font-family:'Oswald',sans-serif; font-size:14px;
-      letter-spacing:1px; cursor:pointer;
-    }
-    .btn-login-trigger:hover { background:#e0c080; }
-
-    /* ── Booking item (meus agendamentos) ── */
-    .booking-item {
-      display:flex; justify-content:space-between; align-items:center;
-      padding:12px 0; border-bottom:1px solid #1e1e1e; font-size:14px;
-    }
-    .booking-date { color:#c8a96e; font-family:'Oswald',sans-serif; }
-    .booking-client { color:#888; font-size:13px; }
-
-    /* ── Cal ── */
-    .cal-header {
-      display:flex; justify-content:space-between; align-items:center;
-      margin-bottom:12px; font-family:'Oswald',sans-serif; font-size:15px; color:#ccc;
-    }
-    .cal-header button {
-      background:none; border:1px solid #333; color:#c8a96e;
-      width:30px; height:30px; border-radius:5px; cursor:pointer; font-size:18px;
-      display:flex; align-items:center; justify-content:center;
-    }
-    .cal-header button:hover { border-color:#c8a96e; }
-    .cal-weekdays {
-      display:grid; grid-template-columns:repeat(7,1fr);
-      margin-bottom:6px;
-    }
-    .cal-weekdays span { text-align:center; font-size:11px; color:#555; padding:4px 0; }
-    #cal-days-grid {
-      display:grid; grid-template-columns:repeat(7,1fr); gap:4px;
-    }
-    .cal-day-cell, .cal-empty {
-      text-align:center; padding:8px 4px; border-radius:6px;
-      font-size:13px; cursor:pointer; color:#bbb;
-      transition:background .2s, color .2s;
-    }
-    .cal-day-cell:hover:not(.disabled) { background:#1e1e1e; color:#c8a96e; }
-    .cal-day-cell.selected { background:#c8a96e !important; color:#000 !important; font-weight:700; }
-    .cal-day-cell.disabled { color:#333; cursor:not-allowed; }
-
-    /* ── Step indicator ── */
-    .step.completed span { background:#c8a96e; color:#000; }
-
-    /* ── Passo 1 – botão Continuar ── */
-    #step-1 .btn-next-wrap {
-      margin-top:16px; text-align:right;
-    }
-  `;
-  document.head.appendChild(style);
+// ─── Gera slots de horário ─────────────────────────
+function gerarSlots(inicio, fim, almoco, almoco_inicio, almoco_fim) {
+  const slots = [];
+  if (!inicio || !fim) return slots;
+  let [h, m] = inicio.split(':').map(Number);
+  const [hf, mf] = fim.split(':').map(Number);
+  const fimMin = hf * 60 + mf;
+  const pausaAtiva = almoco === true
+    && typeof almoco_inicio === 'string' && almoco_inicio.includes(':')
+    && typeof almoco_fim    === 'string' && almoco_fim.includes(':');
+  const pausaInicio = pausaAtiva ? parseInt(almoco_inicio.split(':')[0])*60+parseInt(almoco_inicio.split(':')[1]) : -1;
+  const pausaFim    = pausaAtiva ? parseInt(almoco_fim.split(':')[0])*60+parseInt(almoco_fim.split(':')[1]) : -1;
+  while (h * 60 + m < fimMin) {
+    const cur = h * 60 + m;
+    if (!(pausaAtiva && cur >= pausaInicio && cur < pausaFim)) slots.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+    m += 30; if (m >= 60) { h++; m -= 60; }
+  }
+  return slots;
 }
 
-// ─── INJETAR BOTÃO "CONTINUAR" NO PASSO 1 ───────────────────────────
-function injectStep1Button() {
-  const step1 = document.getElementById('step-1');
-  if (!step1) return;
-  if (step1.querySelector('.btn-next')) return; // já existe
+const DIAS_KEY = ['domingo','segunda','terca','quarta','quinta','sexta','sabado'];
 
-  const div = document.createElement('div');
-  div.className = 'form-row';
-  div.style.marginTop = '16px';
-  div.innerHTML = `<button class="btn-next" onclick="goToStep2()">Continuar →</button>`;
-  step1.appendChild(div);
+async function carregarSlotsParaData(dataSelecionada) {
+  const select = document.getElementById('pref-time');
+  if (!select) return;
+  select.innerHTML = '<option value="">Carregando...</option>';
+  select.disabled = true;
+  try {
+    const [configDoc, datasDoc, agendSnap] = await Promise.all([
+      firebase.firestore().collection('config').doc('horarios').get(),
+      firebase.firestore().collection('config').doc('datas_especiais').get(),
+      firebase.firestore().collection('agendamentos')
+        .where('data', '==', dataSelecionada)
+        .where('status', 'in', ['pendente', 'confirmado'])
+        .get()
+    ]);
+    const ocupados = new Set(agendSnap.docs.map(d => d.data().horario));
+    const datasEspeciais = datasDoc.exists ? (datasDoc.data() || {}) : {};
+    const dataEspecial   = datasEspeciais[dataSelecionada];
+    let cfg;
+    if (dataEspecial) {
+      if (dataEspecial.tipo === 'fechado') {
+        select.innerHTML = '<option value="">Sem atendimento neste dia</option>';
+        return;
+      }
+      cfg = dataEspecial;
+    } else {
+      const diaSemana = new Date(dataSelecionada + 'T12:00:00').getDay();
+      const diaKey = DIAS_KEY[diaSemana];
+      const horarios = configDoc.exists ? (configDoc.data() || {}) : {};
+      cfg = horarios[diaKey];
+      if (!cfg || cfg.ativo === false || cfg.fechado) {
+        select.innerHTML = '<option value="">Sem atendimento neste dia</option>';
+        return;
+      }
+    }
+    const slots = gerarSlots(cfg.inicio, cfg.fim, cfg.almoco, cfg.almoco_inicio, cfg.almoco_fim);
+    const agora = new Date();
+    const hoje  = agora.toISOString().split('T')[0];
+    const agoraMin = agora.getHours() * 60 + agora.getMinutes();
+    const livres = slots.filter(s => {
+      if (ocupados.has(s)) return false;
+      if (dataSelecionada === hoje) {
+        const [sh, sm] = s.split(':').map(Number);
+        if (sh * 60 + sm <= agoraMin + 30) return false;
+      }
+      return true;
+    });
+    if (!livres.length) {
+      select.innerHTML = '<option value="">Sem horários disponíveis</option>';
+    } else {
+      select.innerHTML = '<option value="">Selecione um horário</option>' +
+        livres.map(s => `<option value="${s}">${s}</option>`).join('');
+      select.disabled = false;
+    }
+  } catch (e) {
+    select.innerHTML = '<option value="">Erro ao carregar horários</option>';
+  }
 }
 
-// ─── INJETAR LINK WA NO MODAL DE SUCESSO ────────────────────────────
-function injectWaLinkOnSuccess() {
-  const modal = document.getElementById('success-modal');
-  if (!modal) return;
-  const box = modal.querySelector('.modal-box');
-  if (!box || box.querySelector('#wa-confirm-link')) return;
+// ─── Calendário ────────────────────────────────────
+let calAno, calMes;
+let _calHorarios = null;      // cache dos horários do Firestore
+let _calDatasEsp = null;      // cache das datas especiais
+const mesNomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
-  const link = document.createElement('a');
-  link.id = 'wa-confirm-link';
-  link.href = '#';
-  link.target = '_blank';
-  link.style.cssText = `
-    display:inline-block;margin-top:12px;background:#25d366;color:#fff;
-    padding:10px 22px;border-radius:8px;text-decoration:none;
-    font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:1px;
-  `;
-  link.textContent = '📲 Avisar pelo WhatsApp';
-
-  const closeBtn = box.querySelector('button');
-  if (closeBtn) box.insertBefore(link, closeBtn);
-  else box.appendChild(link);
+async function carregarConfigCalendario() {
+  if (_calHorarios && _calDatasEsp) return; // já carregado
+  try {
+    const [hDoc, dDoc] = await Promise.all([
+      firebase.firestore().collection('config').doc('horarios').get(),
+      firebase.firestore().collection('config').doc('datas_especiais').get(),
+    ]);
+    _calHorarios = hDoc.exists ? (hDoc.data() || {}) : {};
+    _calDatasEsp = dDoc.exists ? (dDoc.data() || {}) : {};
+  } catch(e) {
+    _calHorarios = {};
+    _calDatasEsp = {};
+  }
 }
 
-// ─── INIT ─────────────────────────────────────────────────────────────
+function isDiaDisponivel(dateStr) {
+  if (!_calHorarios) return true; // ainda carregando, permite clicar
+  const dataEsp = _calDatasEsp && _calDatasEsp[dateStr];
+  if (dataEsp) return dataEsp.tipo !== 'fechado';
+  const diaSemana = new Date(dateStr + 'T12:00:00').getDay();
+  const diaKey = DIAS_KEY[diaSemana];
+  const cfg = _calHorarios[diaKey];
+  if (!cfg) return false;
+  return cfg.ativo !== false && !cfg.fechado;
+}
+
+function renderCalendario() {
+  const wrap = document.getElementById('cal-wrap');
+  if (!wrap) return;
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const firstDay = new Date(calAno, calMes, 1).getDay();
+  const daysInMonth = new Date(calAno, calMes + 1, 0).getDate();
+  let cells = '';
+  ['D','S','T','Q','Q','S','S'].forEach(d => {
+    cells += `<div style="text-align:center;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:1px;color:#555;padding:4px 0;">${d}</div>`;
+  });
+  for (let i = 0; i < firstDay; i++) cells += '<div></div>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${calAno}-${String(calMes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dayDate = new Date(calAno, calMes, d);
+    const isPast  = dayDate < hoje;
+    const isSel   = dateStr === state.date;
+    const isFechado = !isPast && !isDiaDisponivel(dateStr);
+    if (isPast || isFechado) {
+      cells += `<div style="text-align:center;padding:8px 4px;font-family:'Roboto',sans-serif;font-size:13px;color:#2a2a2a;border:1px solid #1a1a1a;border-radius:4px;${isFechado && !isPast ? 'text-decoration:line-through;' : ''}">${d}</div>`;
+    } else {
+      cells += `<div class="cal-dia" onclick="selecionarData('${dateStr}')" style="text-align:center;padding:8px 4px;font-family:'Roboto',sans-serif;font-size:13px;color:${isSel?'#0a0a0a':'#f5f0e8'};background:${isSel?'#c9a84c':'transparent'};border:1px solid ${isSel?'#c9a84c':'#2a2a2a'};border-radius:4px;cursor:pointer;transition:all 0.2s;">${d}</div>`;
+    }
+  }
+  wrap.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <button onclick="mudarMes(-1)" style="background:none;border:1px solid #333;color:#f5f0e8;padding:6px 14px;border-radius:4px;cursor:pointer;font-size:16px;">‹</button>
+      <span style="font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:2px;color:#f5f0e8;text-transform:uppercase;">${mesNomes[calMes]} ${calAno}</span>
+      <button onclick="mudarMes(1)" style="background:none;border:1px solid #333;color:#f5f0e8;padding:6px 14px;border-radius:4px;cursor:pointer;font-size:16px;">›</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;">${cells}</div>
+    <div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap;">
+      <span style="font-size:11px;color:#555;font-family:'Roboto',sans-serif;">■ <span style="color:#f5f0e8;">Disponível</span></span>
+      <span style="font-size:11px;color:#555;font-family:'Roboto',sans-serif;">■ <span style="color:#333;">Indisponível</span></span>
+      <span style="font-size:11px;color:#c9a84c;font-family:'Roboto',sans-serif;">■ <span style="color:#c9a84c;">Selecionado</span></span>
+    </div>`;
+}
+
+window.mudarMes = function(delta) {
+  calMes += delta;
+  if (calMes > 11) { calMes = 0; calAno++; }
+  if (calMes < 0)  { calMes = 11; calAno--; }
+  // Invalida cache para buscar datas especiais atualizadas
+  _calDatasEsp = null;
+  carregarConfigCalendario().then(() => renderCalendario());
+};
+
+window.selecionarData = function(dateStr) {
+  state.date = dateStr;
+  document.querySelectorAll('.cal-dia').forEach(el => {
+    const onclick = el.getAttribute('onclick') || '';
+    const isSelected = onclick.includes(dateStr);
+    el.style.background = isSelected ? '#c9a84c' : 'transparent';
+    el.style.color       = isSelected ? '#0a0a0a' : '#f5f0e8';
+    el.style.border      = isSelected ? '1px solid #c9a84c' : '1px solid #2a2a2a';
+  });
+  const inp = document.getElementById('pref-date');
+  if (inp) inp.value = dateStr;
+  carregarSlotsParaData(dateStr);
+};
+
+// ─── Controle de passos ────────────────────────────
+function showStep(n) {
+  document.querySelectorAll('.form-step').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.step').forEach((el, i) => {
+    el.classList.remove('active', 'done');
+    if (i + 1 < n) el.classList.add('done');
+    if (i + 1 === n) el.classList.add('active');
+  });
+  document.querySelectorAll('.step-line').forEach((el, i) => {
+    el.classList.toggle('active', i + 1 < n);
+  });
+  const stepEl = document.getElementById('step-' + n);
+  if (stepEl) stepEl.classList.add('active');
+}
+
+window.goBack = function(n) { showStep(n); };
+
+window.selectService = function(id) {
+  if (!currentUser) {
+    showToast('Faça login para agendar. 👆');
+    openLoginModal();
+    return;
+  }
+  const s = SERVICES.find(x => x.id === id);
+  if (!s) return;
+  state.selected = s;
+  document.querySelectorAll('.option-item').forEach(el => el.classList.remove('selected'));
+  const item = document.getElementById('opt-' + id);
+  if (item) item.classList.add('selected');
+  setTimeout(() => {
+    showStep(2);
+    preencherDadosAgendamento();
+    const now = new Date();
+    if (!calAno) { calAno = now.getFullYear(); calMes = now.getMonth(); }
+    carregarConfigCalendario().then(() => renderCalendario());
+  }, 180);
+};
+
+window.goToConfirm = function() {
+  if (!currentUser) {
+    showToast('Faça login para continuar. 👆');
+    openLoginModal();
+    return;
+  }
+  const name  = document.getElementById('client-name').value.trim();
+  const phone = document.getElementById('client-phone').value.trim();
+  const date  = state.date || document.getElementById('pref-date').value;
+  const time  = document.getElementById('pref-time').value;
+  if (!name || !phone || !date || !time) {
+    alert('Por favor, preencha todos os campos obrigatórios (*).');
+    return;
+  }
+  state.name = name; state.phone = phone; state.date = date; state.time = time;
+  state.obs = document.getElementById('obs').value.trim();
+  renderConfirm();
+  showStep(3);
+};
+
+function formatDate(d) {
+  const [y, m, day] = d.split('-');
+  return `${day}/${m}/${y}`;
+}
+
+function renderConfirm() {
+  const sel = state.selected;
+  document.getElementById('confirm-summary').innerHTML = `
+    <div class="confirm-row"><label>Serviço</label><span>${sel.name}</span></div>
+    <div class="confirm-row"><label>Cliente</label><span>${state.name}</span></div>
+    <div class="confirm-row"><label>WhatsApp</label><span>${state.phone}</span></div>
+    <div class="confirm-row"><label>Data</label><span>${formatDate(state.date)}</span></div>
+    <div class="confirm-row"><label>Horário</label><span>${state.time}</span></div>
+    ${state.obs ? `<div class="confirm-row"><label>Obs.</label><span>${state.obs}</span></div>` : ''}
+    <div class="confirm-row confirm-total"><label>Valor</label>
+      <span>R$${Number(sel.price).toFixed(2).replace('.', ',')}</span>
+    </div>`;
+}
+
+function sendWhatsAppNotification() {
+  const sel = state.selected;
+  const lines = [
+    '*Novo Agendamento!*', '',
+    '*Cliente:* ' + state.name,
+    '*WhatsApp:* ' + state.phone,
+    '*Servico:* ' + sel.name,
+    '*Data:* ' + formatDate(state.date),
+    '*Horario:* ' + state.time,
+    '*Valor:* R$' + Number(sel.price).toFixed(2).replace('.', ','),
+  ];
+  if (state.obs) lines.push('*Obs:* ' + state.obs);
+  window.open(`https://wa.me/${WHATSAPP_NOTIFY}?text=${encodeURIComponent(lines.join('\n'))}`, '_blank');
+}
+
+function sendClientConfirmation() {
+  const sel = state.selected;
+  const primeiroNome = state.name.split(' ')[0];
+  const lines = [
+    `Olá, *${primeiroNome}*! 👋`, '',
+    'Recebemos seu agendamento na *VR Barber Shop* e em breve entraremos em contato para confirmar o horário.', '',
+    '📋 *Resumo do seu agendamento:*',
+    '*Serviço:* ' + sel.name,
+    '*Data:* ' + formatDate(state.date),
+    '*Horário:* ' + state.time,
+    '*Valor:* R$' + Number(sel.price).toFixed(2).replace('.', ','), '',
+    'Qualquer dúvida, é só responder esta mensagem. Te esperamos! ✂️',
+  ];
+  const clientPhone = state.phone.replace(/\D/g, '');
+  window.open(`https://wa.me/55${clientPhone}?text=${encodeURIComponent(lines.join('\n'))}`, '_blank');
+}
+
+window.submitBooking = async function() {
+  const btn = document.querySelector('.btn-confirm');
+  btn.textContent = 'Enviando...'; btn.disabled = true;
+  try {
+    const key = phoneKey(state.phone);
+    await firebase.firestore().collection('agendamentos').add({
+      tipo: 'servico', servico: state.selected.name, preco: state.selected.price,
+      cliente: state.name, telefone: key,
+      data: state.date, horario: state.time, obs: state.obs,
+      status: 'pendente',
+      criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    sendWhatsAppNotification();
+    sendClientConfirmation();
+    document.getElementById('success-modal').classList.add('open');
+    state = { selected: null, name: '', phone: '', date: '', time: '', obs: '' };
+    calAno = undefined; calMes = undefined;
+    ['client-name','client-phone','pref-date','obs'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    document.getElementById('pref-time').innerHTML = '<option value="">Selecione uma data primeiro</option>';
+    document.getElementById('pref-time').disabled = true;
+    const calWrap = document.getElementById('cal-wrap');
+    if (calWrap) calWrap.innerHTML = '';
+    renderServiceOptions();
+    showStep(1);
+    preencherDadosAgendamento();
+  } catch (err) {
+    console.error(err);
+    alert('Erro ao enviar. Verifique a conexão e tente novamente.');
+  } finally {
+    btn.textContent = '✓ Confirmar'; btn.disabled = false;
+  }
+};
+
+window.closeModal = function() {
+  document.getElementById('success-modal').classList.remove('open');
+};
+
+// ─── Inicialização ─────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  injectExtraStyles();
-
   renderServices();
   renderPlans();
-  renderOptionsList();
-  injectStep1Button();
-  injectWaLinkOnSuccess();
+  renderServiceOptions();
+  initSlideshow();
 
+  // Sessão
   currentUser = loadSession();
   renderAuthBar();
-  if (currentUser) preencherDadosUsuario();
+  if (currentUser) preencherDadosAgendamento();
 
-  setupAllPhoneMasks();
-  setupModalCloseOnOverlay();
-
-  showStep(1);
+  // Máscara telefone (apenas se usuário não estiver logado)
+  const phoneInput = document.getElementById('client-phone');
+  if (phoneInput) {
+    phoneInput.addEventListener('input', function() {
+      if (currentUser) return; // não sobrescreve enquanto logado
+      let v = this.value.replace(/\D/g, '').substring(0, 11);
+      if (v.length > 6)      v = `(${v.substring(0,2)}) ${v.substring(2,7)}-${v.substring(7)}`;
+      else if (v.length > 2) v = `(${v.substring(0,2)}) ${v.substring(2)}`;
+      else if (v.length > 0) v = `(${v}`;
+      this.value = v;
+    });
+  }
 });
