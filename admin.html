@@ -617,6 +617,40 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    // ── Estado Global (declarado no topo para evitar TDZ) ────────────
+    let allAgendamentos = [];
+    let unsubscribe = null;
+    let _agendamentosKnownIds = null;
+    let _clientesFirestore = {};
+    let _clientListCache = [];
+    let datasEspeciais = {};
+    let deAlmocoAtivo = false;
+    let _notificacoes = [];
+    let _notifPanelOpen = false;
+
+    const DIAS_SEMANA = [
+      { key:'domingo', label:'Domingo' },
+      { key:'segunda', label:'Segunda-feira' },
+      { key:'terca',   label:'Terca-feira' },
+      { key:'quarta',  label:'Quarta-feira' },
+      { key:'quinta',  label:'Quinta-feira' },
+      { key:'sexta',   label:'Sexta-feira' },
+      { key:'sabado',  label:'Sabado' },
+    ];
+
+    const DEFAULT_HORARIOS = {
+      domingo: { ativo:false, inicio:'08:00', fim:'18:00', almoco:false, almoco_inicio:'12:00', almoco_fim:'13:00' },
+      segunda: { ativo:true,  inicio:'08:00', fim:'19:00', almoco:false, almoco_inicio:'12:00', almoco_fim:'13:00' },
+      terca:   { ativo:true,  inicio:'08:00', fim:'19:00', almoco:false, almoco_inicio:'12:00', almoco_fim:'13:00' },
+      quarta:  { ativo:true,  inicio:'08:00', fim:'19:00', almoco:false, almoco_inicio:'12:00', almoco_fim:'13:00' },
+      quinta:  { ativo:true,  inicio:'08:00', fim:'19:00', almoco:false, almoco_inicio:'12:00', almoco_fim:'13:00' },
+      sexta:   { ativo:true,  inicio:'08:00', fim:'19:00', almoco:false, almoco_inicio:'12:00', almoco_fim:'13:00' },
+      sabado:  { ativo:true,  inicio:'08:00', fim:'17:00', almoco:false, almoco_inicio:'12:00', almoco_fim:'13:00' },
+    };
+
+    let horariosConfig = JSON.parse(JSON.stringify(DEFAULT_HORARIOS));
+
+
     // ── Login ────────────────────────────────────────
     const ADMIN_PASS = '59360102';
 
@@ -638,8 +672,6 @@
       { name: 'Premium',   price: 135, features: ['Corte + Barba + Sobrancelha ilimitado','Prioridade na marcacao','Brinde: lavagem inclusa','10% desconto antecipado'] }
     ];
 
-    let allAgendamentos = [];
-    let unsubscribe = null;
 
     // ── Auth ─────────────────────────────────────────
     function doLogin() {
@@ -723,7 +755,6 @@
     }
 
     // ── Agendamentos ─────────────────────────────────
-    let _agendamentosKnownIds = null; // null = primeira carga
 
     function loadAgendamentos() {
       unsubscribe = db.collection('agendamentos').orderBy('criadoEm', 'desc').onSnapshot(snapshot => {
@@ -1027,27 +1058,8 @@
     }
 
     // ── Horários ─────────────────────────────────────
-    const DIAS_SEMANA = [
-      { key:'domingo', label:'Domingo' },
-      { key:'segunda', label:'Segunda-feira' },
-      { key:'terca',   label:'Terca-feira' },
-      { key:'quarta',  label:'Quarta-feira' },
-      { key:'quinta',  label:'Quinta-feira' },
-      { key:'sexta',   label:'Sexta-feira' },
-      { key:'sabado',  label:'Sabado' },
-    ];
 
-    const DEFAULT_HORARIOS = {
-      domingo: { ativo:false, inicio:'08:00', fim:'18:00', almoco:false, almoco_inicio:'12:00', almoco_fim:'13:00' },
-      segunda: { ativo:true,  inicio:'08:00', fim:'19:00', almoco:false, almoco_inicio:'12:00', almoco_fim:'13:00' },
-      terca:   { ativo:true,  inicio:'08:00', fim:'19:00', almoco:false, almoco_inicio:'12:00', almoco_fim:'13:00' },
-      quarta:  { ativo:true,  inicio:'08:00', fim:'19:00', almoco:false, almoco_inicio:'12:00', almoco_fim:'13:00' },
-      quinta:  { ativo:true,  inicio:'08:00', fim:'19:00', almoco:false, almoco_inicio:'12:00', almoco_fim:'13:00' },
-      sexta:   { ativo:true,  inicio:'08:00', fim:'19:00', almoco:false, almoco_inicio:'12:00', almoco_fim:'13:00' },
-      sabado:  { ativo:true,  inicio:'08:00', fim:'17:00', almoco:false, almoco_inicio:'12:00', almoco_fim:'13:00' },
-    };
 
-    let horariosConfig = JSON.parse(JSON.stringify(DEFAULT_HORARIOS));
 
     async function carregarHorarios() {
       try {
@@ -1204,7 +1216,6 @@
 
     // ── CLIENTES ─────────────────────────────────────
 
-    let _clientesFirestore = {}; // { telefoneKey: { nome, telefone, nascimento } }
 
     async function carregarClientesFirestore() {
       try {
@@ -1317,7 +1328,6 @@
       }
     }
 
-    let _clientListCache = [];
 
     async function renderClientes() {
       await carregarClientesFirestore();
@@ -1668,8 +1678,6 @@
     }
 
     // ── Datas Especiais ──────────────────────────────
-    let datasEspeciais = {}; // { 'YYYY-MM-DD': { desc, tipo, inicio, fim, almoco, almoco_inicio, almoco_fim } }
-    let deAlmocoAtivo = false;
 
     function toggleDETipo() {
       const tipo = document.getElementById('de-tipo').value;
@@ -1871,8 +1879,6 @@
 
 
     // ── Sistema de Notificações ──────────────────────
-    let _notificacoes = [];
-    let _notifPanelOpen = false;
 
     function notificarNovoAgendamento(a) {
       const nome    = a.cliente || 'Cliente';
