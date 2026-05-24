@@ -167,6 +167,22 @@
           <p id="admin-date"></p>
         </div>
         <div class="header-actions">
+          <!-- Sino de notificações -->
+          <div id="notif-bell" onclick="toggleNotifPanel()" style="position:relative;cursor:pointer;padding:8px;border-radius:4px;transition:background .2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#7a7a7a" stroke-width="1.5" id="bell-icon">
+              <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 01-3.46 0"/>
+            </svg>
+            <span id="notif-badge" style="display:none;position:absolute;top:4px;right:4px;width:8px;height:8px;background:#d45a5a;border-radius:50%;border:1.5px solid #0f0f0f;"></span>
+          </div>
+          <!-- Painel de notificações -->
+          <div id="notif-panel" style="display:none;position:absolute;top:60px;right:20px;width:340px;background:#141414;border:1px solid #252525;border-radius:4px;box-shadow:0 24px 60px rgba(0,0,0,0.8);z-index:9997;overflow:hidden;max-height:480px;display:none;flex-direction:column;">
+            <div style="padding:14px 18px;border-bottom:1px solid #1e1e1e;display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#7a7a7a;">Notificações</span>
+              <button onclick="limparNotificacoes()" style="background:none;border:none;font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#3c3c3c;cursor:pointer;transition:color .2s;" onmouseover="this.style.color='#7a7a7a'" onmouseout="this.style.color='#3c3c3c'">Limpar</button>
+            </div>
+            <div id="notif-list" style="overflow-y:auto;max-height:400px;"></div>
+          </div>
           <span class="badge-status">Online</span>
         </div>
       </header>
@@ -675,6 +691,8 @@
       if (el) el.textContent = new Date().toLocaleDateString('pt-BR', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
       loadAgendamentos();
       verificarAniversariosGlobal();
+      solicitarPermissaoNotificacao();
+      renderNotifPanel(); // inicia painel vazio
     }
 
     // ── Tabs ─────────────────────────────────────────
@@ -705,9 +723,31 @@
     }
 
     // ── Agendamentos ─────────────────────────────────
+    let _agendamentosKnownIds = null; // null = primeira carga
+
     function loadAgendamentos() {
       unsubscribe = db.collection('agendamentos').orderBy('criadoEm', 'desc').onSnapshot(snapshot => {
-        allAgendamentos = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        // Detecta novos agendamentos após a primeira carga
+        if (_agendamentosKnownIds !== null) {
+          snapshot.docChanges().forEach(change => {
+            if (change.type === 'added') {
+              const a = { id: change.doc.id, ...change.doc.data() };
+              // Só notifica se foi criado há menos de 30s (evita notificar histórico no reload)
+              const criadoEm = a.criadoEm?.toDate ? a.criadoEm.toDate() : null;
+              const recente = !criadoEm || (Date.now() - criadoEm.getTime() < 30000);
+              if (recente) {
+                notificarNovoAgendamento(a);
+              }
+            }
+          });
+        } else {
+          // Primeira carga: registra IDs conhecidos
+          _agendamentosKnownIds = new Set(docs.map(d => d.id));
+        }
+
+        allAgendamentos = docs;
         renderDashboard();
         renderAgendamentosTable(allAgendamentos);
       });
@@ -1847,6 +1887,192 @@
 
     function fecharModalExcluirTodosClientes() {
       document.getElementById('excluir-todos-clientes-modal').style.display = 'none';
+    }
+
+
+    // ── Sistema de Notificações ──────────────────────
+    let _notificacoes = [];
+    let _notifPanelOpen = false;
+
+    function notificarNovoAgendamento(a) {
+      const nome    = a.cliente || 'Cliente';
+      const servico = a.servico || 'Serviço';
+      const data    = a.data    ? a.data.split('-').reverse().join('/') : '';
+      const hora    = a.horario || '';
+
+      // Adiciona à lista interna
+      const notif = {
+        id:   a.id,
+        nome, servico, data, hora,
+        ts:   Date.now(),
+        lida: false,
+      };
+      _notificacoes.unshift(notif);
+
+      // Atualiza badge
+      atualizarBadgeNotif();
+
+      // Toca som sutil (beep via AudioContext)
+      tocarSomNotificacao();
+
+      // Toast customizado de novo agendamento
+      showToastAgendamento(nome, servico, data, hora);
+
+      // Notificação do browser (se permitido)
+      if (Notification.permission === 'granted') {
+        new Notification('Novo Agendamento — VR Barber', {
+          body: nome + ' · ' + servico + (data ? ' · ' + data : '') + (hora ? ' às ' + hora : ''),
+          icon: 'logo.png',
+          tag:  'vr-agendamento-' + a.id,
+          silent: false,
+        });
+      }
+
+      // Renderiza painel
+      renderNotifPanel();
+    }
+
+    function atualizarBadgeNotif() {
+      const naoLidas = _notificacoes.filter(n => !n.lida).length;
+      const badge = document.getElementById('notif-badge');
+      const icon  = document.getElementById('bell-icon');
+      if (!badge || !icon) return;
+      if (naoLidas > 0) {
+        badge.style.display = 'block';
+        icon.querySelector('path').setAttribute('stroke', '#f0ece4');
+      } else {
+        badge.style.display = 'none';
+        icon.querySelector('path').setAttribute('stroke', '#7a7a7a');
+      }
+    }
+
+    function renderNotifPanel() {
+      const el = document.getElementById('notif-list');
+      if (!el) return;
+      if (!_notificacoes.length) {
+        el.innerHTML = '<div style="padding:28px 18px;text-align:center;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:2px;color:#2e2e2e;text-transform:uppercase;">Nenhuma notificação</div>';
+        return;
+      }
+      el.innerHTML = _notificacoes.map(n => {
+        const ago = formatAgo(n.ts);
+        return `<div onclick="irParaAgendamento('${n.id}')" style="padding:14px 18px;border-bottom:1px solid #1a1a1a;cursor:pointer;background:${n.lida ? 'transparent' : 'rgba(255,255,255,0.025)'};transition:background .2s;display:flex;gap:12px;align-items:flex-start;" onmouseover="this.style.background='rgba(255,255,255,0.04)'" onmouseout="this.style.background='${n.lida ? 'transparent' : 'rgba(255,255,255,0.025)'}'">
+          <div style="width:6px;height:6px;border-radius:50%;background:${n.lida ? '#2e2e2e' : '#d45a5a'};flex-shrink:0;margin-top:5px;"></div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-family:'Oswald',sans-serif;font-size:13px;color:#f0ece4;letter-spacing:0.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${n.nome}</div>
+            <div style="font-family:'Roboto',sans-serif;font-size:12px;color:#555;margin-top:2px;">${n.servico}${n.data ? ' · ' + n.data : ''}${n.hora ? ' às ' + n.hora : ''}</div>
+            <div style="font-family:'Roboto',sans-serif;font-size:10px;color:#2e2e2e;margin-top:4px;letter-spacing:0.5px;">${ago}</div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function formatAgo(ts) {
+      const diff = Math.floor((Date.now() - ts) / 1000);
+      if (diff < 60)  return 'agora mesmo';
+      if (diff < 3600) return Math.floor(diff / 60) + ' min atrás';
+      if (diff < 86400) return Math.floor(diff / 3600) + 'h atrás';
+      return Math.floor(diff / 86400) + 'd atrás';
+    }
+
+    function toggleNotifPanel() {
+      const panel = document.getElementById('notif-panel');
+      if (!panel) return;
+      _notifPanelOpen = !_notifPanelOpen;
+      panel.style.display = _notifPanelOpen ? 'flex' : 'none';
+      if (_notifPanelOpen) {
+        // Marcar todas como lidas ao abrir
+        _notificacoes.forEach(n => n.lida = true);
+        atualizarBadgeNotif();
+        renderNotifPanel();
+        // Fechar ao clicar fora
+        setTimeout(() => {
+          document.addEventListener('click', fecharNotifPanelFora, { once: true });
+        }, 10);
+      }
+    }
+
+    function fecharNotifPanelFora(e) {
+      const panel = document.getElementById('notif-panel');
+      const bell  = document.getElementById('notif-bell');
+      if (panel && !panel.contains(e.target) && !bell.contains(e.target)) {
+        panel.style.display = 'none';
+        _notifPanelOpen = false;
+      }
+    }
+
+    function limparNotificacoes() {
+      _notificacoes = [];
+      atualizarBadgeNotif();
+      renderNotifPanel();
+    }
+
+    function irParaAgendamento(id) {
+      const panel = document.getElementById('notif-panel');
+      if (panel) panel.style.display = 'none';
+      _notifPanelOpen = false;
+      // Vai para aba de agendamentos e destaca o item
+      const navItem = document.querySelector('[onclick*="showTab('agendamentos'"]') || document.querySelector('[onclick*=\'agendamentos\']');
+      showTab('agendamentos', navItem);
+      // Destaca linha após renderizar
+      setTimeout(() => {
+        const rows = document.querySelectorAll('#agendamentos-body tr');
+        rows.forEach(row => {
+          if (row.dataset.id === id) {
+            row.style.background = 'rgba(212,90,90,0.1)';
+            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => { row.style.background = ''; }, 2500);
+          }
+        });
+      }, 300);
+    }
+
+    function showToastAgendamento(nome, servico, data, hora) {
+      let toast = document.getElementById('notif-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'notif-toast';
+        document.body.appendChild(toast);
+      }
+      toast.style.cssText = 'position:fixed;top:20px;right:20px;background:#141414;border:1px solid #252525;border-left:3px solid #d45a5a;color:#f0ece4;padding:16px 20px;border-radius:4px;font-family:Oswald,sans-serif;z-index:99999;max-width:300px;box-shadow:0 16px 48px rgba(0,0,0,0.8);cursor:pointer;transition:opacity .3s;';
+      toast.innerHTML = `
+        <div style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#d45a5a;margin-bottom:6px;">Novo Agendamento</div>
+        <div style="font-size:14px;letter-spacing:0.5px;margin-bottom:3px;">${nome}</div>
+        <div style="font-size:12px;color:#555;font-family:Roboto,sans-serif;">${servico}${data ? ' · ' + data : ''}${hora ? ' às ' + hora : ''}</div>
+      `;
+      toast.style.display = 'block';
+      toast.style.opacity = '1';
+      toast.onclick = () => { toast.style.opacity = '0'; setTimeout(() => { toast.style.display='none'; }, 300); };
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => { toast.style.display = 'none'; }, 300);
+      }, 7000);
+    }
+
+    function tocarSomNotificacao() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const notas = [880, 1100];
+        notas.forEach((freq, i) => {
+          const osc  = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.12);
+          gain.gain.setValueAtTime(0.08, ctx.currentTime + i * 0.12);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.12 + 0.25);
+          osc.start(ctx.currentTime + i * 0.12);
+          osc.stop(ctx.currentTime + i * 0.12 + 0.25);
+        });
+      } catch(e) {}
+    }
+
+    // Solicita permissão de notificação ao iniciar o admin
+    function solicitarPermissaoNotificacao() {
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
     }
 
     // Registro do Service Worker (PWA)
