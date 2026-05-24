@@ -1,9 +1,10 @@
-const CACHE_NAME = 'vr-barber-admin-v1';
+const CACHE_NAME = 'vr-barber-v1';
 
 // Arquivos essenciais para funcionar offline
 const STATIC_ASSETS = [
-  './admin.html',
-  './admin.css',
+  './index.html',
+  './style.css',
+  './app.js',
   './manifest.json',
   './logo.png',
   'https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Bebas+Neue&family=Roboto:wght@300;400;500&display=swap',
@@ -54,7 +55,7 @@ self.addEventListener('fetch', event => {
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         }
         return response;
-      }).catch(() => caches.match('./admin.html'));
+      }).catch(() => caches.match('./index.html'));
     })
   );
 });
