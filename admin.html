@@ -444,18 +444,24 @@
       </details>
 
       <!-- BUSCA E ORDENAÇÃO -->
-      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
         <input type="text" id="clientes-search" oninput="filtrarClientes()"
           placeholder="Buscar cliente..."
-          style="background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:10px 16px;color:#f0ece4;font-family:'Roboto',sans-serif;font-size:14px;outline:none;flex:1;min-width:200px;"/>
+          style="background:#1a1a1a;border:1px solid #333;border-radius:4px;padding:10px 16px;color:#f0ece4;font-family:'Roboto',sans-serif;font-size:14px;outline:none;flex:1;min-width:200px;"/>
         <select id="clientes-sort" onchange="filtrarClientes()"
-          style="background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:10px 14px;color:#f0ece4;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:1px;outline:none;cursor:pointer;color-scheme:dark;">
+          style="background:#1a1a1a;border:1px solid #333;border-radius:4px;padding:10px 14px;color:#f0ece4;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:1px;outline:none;cursor:pointer;color-scheme:dark;">
           <option value="nome">Ordenar: Nome A-Z</option>
           <option value="visitas">Ordenar: + Visitas</option>
           <option value="ticket">Ordenar: Maior Ticket</option>
           <option value="gasto">Ordenar: Maior Gasto Total</option>
           <option value="recente">Ordenar: + Recente</option>
         </select>
+        <button onclick="abrirModalExcluirTodosClientes()"
+          style="background:transparent;border:1px solid rgba(176,48,48,0.4);color:#d45a5a;padding:10px 18px;border-radius:4px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;font-weight:700;white-space:nowrap;transition:all .2s;"
+          onmouseover="this.style.background='rgba(176,48,48,0.1)';this.style.borderColor='#d45a5a'"
+          onmouseout="this.style.background='transparent';this.style.borderColor='rgba(176,48,48,0.4)'">
+          Excluir Todos
+        </button>
       </div>
 
       <!-- RESUMO GERAL -->
@@ -480,6 +486,65 @@
       </div>
     </div>
   </template>
+
+
+  <!-- MODAL EXCLUIR CLIENTE INDIVIDUAL -->
+  <div id="excluir-cliente-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:10000;align-items:center;justify-content:center;">
+    <div style="background:#141414;border:1px solid #2a2a2a;border-radius:2px;padding:40px 36px;max-width:380px;width:90%;text-align:center;box-shadow:0 40px 100px rgba(0,0,0,0.9);">
+      <div style="width:40px;height:1px;background:#b03030;margin:0 auto 28px;"></div>
+      <h3 style="font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:3px;text-transform:uppercase;color:#f0ece4;margin-bottom:10px;">Excluir Cliente</h3>
+      <p style="font-family:'Roboto',sans-serif;font-size:13px;color:#777;line-height:1.7;margin-bottom:28px;">
+        Tem certeza que deseja excluir <strong id="excluir-cliente-nome" style="color:#f0ece4;"></strong>?<br/>
+        <span style="font-size:11px;color:#555;">Esta ação não pode ser desfeita.</span>
+      </p>
+      <div style="display:flex;gap:10px;">
+        <button onclick="fecharModalExcluirCliente()"
+          style="flex:1;padding:12px;background:transparent;border:1px solid #2a2a2a;border-radius:4px;color:#777;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;"
+          onmouseover="this.style.borderColor='#444';this.style.color='#aaa'"
+          onmouseout="this.style.borderColor='#2a2a2a';this.style.color='#777'">
+          Cancelar
+        </button>
+        <button id="excluir-cliente-confirmar"
+          style="flex:1;padding:12px;background:rgba(176,48,48,0.15);border:1px solid rgba(176,48,48,0.5);border-radius:4px;color:#d45a5a;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:700;cursor:pointer;transition:all .2s;"
+          onmouseover="this.style.background='rgba(176,48,48,0.25)'"
+          onmouseout="this.style.background='rgba(176,48,48,0.15)'">
+          Excluir
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EXCLUIR TODOS OS CLIENTES -->
+  <div id="excluir-todos-clientes-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10000;align-items:center;justify-content:center;">
+    <div style="background:#141414;border:1px solid #2a2a2a;border-radius:2px;padding:40px 36px;max-width:400px;width:90%;text-align:center;box-shadow:0 40px 100px rgba(0,0,0,0.9);">
+      <div style="width:40px;height:1px;background:#b03030;margin:0 auto 28px;"></div>
+      <h3 style="font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:3px;text-transform:uppercase;color:#f0ece4;margin-bottom:10px;">Excluir Todos os Clientes</h3>
+      <p style="font-family:'Roboto',sans-serif;font-size:13px;color:#777;line-height:1.7;margin-bottom:8px;">
+        Esta ação irá excluir <strong id="excluir-todos-count" style="color:#d45a5a;"></strong> da base de dados.
+      </p>
+      <p style="font-family:'Roboto',sans-serif;font-size:12px;color:#555;line-height:1.6;margin-bottom:28px;">
+        Os agendamentos não serão afetados. Esta ação <strong style="color:#f0ece4;">não pode ser desfeita</strong>.
+      </p>
+      <div style="margin-bottom:24px;padding:14px 18px;background:#1a0a0a;border:1px solid rgba(176,48,48,0.25);border-radius:4px;">
+        <p style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;color:#555;text-transform:uppercase;margin-bottom:8px;">Confirme digitando</p>
+        <input type="text" id="excluir-todos-confirm-input" placeholder="EXCLUIR TUDO"
+          style="width:100%;background:#0f0f0f;border:1px solid #2a2a2a;border-radius:4px;padding:10px 14px;color:#f0ece4;font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:3px;text-align:center;outline:none;"
+          oninput="validarConfirmacaoExcluirTodos()"/>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="fecharModalExcluirTodosClientes()"
+          style="flex:1;padding:12px;background:transparent;border:1px solid #2a2a2a;border-radius:4px;color:#777;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;"
+          onmouseover="this.style.borderColor='#444';this.style.color='#aaa'"
+          onmouseout="this.style.borderColor='#2a2a2a';this.style.color='#777'">
+          Cancelar
+        </button>
+        <button id="excluir-todos-confirmar" disabled
+          style="flex:1;padding:12px;background:rgba(176,48,48,0.08);border:1px solid rgba(176,48,48,0.2);border-radius:4px;color:#666;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:700;cursor:not-allowed;transition:all .2s;">
+          Excluir Tudo
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- MODAL CONCLUIR TODOS -->
   <div id="concluir-todos-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;">
@@ -1399,6 +1464,15 @@
           onmouseover="this.style.background='#2a2a2a'" onmouseout="this.style.background='#1e1e1e'">
           Abrir WhatsApp →
         </a>` : ''}
+
+        <div style="margin-top:32px;padding-top:20px;border-top:1px solid #1e1e1e;">
+          <button onclick="confirmarExcluirCliente('${encodeURIComponent(c.nome)}', '${(c.telefone||'').replace(/\D/g,'')}')"
+            style="width:100%;background:transparent;border:1px solid rgba(176,48,48,0.35);color:#d45a5a;padding:12px;border-radius:4px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:2.5px;text-transform:uppercase;font-weight:700;transition:all .2s;"
+            onmouseover="this.style.background='rgba(176,48,48,0.1)';this.style.borderColor='#d45a5a'"
+            onmouseout="this.style.background='transparent';this.style.borderColor='rgba(176,48,48,0.35)'">
+            Excluir Este Cliente
+          </button>
+        </div>
       `;
 
       document.getElementById('cliente-drawer').style.display = 'block';
@@ -1409,6 +1483,9 @@
       if (e && e.target !== document.getElementById('cliente-drawer')) return;
       document.getElementById('cliente-drawer').style.display = 'none';
       document.body.style.overflow = '';
+      // Close excluir-cliente modal too if open
+      const ecm = document.getElementById('excluir-cliente-modal');
+      if (ecm) ecm.style.display = 'none';
     }
 
     // Verifica aniversários ao carregar o admin (mesmo sem abrir a aba)
@@ -1685,6 +1762,93 @@
   </nav>
 
   <script>
+
+    // ── Excluir Cliente Individual ───────────────────
+    let _excluirClienteKey = null;
+
+    function confirmarExcluirCliente(encodedNome, tel) {
+      const nome = decodeURIComponent(encodedNome);
+      _excluirClienteKey = tel;
+      document.getElementById('excluir-cliente-nome').textContent = nome;
+      const modal = document.getElementById('excluir-cliente-modal');
+      modal.style.display = 'flex';
+
+      document.getElementById('excluir-cliente-confirmar').onclick = async () => {
+        const btn = document.getElementById('excluir-cliente-confirmar');
+        btn.textContent = 'Excluindo...';
+        btn.disabled = true;
+        try {
+          await db.collection('clientes').doc(_excluirClienteKey).delete();
+          delete _clientesFirestore[_excluirClienteKey];
+          fecharModalExcluirCliente();
+          fecharClienteDrawer();
+          showToast('Cliente excluído.');
+          renderClientes();
+        } catch(e) {
+          btn.textContent = 'Excluir';
+          btn.disabled = false;
+          alert('Erro ao excluir: ' + (e.message || e.code));
+        }
+      };
+    }
+
+    function fecharModalExcluirCliente() {
+      document.getElementById('excluir-cliente-modal').style.display = 'none';
+      _excluirClienteKey = null;
+    }
+
+    // ── Excluir Todos os Clientes ────────────────────
+    function abrirModalExcluirTodosClientes() {
+      const total = _clientListCache.length;
+      if (!total) { showToast('Nenhum cliente cadastrado.'); return; }
+      document.getElementById('excluir-todos-count').textContent =
+        total === 1 ? '1 cliente' : total + ' clientes';
+      document.getElementById('excluir-todos-confirm-input').value = '';
+      const btn = document.getElementById('excluir-todos-confirmar');
+      btn.disabled = true;
+      btn.style.background = 'rgba(176,48,48,0.08)';
+      btn.style.borderColor = 'rgba(176,48,48,0.2)';
+      btn.style.color = '#666';
+      btn.style.cursor = 'not-allowed';
+      document.getElementById('excluir-todos-clientes-modal').style.display = 'flex';
+    }
+
+    function validarConfirmacaoExcluirTodos() {
+      const val = (document.getElementById('excluir-todos-confirm-input')?.value || '').trim().toUpperCase();
+      const btn = document.getElementById('excluir-todos-confirmar');
+      const ok = val === 'EXCLUIR TUDO';
+      btn.disabled = !ok;
+      btn.style.background    = ok ? 'rgba(176,48,48,0.2)'   : 'rgba(176,48,48,0.08)';
+      btn.style.borderColor   = ok ? 'rgba(176,48,48,0.6)'   : 'rgba(176,48,48,0.2)';
+      btn.style.color         = ok ? '#d45a5a'                : '#666';
+      btn.style.cursor        = ok ? 'pointer'                : 'not-allowed';
+
+      if (ok) {
+        btn.onclick = async () => {
+          btn.textContent = 'Excluindo...';
+          btn.disabled = true;
+          try {
+            const snap = await db.collection('clientes').get();
+            const batch = db.batch();
+            snap.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+            _clientesFirestore = {};
+            fecharModalExcluirTodosClientes();
+            showToast('Todos os clientes foram excluídos.');
+            renderClientes();
+          } catch(e) {
+            btn.textContent = 'Excluir Tudo';
+            btn.disabled = false;
+            alert('Erro ao excluir: ' + (e.message || e.code));
+          }
+        };
+      }
+    }
+
+    function fecharModalExcluirTodosClientes() {
+      document.getElementById('excluir-todos-clientes-modal').style.display = 'none';
+    }
+
     // Registro do Service Worker (PWA)
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
