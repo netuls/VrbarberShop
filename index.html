@@ -33,30 +33,41 @@
   </script>
 
   <style>
-    /* ── Nav Logo Ghost ── */
+    /* ── Nav Logo ── */
     .nav-logo-text {
       display: flex;
       flex-direction: column;
       line-height: 1;
-      position: relative;
-    }
-    .nav-logo-text::before {
-      content: "";
-      position: absolute;
-      inset: -14px -10px;
-      background: url("logo.png") center/contain no-repeat;
-      opacity: 0.07;
-      pointer-events: none;
-      filter: grayscale(1) brightness(2);
-    }
-    .nav-logo-text .logo-vr,
-    .nav-logo-text .logo-sub {
-      position: relative;
-      z-index: 1;
     }
 
     @media (max-width: 768px) {
       .nav-logo-img  { width: 36px; height: 36px; }
+    }
+  </style>
+
+  <style>
+    /* ── Hero Ghost Logo ── */
+    .hero-ghost-logo {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: min(520px, 80vw);
+      height: min(520px, 80vw);
+      background: url("logo.png") center/contain no-repeat;
+      opacity: 0.045;
+      pointer-events: none;
+      filter: grayscale(1) brightness(3);
+      z-index: 1;
+      animation: fadeUp 1.2s 0.1s ease both;
+    }
+    /* Garante que o conteudo do hero fique acima do fantasma */
+    .hero-badge,
+    .hero-title,
+    .hero-sub,
+    .btn-hero {
+      position: relative;
+      z-index: 2;
     }
   </style>
 </head>
@@ -83,6 +94,7 @@
     </nav>
 
     <div class="hero-content">
+      <div class="hero-ghost-logo"></div>
       <div class="hero-badge">EST. 2019</div>
       <h1 class="hero-title">VR<br/><span>Barber Shop</span></h1>
       <p class="hero-sub"><span class="hero-sub-item">Barba</span><span class="hero-sub-dot">·</span><span class="hero-sub-item">Cabelo</span><span class="hero-sub-dot">·</span><span class="hero-sub-item">Estilo</span></p>
