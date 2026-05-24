@@ -14,6 +14,7 @@ const HERO_SLIDES = [
 const SERVICES = [
   { id: 'corte',             name: 'Corte',                        price: 25 },
   { id: 'corte_sobrancelha', name: 'Corte + Sobrancelha',         price: 30 },
+  { id: 'corte_barba',       name: 'Corte + Barba',               price: 45 },
   { id: 'corte_barba_sob',   name: 'Corte + Barba + Sobrancelha', price: 45 },
   { id: 'barba',             name: 'Barba',                        price: 20 },
   { id: 'sobrancelha',       name: 'Sobrancelha',                  price: 5  },
