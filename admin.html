@@ -109,6 +109,51 @@
       transition: background .2s !important;
     }
     #btn-salvar-horarios:hover { background: #333 !important; }
+
+    /* ═══ CLIENTES — lista mobile responsiva ═══ */
+    /* Linha de cliente: no mobile vira card empilhado */
+    @media (max-width: 768px) {
+      /* Resumo: 2 colunas */
+      #clientes-resumo {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+      }
+      /* Cada linha de cliente vira coluna */
+      #clientes-lista [data-cliente-row] {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 12px !important;
+        padding: 14px 14px !important;
+      }
+      #clientes-lista [data-cliente-row] > [data-stats] {
+        width: 100% !important;
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        border-top: 1px solid rgba(255,255,255,0.04) !important;
+        padding-top: 10px !important;
+        gap: 0 !important;
+      }
+      /* Drawer full-screen no mobile */
+      #cliente-drawer-box {
+        width: 100vw !important;
+        border-left: none !important;
+        top: auto !important;
+        bottom: 0 !important;
+        max-height: 90vh !important;
+        border-radius: 12px 12px 0 0 !important;
+        border-top: 1px solid #2a2a2a !important;
+      }
+      /* Busca em coluna */
+      #clientes-search { width: 100% !important; }
+    }
+
+    /* ═══ CLIENTES — resumo desktop: 4 colunas grid ═══ */
+    @media (min-width: 769px) {
+      #clientes-resumo {
+        display: grid !important;
+        grid-template-columns: repeat(4, 1fr) !important;
+      }
+    }
   </style>
 </head>
 <body class="admin-body">
@@ -1344,16 +1389,22 @@
       const clienteTop    = [...clientes].sort((a, b) => b.stats.gastoTotal - a.stats.gastoTotal)[0];
 
       const resumoEl = document.getElementById('clientes-resumo');
+      const resumoIcons = {
+        clientes: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>`,
+        receita:  `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>`,
+        ticket:   `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,
+        top:      `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`,
+      };
       if (resumoEl) resumoEl.innerHTML = [
-        { icon: 'cli', val: totalClientes, label: 'Total de Clientes' },
-        { icon: 'R$', val: 'R$' + totalGasto.toFixed(2).replace('.', ','), label: 'Receita Total' },
-        { icon: '~', val: isNaN(ticketMedio) || !isFinite(ticketMedio) ? 'R$0,00' : 'R$' + ticketMedio.toFixed(2).replace('.', ','), label: 'Ticket Médio Geral' },
-        { icon: 'top', val: clienteTop ? clienteTop.nome.split(' ')[0] : '—', label: 'Maior Gastador' },
+        { icon: resumoIcons.clientes, val: totalClientes, label: 'Total de Clientes' },
+        { icon: resumoIcons.receita,  val: 'R$' + totalGasto.toFixed(2).replace('.', ','), label: 'Receita Total' },
+        { icon: resumoIcons.ticket,   val: isNaN(ticketMedio) || !isFinite(ticketMedio) ? 'R$0,00' : 'R$' + ticketMedio.toFixed(2).replace('.', ','), label: 'Ticket Médio Geral' },
+        { icon: resumoIcons.top,      val: clienteTop ? clienteTop.nome.split(' ')[0] : '—', label: 'Maior Gastador' },
       ].map(c => `
-        <div style="flex:1;min-width:130px;background:#141414;padding:18px 20px;">
-          <div style="font-size:20px;margin-bottom:6px;">${c.icon}</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#f0ece4;letter-spacing:1px;">${c.val}</div>
-          <div style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;color:#555;text-transform:uppercase;margin-top:2px;">${c.label}</div>
+        <div style="flex:1;min-width:120px;background:#141414;padding:18px 20px;">
+          <div style="color:#3a3a3a;margin-bottom:10px;display:flex;align-items:center;">${c.icon}</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:#f0ece4;letter-spacing:1px;line-height:1;">${c.val}</div>
+          <div style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:2px;color:#555;text-transform:uppercase;margin-top:6px;">${c.label}</div>
         </div>
       `).join('');
 
@@ -1390,41 +1441,45 @@
           const nascFmt    = c.nascimento ? fmtNascimento(c.nascimento) : '';
           const anivAmanha = isAniversarioAmanha(c.nascimento);
           return `<div onclick="abrirClienteDrawer('${encodeURIComponent(JSON.stringify({ nome: c.nome, telefone: c.telefone, nascimento: c.nascimento || '', agendamentos: c.agendamentos }))}')"
-            style="background:#141414;padding:16px 20px;display:flex;align-items:center;gap:16px;cursor:pointer;transition:background .2s;flex-wrap:wrap;${anivAmanha ? 'border-left:3px solid #c8a96e;' : ''}"
-            onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background='#161616'">
-            <div style="width:42px;height:42px;border-radius:50%;background:${anivAmanha ? '#2a1e00' : '#222'};border:1px solid ${anivAmanha ? '#c8a96e' : '#2a2a2a'};display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:${anivAmanha ? '#c8a96e' : '#555'};flex-shrink:0;">
+            style="background:#141414;padding:14px 20px;display:flex;align-items:center;gap:16px;cursor:pointer;transition:background .15s;${anivAmanha ? 'border-left:3px solid #c8a96e;' : 'border-left:3px solid transparent;'}"
+            onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background='#141414'">
+            <!-- Avatar -->
+            <div style="width:40px;height:40px;border-radius:50%;background:${anivAmanha ? '#2a1e00' : '#1e1e1e'};border:1px solid ${anivAmanha ? '#c8a96e' : '#2a2a2a'};display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:17px;color:${anivAmanha ? '#c8a96e' : '#555'};flex-shrink:0;">
               ${(c.nome || '?')[0].toUpperCase()}
             </div>
-            <div style="flex:1;min-width:120px;">
-              <div style="font-family:'Oswald',sans-serif;font-size:15px;font-weight:500;color:#f0ece4;">${c.nome}${anivAmanha ? ' <span style="font-size:10px;background:#2a1e00;color:#c8a96e;letter-spacing:1px;padding:2px 7px;border-radius:4px;border:1px solid #4a3800;">\uD83C\uDF82 ANIVER. AMANH\u00c3</span>' : ''}</div>
-              <div style="font-family:'Roboto',sans-serif;font-size:11px;color:#555;margin-top:3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <!-- Nome + telefone -->
+            <div style="flex:1;min-width:0;">
+              <div style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:500;color:#f0ece4;letter-spacing:0.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.nome}${anivAmanha ? ' <span style="font-size:9px;background:#2a1e00;color:#c8a96e;letter-spacing:1px;padding:2px 6px;border-radius:3px;border:1px solid #4a3800;vertical-align:middle;">\uD83C\uDF82 ANIVER. AMANH\u00c3</span>' : ''}</div>
+              <div style="font-family:'Roboto',sans-serif;font-size:11px;color:#4a4a4a;margin-top:3px;display:flex;align-items:center;gap:8px;">
                 <span>${c.telefone}</span>
-                ${nascFmt ? `<span style="color:${anivAmanha ? '#c8a96e' : '#444'};display:inline-flex;align-items:center;gap:3px;">\uD83C\uDF82 ${nascFmt}</span>` : ''}
+                ${nascFmt ? `<span style="color:${anivAmanha ? '#c8a96e' : '#3a3a3a'};">\uD83C\uDF82 ${nascFmt}</span>` : ''}
               </div>
             </div>
-            <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:center;">
-              <div style="text-align:center;">
-                <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#f0ece4;">${s.total}</div>
-                <div style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:2px;color:#444;text-transform:uppercase;">Visitas</div>
+            <!-- Stats: visitas / ticket / gasto / favorito / última visita -->
+            <div style="display:flex;align-items:center;gap:0;flex-shrink:0;">
+              <div style="text-align:center;width:64px;padding:0 6px;border-right:1px solid #1e1e1e;">
+                <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#f0ece4;line-height:1.1;">${s.total}</div>
+                <div style="font-family:'Oswald',sans-serif;font-size:8px;letter-spacing:1.5px;color:#3a3a3a;text-transform:uppercase;margin-top:2px;">Visitas</div>
               </div>
-              <div style="text-align:center;">
-                <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#c8a96e;">R$${s.ticket.toFixed(0)}</div>
-                <div style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:2px;color:#444;text-transform:uppercase;">Ticket</div>
+              <div style="text-align:center;width:70px;padding:0 6px;border-right:1px solid #1e1e1e;">
+                <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#c8a96e;line-height:1.1;">R$${s.ticket.toFixed(0)}</div>
+                <div style="font-family:'Oswald',sans-serif;font-size:8px;letter-spacing:1.5px;color:#3a3a3a;text-transform:uppercase;margin-top:2px;">Ticket</div>
               </div>
-              <div style="text-align:center;">
-                <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#f0ece4;">R$${s.gastoTotal.toFixed(0)}</div>
-                <div style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:2px;color:#444;text-transform:uppercase;">Total Gasto</div>
+              <div style="text-align:center;width:72px;padding:0 6px;border-right:1px solid #1e1e1e;">
+                <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#f0ece4;line-height:1.1;">R$${s.gastoTotal.toFixed(0)}</div>
+                <div style="font-family:'Oswald',sans-serif;font-size:8px;letter-spacing:1.5px;color:#3a3a3a;text-transform:uppercase;margin-top:2px;">Total</div>
               </div>
-              <div style="text-align:center;max-width:110px;">
-                <div style="font-family:'Roboto',sans-serif;font-size:11px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${favorito}</div>
-                <div style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:2px;color:#444;text-transform:uppercase;">Favorito</div>
+              <div style="text-align:center;width:100px;padding:0 10px;border-right:1px solid #1e1e1e;">
+                <div style="font-family:'Roboto',sans-serif;font-size:11px;color:#777;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;">${favorito}</div>
+                <div style="font-family:'Oswald',sans-serif;font-size:8px;letter-spacing:1.5px;color:#3a3a3a;text-transform:uppercase;margin-top:2px;">Favorito</div>
               </div>
-              <div style="text-align:center;">
-                <div style="font-family:'Roboto',sans-serif;font-size:11px;color:#666;">${ultimaFmt}</div>
-                <div style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:2px;color:#444;text-transform:uppercase;">Última Visita</div>
+              <div style="text-align:center;width:90px;padding:0 10px;">
+                <div style="font-family:'Roboto',sans-serif;font-size:11px;color:#666;line-height:1.3;">${ultimaFmt}</div>
+                <div style="font-family:'Oswald',sans-serif;font-size:8px;letter-spacing:1.5px;color:#3a3a3a;text-transform:uppercase;margin-top:2px;">Última visita</div>
               </div>
             </div>
-            <div style="color:#333;font-size:14px;flex-shrink:0;">›</div>
+            <!-- Seta -->
+            <div style="color:#2a2a2a;font-size:16px;flex-shrink:0;margin-left:4px;">›</div>
           </div>`;
         }).join('')}
       </div>`;
@@ -1458,17 +1513,16 @@
 
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.06);border-radius:8px;overflow:hidden;margin-bottom:24px;">
           ${[
-            { icon: 'svc', val: s.total,                                                                     label: 'Visitas' },
-            { icon: 'ok', val: s.concluidos,                                                                 label: 'Concluídos' },
-            { icon: 'R$', val: 'R$' + s.gastoTotal.toFixed(2).replace('.', ','),                             label: 'Total Gasto' },
-            { icon: '~', val: 'R$' + s.ticket.toFixed(2).replace('.', ','),                                 label: 'Ticket Médio' },
-            { icon: 'dt', val: s.ultimaVisita ? s.ultimaVisita.split('-').reverse().join('/') : '—',         label: 'Última Visita' },
-            { icon: 'top', val: s.servicoFavorito ? s.servicoFavorito[0].split('+')[0].trim() : '—',          label: 'Serviço Favorito' },
+            { val: s.total,                                                                    label: 'Visitas' },
+            { val: s.concluidos,                                                               label: 'Concluídos' },
+            { val: 'R$' + s.gastoTotal.toFixed(2).replace('.', ','),                           label: 'Total Gasto' },
+            { val: 'R$' + s.ticket.toFixed(2).replace('.', ','),                               label: 'Ticket Médio' },
+            { val: s.ultimaVisita ? s.ultimaVisita.split('-').reverse().join('/') : '—',       label: 'Última Visita' },
+            { val: s.servicoFavorito ? s.servicoFavorito[0].split('+')[0].trim() : '—',       label: 'Serviço Favorito' },
           ].map(m => `
-            <div style="background:#141414;padding:14px 16px;text-align:center;">
-              <div style="font-size:16px;margin-bottom:4px;">${m.icon}</div>
-              <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#f0ece4;letter-spacing:1px;">${m.val}</div>
-              <div style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:1.5px;color:#444;text-transform:uppercase;margin-top:2px;">${m.label}</div>
+            <div style="background:#141414;padding:16px 12px;text-align:center;">
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#f0ece4;letter-spacing:1px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${m.val}</div>
+              <div style="font-family:'Oswald',sans-serif;font-size:8px;letter-spacing:1.5px;color:#444;text-transform:uppercase;margin-top:5px;">${m.label}</div>
             </div>
           `).join('')}
         </div>
