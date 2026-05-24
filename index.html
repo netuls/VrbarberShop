@@ -33,29 +33,26 @@
   </script>
 
   <style>
-    /* ── Nav Logo ── */
+    /* ── Nav Logo Ghost ── */
     .nav-logo-text {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .nav-logo-img {
-      width: 48px;
-      height: 48px;
-      object-fit: contain;
-      opacity: 0.88;
-      transition: opacity 0.3s ease, transform 0.35s ease;
-      flex-shrink: 0;
-      filter: drop-shadow(0 2px 8px rgba(0,0,0,0.6));
-    }
-    .nav-logo-img:hover {
-      opacity: 1;
-      transform: rotate(-4deg) scale(1.08);
-    }
-    .nav-logo-labels {
       display: flex;
       flex-direction: column;
       line-height: 1;
+      position: relative;
+    }
+    .nav-logo-text::before {
+      content: "";
+      position: absolute;
+      inset: -14px -10px;
+      background: url("logo.png") center/contain no-repeat;
+      opacity: 0.07;
+      pointer-events: none;
+      filter: grayscale(1) brightness(2);
+    }
+    .nav-logo-text .logo-vr,
+    .nav-logo-text .logo-sub {
+      position: relative;
+      z-index: 1;
     }
 
     @media (max-width: 768px) {
@@ -70,11 +67,8 @@
     <div class="hero-bg"></div>
     <nav class="navbar">
       <div class="nav-logo-text">
-        <img src="logo.png" alt="VR Barber Shop" class="nav-logo-img"/>
-        <div class="nav-logo-labels">
-          <span class="logo-vr">VR</span>
-          <span class="logo-sub">Barber Shop</span>
-        </div>
+        <span class="logo-vr">VR</span>
+        <span class="logo-sub">Barber Shop</span>
       </div>
       <!-- Hamburger mobile -->
       <button class="nav-hamburger" id="nav-hamburger" aria-label="Menu">
