@@ -41,6 +41,11 @@
       padding-right: env(safe-area-inset-right);
     }
     input[type="time"] { color-scheme: dark; }
+    /* ── Badge Agendado ── */
+    .badge-agendado { background: rgba(200,169,110,.15); color: #c8a96e; border: 1px solid rgba(200,169,110,.3); padding: 3px 10px; border-radius: 4px; font-size: 11px; font-family: 'Oswald', sans-serif; letter-spacing: 1px; }
+    .badge-confirmado { background: rgba(39,174,96,.15); color: #27ae60; border: 1px solid rgba(39,174,96,.3); padding: 3px 10px; border-radius: 4px; font-size: 11px; font-family: 'Oswald', sans-serif; letter-spacing: 1px; }
+    .badge-concluido  { background: rgba(52,152,219,.15); color: #3498db; border: 1px solid rgba(52,152,219,.3); padding: 3px 10px; border-radius: 4px; font-size: 11px; font-family: 'Oswald', sans-serif; letter-spacing: 1px; }
+    .badge-cancelado  { background: rgba(192,57,43,.15);  color: #c0392b; border: 1px solid rgba(192,57,43,.3);  padding: 3px 10px; border-radius: 4px; font-size: 11px; font-family: 'Oswald', sans-serif; letter-spacing: 1px; }
 
     /* ── Sidebar Logo ── */
     .sidebar-brand {
@@ -225,8 +230,8 @@
           <div class="stat-card">
             <div class="stat-icon">⏳</div>
             <div class="stat-info">
-              <span class="stat-value" id="stat-pendentes">0</span>
-              <span class="stat-label" id="stat-pendentes-label">Pendentes</span>
+              <span class="stat-value" id="stat-agendados">0</span>
+              <span class="stat-label" id="stat-agendados-label">Agendados</span>
             </div>
           </div>
           <div class="stat-card">
@@ -260,7 +265,7 @@
           <div class="filter-group">
             <select id="filter-status" onchange="applyFilters()">
               <option value="">Todos os Status</option>
-              <option value="pendente">Pendente</option>
+              <option value="agendado">Agendado</option>
               <option value="confirmado">Confirmado</option>
               <option value="concluido">Concluído</option>
               <option value="cancelado">Cancelado</option>
@@ -482,7 +487,7 @@
       <div style="font-size:28px;margin-bottom:14px;">✅</div>
       <h3 style="font-family:'Oswald',sans-serif;font-size:16px;letter-spacing:2px;text-transform:uppercase;color:#f5f0e8;margin-bottom:10px;">Concluir Todos</h3>
       <p style="font-family:'Roboto',sans-serif;font-size:13px;color:#888;line-height:1.6;margin-bottom:28px;">
-        Isso vai marcar como <strong style="color:#27ae60;">concluído</strong> todos os <strong id="concluir-todos-count" style="color:#f5f0e8;"></strong> agendamentos pendentes e confirmados. Deseja continuar?
+        Isso vai marcar como <strong style="color:#27ae60;">concluído</strong> todos os <strong id="concluir-todos-count" style="color:#f5f0e8;"></strong> agendamentos agendados e confirmados. Deseja continuar?
       </p>
       <div style="display:flex;gap:12px;justify-content:center;">
         <button onclick="fecharModalConcluirTodos()"
@@ -718,10 +723,10 @@
         ? (isSingleDay ? 'Agendamentos no Dia' : 'Agendamentos no Período')
         : 'Agendamentos Hoje';
 
-      document.getElementById('stat-pendentes').textContent = hasFilter
-        ? agendamentosNoRange.filter(a => a.status === 'pendente').length
-        : allAgendamentos.filter(a => a.status === 'pendente').length;
-      document.getElementById('stat-pendentes-label').textContent = hasFilter ? 'Pendentes no Período' : 'Pendentes';
+      document.getElementById('stat-agendados').textContent = hasFilter
+        ? agendamentosNoRange.filter(a => a.status === 'agendado').length
+        : allAgendamentos.filter(a => a.status === 'agendado').length;
+      document.getElementById('stat-agendados-label').textContent = hasFilter ? 'Agendados no Período' : 'Agendados';
 
       document.getElementById('stat-confirmados').textContent = hasFilter
         ? agendamentosNoRange.filter(a => a.status === 'confirmado').length
@@ -787,9 +792,9 @@
         <td data-label="Status">${badgeHTML(a.status)}</td>
         <td>
           <div class="action-btns">
-            ${a.status==='pendente' ? `<button class="btn-action btn-confirmar" onclick="updateStatus('${a.id}','confirmado')">Confirmar</button>` : ''}
+            ${a.status==='agendado' ? `<button class="btn-action btn-confirmar" onclick="updateStatus('${a.id}','confirmado')">Confirmar</button>` : ''}
             ${a.status==='confirmado' ? `<button class="btn-action btn-concluir" onclick="updateStatus('${a.id}','concluido')">Concluir</button>` : ''}
-            ${['pendente','confirmado'].includes(a.status) ? `<button class="btn-action btn-cancelar" onclick="updateStatus('${a.id}','cancelado')">Cancelar</button>` : ''}
+            ${['agendado','confirmado'].includes(a.status) ? `<button class="btn-action btn-cancelar" onclick="updateStatus('${a.id}','cancelado')">Cancelar</button>` : ''}
             <a class="btn-action btn-whats" href="https://wa.me/55${(a.telefone||'').replace(/\D/g,'')}" target="_blank">WhatsApp</a>
             <button class="btn-action btn-excluir" onclick="deleteAgendamento('${a.id}')">Excluir</button>
           </div>
@@ -865,9 +870,9 @@
     }
 
     function abrirModalConcluirTodos() {
-      const pendentes = allAgendamentos.filter(a => ['pendente','confirmado'].includes(a.status));
+      const pendentes = allAgendamentos.filter(a => ['agendado','confirmado'].includes(a.status));
       if (!pendentes.length) {
-        alert('Nenhum agendamento pendente ou confirmado para concluir.');
+        alert('Nenhum agendamento agendado ou confirmado para concluir.');
         return;
       }
       document.getElementById('concluir-todos-count').textContent = pendentes.length;
@@ -885,7 +890,7 @@
       btn.textContent = 'Concluindo...';
       btn.disabled = true;
 
-      const pendentes = allAgendamentos.filter(a => ['pendente','confirmado'].includes(a.status));
+      const pendentes = allAgendamentos.filter(a => ['agendado','confirmado'].includes(a.status));
       try {
         const batch = db.batch();
         pendentes.forEach(a => {
@@ -1539,8 +1544,8 @@
     }
 
     function badgeHTML(status) {
-      const labels = { pendente:'Pendente', confirmado:'Confirmado', concluido:'Concluido', cancelado:'Cancelado' };
-      return '<span class="badge badge-' + (status||'pendente') + '">' + (labels[status]||status) + '</span>';
+      const labels = { agendado:'Agendado', confirmado:'Confirmado', concluido:'Concluido', cancelado:'Cancelado' };
+      return '<span class="badge badge-' + (status||'agendado') + '">' + (labels[status]||status) + '</span>';
     }
 
     // ── Datas Especiais ──────────────────────────────
