@@ -37,19 +37,20 @@
     .nav-logo-text {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
     .nav-logo-img {
-      width: 44px;
-      height: 44px;
+      width: 48px;
+      height: 48px;
       object-fit: contain;
-      opacity: 0.9;
-      transition: opacity 0.3s ease, transform 0.3s ease;
+      opacity: 0.88;
+      transition: opacity 0.3s ease, transform 0.35s ease;
       flex-shrink: 0;
+      filter: drop-shadow(0 2px 8px rgba(0,0,0,0.6));
     }
     .nav-logo-img:hover {
       opacity: 1;
-      transform: scale(1.06);
+      transform: rotate(-4deg) scale(1.08);
     }
     .nav-logo-labels {
       display: flex;
@@ -57,21 +58,8 @@
       line-height: 1;
     }
 
-    /* ── Hero Logo ── */
-    .hero-logo {
-      width: 160px;
-      height: 160px;
-      object-fit: contain;
-      opacity: 0.9;
-      margin: 0 auto 12px;
-      display: block;
-      animation: fadeUp 1s 0.1s ease both;
-      filter: drop-shadow(0 4px 24px rgba(0,0,0,0.7));
-    }
-
     @media (max-width: 768px) {
       .nav-logo-img  { width: 36px; height: 36px; }
-      .hero-logo     { width: 120px; height: 120px; }
     }
   </style>
 </head>
@@ -101,7 +89,6 @@
     </nav>
 
     <div class="hero-content">
-      <img src="logo.png" alt="VR Barber Shop" class="hero-logo"/>
       <div class="hero-badge">EST. 2019</div>
       <h1 class="hero-title">VR<br/><span>Barber Shop</span></h1>
       <p class="hero-sub"><span class="hero-sub-item">Barba</span><span class="hero-sub-dot">·</span><span class="hero-sub-item">Cabelo</span><span class="hero-sub-dot">·</span><span class="hero-sub-item">Estilo</span></p>
