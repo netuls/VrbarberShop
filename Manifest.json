@@ -1,12 +1,12 @@
 {
-  "name": "VR Barber Shop — Admin",
-  "short_name": "VR Admin",
-  "description": "Painel administrativo da VR Barber Shop",
-  "start_url": "./admin.html",
+  "name": "VR Barber Shop",
+  "short_name": "VR Barber",
+  "description": "Agende seu horário na VR Barber Shop",
+  "start_url": "./index.html",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0a0a0a",
-  "theme_color": "#0a0a0a",
+  "background_color": "#080808",
+  "theme_color": "#080808",
   "lang": "pt-BR",
   "icons": [
     {
