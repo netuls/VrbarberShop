@@ -1397,7 +1397,7 @@
       el.innerHTML = `
         <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-radius:8px;overflow:hidden;">
           <!-- Cabeçalho -->
-          <div style="display:grid;grid-template-columns:minmax(180px,2fr) 70px 80px 90px 120px 110px 24px;align-items:center;padding:8px 20px;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <div style="display:grid;grid-template-columns:1fr 70px 80px 90px 120px 110px 24px;align-items:center;padding:8px 20px;border-bottom:1px solid rgba(255,255,255,0.04);">
             <div style="font-family:'Oswald',sans-serif;font-size:8px;letter-spacing:2px;color:#2e2e2e;text-transform:uppercase;">Cliente</div>
             <div style="font-family:'Oswald',sans-serif;font-size:8px;letter-spacing:2px;color:#2e2e2e;text-transform:uppercase;text-align:center;">Visitas</div>
             <div style="font-family:'Oswald',sans-serif;font-size:8px;letter-spacing:2px;color:#2e2e2e;text-transform:uppercase;text-align:center;">Ticket</div>
@@ -1415,12 +1415,12 @@
             const anivAmanha = isAniversarioAmanha(c.nascimento);
             const encData    = encodeURIComponent(JSON.stringify({ nome: c.nome, telefone: c.telefone, nascimento: c.nascimento || '', agendamentos: c.agendamentos }));
             return `<div onclick="abrirClienteDrawer('${encData}')"
-              style="display:grid;grid-template-columns:minmax(180px,2fr) 70px 80px 90px 120px 110px 24px;align-items:center;padding:13px 20px;background:#141414;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.025);${anivAmanha ? 'border-left:3px solid #c8a96e;padding-left:17px;' : ''}"
+              style="display:grid;grid-template-columns:1fr 70px 80px 90px 120px 110px 24px;align-items:center;padding:13px 20px;background:#141414;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.025);${anivAmanha ? 'border-left:3px solid #c8a96e;padding-left:17px;' : ''}"
               onmouseover="this.style.background='#1b1b1b'" onmouseout="this.style.background='#141414'">
               <!-- Avatar + Nome -->
-              <div style="display:flex;align-items:center;gap:12px;">
+              <div style="display:flex;align-items:center;gap:12px;min-width:0;">
                 <div style="width:36px;height:36px;border-radius:50%;background:${anivAmanha ? '#2a1e00' : '#1e1e1e'};border:1px solid ${anivAmanha ? '#c8a96e' : '#252525'};display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:15px;color:${anivAmanha ? '#c8a96e' : '#555'};flex-shrink:0;">${(c.nome||'?')[0].toUpperCase()}</div>
-                <div style="overflow:hidden;">
+                <div style="min-width:0;overflow:hidden;">
                   <div style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:500;color:#f0ece4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.nome}${anivAmanha ? '&nbsp;<span style="font-size:8px;background:#2a1e00;color:#c8a96e;letter-spacing:1px;padding:2px 5px;border-radius:3px;border:1px solid #4a3800;">\uD83C\uDF82 AMANHÃ</span>' : ''}</div>
                   <div style="font-family:'Roboto',sans-serif;font-size:11px;color:#3a3a3a;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.telefone}${nascFmt ? ' · ' + nascFmt : ''}</div>
                 </div>
@@ -1480,17 +1480,17 @@
 
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.06);border-radius:8px;overflow:hidden;margin-bottom:24px;">
           ${[
-            { icon: 'svc', val: s.total,                                                                     label: 'Visitas' },
-            { icon: 'ok', val: s.concluidos,                                                                 label: 'Concluídos' },
-            { icon: 'R$', val: 'R$' + s.gastoTotal.toFixed(2).replace('.', ','),                             label: 'Total Gasto' },
-            { icon: '~', val: 'R$' + s.ticket.toFixed(2).replace('.', ','),                                 label: 'Ticket Médio' },
-            { icon: 'dt', val: s.ultimaVisita ? s.ultimaVisita.split('-').reverse().join('/') : '—',         label: 'Última Visita' },
-            { icon: 'top', val: s.servicoFavorito ? s.servicoFavorito[0].split('+')[0].trim() : '—',          label: 'Serviço Favorito' },
+            { icon: '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"#555\" stroke-width=\"1.5\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"18\" rx=\"2\"/><path d=\"M16 2v4M8 2v4M3 10h18\"/></svg>', val: s.total, label: 'Visitas' },
+            { icon: '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"#555\" stroke-width=\"1.5\"><path d=\"M22 11.08V12a10 10 0 11-5.93-9.14\"/><polyline points=\"22 4 12 14.01 9 11.01\"/></svg>', val: s.concluidos, label: 'Concluídos' },
+            { icon: '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"#555\" stroke-width=\"1.5\"><line x1=\"12\" y1=\"1\" x2=\"12\" y2=\"23\"/><path d=\"M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6\"/></svg>', val: 'R$' + s.gastoTotal.toFixed(2).replace('.', ','), label: 'Total Gasto' },
+            { icon: '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"#555\" stroke-width=\"1.5\"><polyline points=\"22 12 18 12 15 21 9 3 6 12 2 12\"/></svg>', val: 'R$' + s.ticket.toFixed(2).replace('.', ','), label: 'Ticket Médio' },
+            { icon: '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"#555\" stroke-width=\"1.5\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 3\"/></svg>', val: s.ultimaVisita ? s.ultimaVisita.split('-').reverse().join('/') : '—', label: 'Última Visita' },
+            { icon: '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"#555\" stroke-width=\"1.5\"><path d=\"M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z\"/></svg>', val: s.servicoFavorito ? s.servicoFavorito[0].split('+')[0].trim() : '—', label: 'Serviço Favorito' },
           ].map(m => `
             <div style="background:#141414;padding:14px 16px;text-align:center;">
-              <div style="font-size:16px;margin-bottom:4px;">${m.icon}</div>
-              <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#f0ece4;letter-spacing:1px;">${m.val}</div>
-              <div style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:1.5px;color:#444;text-transform:uppercase;margin-top:2px;">${m.label}</div>
+              <div style="display:flex;justify-content:center;margin-bottom:6px;">${m.icon}</div>
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#f0ece4;letter-spacing:1px;line-height:1;">${m.val}</div>
+              <div style="font-family:'Oswald',sans-serif;font-size:9px;letter-spacing:1.5px;color:#444;text-transform:uppercase;margin-top:4px;">${m.label}</div>
             </div>
           `).join('')}
         </div>
