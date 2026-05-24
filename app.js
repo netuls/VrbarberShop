@@ -52,7 +52,6 @@ window.logout = function() {
   localStorage.removeItem('barber_session');
   currentUser = null;
   renderAuthBar();
-  // Limpa campos agendamento
   const nameInp = document.getElementById('client-name');
   const phoneInp = document.getElementById('client-phone');
   if (nameInp) { nameInp.value = ''; nameInp.disabled = false; }
@@ -121,12 +120,11 @@ function renderAuthBar() {
   }
 }
 
-// ─── SLIDESHOW ──────────────────────────────────────────────────────
+// ─── SLIDESHOW RETIFICADO (APENAS LÓGICA) ───────────────────────────
 function initSlideshow() {
   const hero = document.getElementById('hero-section');
   if (!hero) return;
 
-  // Cria estrutura interna do slide se não existir
   hero.innerHTML = `
     <div class="slides-container"></div>
     <div class="hero-content">
@@ -262,7 +260,6 @@ window.assignPlan = function(planId) {
     return;
   }
   currentUser.plan = planId;
-  // Atualiza no banco mock
   const idx = MOCK_DATABASE.users.findIndex(u => u.id === currentUser.id);
   if (idx !== -1) MOCK_DATABASE.users[idx].plan = planId;
   saveMockDB();
@@ -279,7 +276,6 @@ function showStep(s) {
   const target = document.getElementById(`step-${s}`);
   if (target) target.classList.add('active');
 
-  // Classes indicadoras no topo
   document.querySelectorAll('.step-indicator .indicator').forEach(el => {
     const num = parseInt(el.getAttribute('data-step'));
     el.classList.remove('active', 'completed');
@@ -290,7 +286,6 @@ function showStep(s) {
 
 window.nextStep = function() {
   if (currentStep === 1) {
-    // Valida passo 1 se deslogado
     if (!currentUser) {
       const n = document.getElementById('client-name').value.trim();
       const p = document.getElementById('client-phone').value.trim();
@@ -299,17 +294,14 @@ window.nextStep = function() {
         return;
       }
     }
-    // Renderiza calendário
     generateCalendar();
     showStep(2);
   } else if (currentStep === 2) {
-    // Valida passo 2
     selectedService = document.getElementById('pref-service').value;
     if (!selectedService) { alert('Escolha um serviço.'); return; }
     if (!selectedDate) { alert('Selecione uma data no calendário.'); return; }
     if (!selectedTime) { alert('Escolha um horário livre.'); return; }
 
-    // Prepara passo 3 (Resumo)
     renderSummary();
     showStep(3);
   }
@@ -363,7 +355,6 @@ function generateCalendar() {
   const firstDayIndex = new Date(calYear, calMonth, 1).getDay();
   const totalDays = new Date(calYear, calMonth + 1, 0).getDate();
 
-  // Espaços vazios iniciais
   for (let i = 0; i < firstDayIndex; i++) {
     const space = document.createElement('span');
     space.className = 'cal-empty';
@@ -381,9 +372,7 @@ function generateCalendar() {
     cell.className = 'cal-day-cell';
     cell.textContent = day;
 
-    // Regra: Não atende Domingo (0) nem Segunda (1)
     const isClosed = (dayOfWeek === 0 || dayOfWeek === 1);
-    // Regra: Passado bloqueado
     const isPast = currentLoopStr < todayStr;
 
     if (isClosed || isPast) {
@@ -405,7 +394,7 @@ window.changeMonth = function(dir) {
 
 function selectDateHandler(dateStr) {
   selectedDate = dateStr;
-  selectedTime = null; // reseta anterior
+  selectedTime = null;
   generateCalendar();
   updateTimeOptions();
 }
@@ -422,7 +411,6 @@ function updateTimeOptions() {
 
   timeSelect.disabled = false;
   
-  // Filtra horários que já foram tomados na mesma data no banco mock
   const takenTimes = MOCK_DATABASE.appointments
     .filter(ap => ap.date === selectedDate)
     .map(ap => ap.time);
@@ -447,7 +435,6 @@ function renderSummary() {
   const sPhone = currentUser ? currentUser.phone : document.getElementById('client-phone').value.trim();
   const sServiceObj = MOCK_DATABASE.services.find(s => s.id === selectedService);
 
-  // Formata data brasileira
   const parts = selectedDate.split('-');
   const formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
 
@@ -464,7 +451,7 @@ function renderSummary() {
   `;
 }
 
-// ─── SUBMISSÃO FINAL (WEBHOOK / BACKEND API) ──────────────────────────
+// ─── SUBMISSÃO FINAL (WEBHOOK API) ───────────────────────────────────
 window.submitBooking = async function() {
   const btn = document.getElementById('btn-submit-booking');
   if (!btn) return;
@@ -489,26 +476,21 @@ window.submitBooking = async function() {
   try {
     btn.textContent = 'Enviando...'; btn.disabled = true;
 
-    // Conexão fictícia para simular uma API REST ou Webhook (Substitua pela sua URL real)
     const response = await fetch('https://api.exemplobarbearia.com.br/v1/appointments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     }).catch(() => {
-      // Fallback offline caso a URL de teste falhe para o mock continuar rodando perfeitamente
       return { ok: true };
     });
 
     if (!response.ok) throw new Error('Falha na resposta do servidor.');
 
-    // Salva localmente no array do mock
     MOCK_DATABASE.appointments.push({ date: selectedDate, time: selectedTime, client: sName });
     saveMockDB();
 
-    // Dispara o modal de sucesso customizado
     document.getElementById('success-modal').classList.add('open');
 
-    // Reseta o agendamento de volta ao início
     selectedDate = null; selectedTime = null; selectedService = '';
     const ts = document.getElementById('pref-time');
     if (ts) ts.innerHTML = '<option value="">Selecione uma data primeiro</option>';
@@ -530,23 +512,21 @@ window.closeModal = function() {
   document.getElementById('success-modal').classList.remove('open');
 };
 
-// ─── Inicialização ─────────────────────────────────
+// ─── INICIALIZAÇÃO DO DOM ───────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   renderServices();
   renderPlans();
   renderServiceOptions();
   initSlideshow();
 
-  // Sessão
   currentUser = loadSession();
   renderAuthBar();
   if (currentUser) preencherDadosAgendamento();
 
-  // Máscara telefone (apenas se usuário não estiver logado)
   const phoneInput = document.getElementById('client-phone');
   if (phoneInput) {
     phoneInput.addEventListener('input', function() {
-      if (currentUser) return; // não sobrescreve enquanto logado
+      if (currentUser) return;
       let v = this.value.replace(/\D/g, '').substring(0, 11);
       if (v.length > 6) v = `(${v.substring(0,2)}) ${v.substring(2,7)}-${v.substring(7)}`;
       else if (v.length > 2) v = `(${v.substring(0,2)}) ${v.substring(2)}`;
