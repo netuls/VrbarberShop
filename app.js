@@ -5,6 +5,11 @@
 const WHATSAPP_NUMBER = '5585994044941';
 const WHATSAPP_NOTIFY = '5585994044941';
 
+// ─── Slides do Slideshow (adicione URLs de imagens aqui) ───
+const HERO_SLIDES = [
+  // ex: 'fotos/corte1.jpg', 'fotos/corte2.jpg'
+];
+
 // ─── Serviços ─────────────────────────────────────
 const SERVICES = [
   { id: 'corte',             name: 'Corte',                        price: 25 },
@@ -297,7 +302,6 @@ window.cancelarAgendamento = async function(id, servico, data, horario) {
     });
 
     // Notifica dono no WhatsApp
-    const nome = currentUser ? currentUser.nome.split(' ')[0] : 'Cliente';
     const msg = encodeURIComponent(
       `❌ *Cancelamento*\n\n*Cliente:* ${currentUser ? currentUser.nome : ''}\n*Serviço:* ${servico}\n*Data:* ${formatDate(data)}\n*Horário:* ${horario}`
     );
@@ -404,12 +408,11 @@ function renderServiceOptions() {
     </div>`).join('');
 }
 
-
-
 // ─── Slideshow Seção Cortes ────────────────────────
 function initSlideshow() {
   const slider   = document.getElementById('cortes-slider');
   const dotsWrap = document.getElementById('cortes-dots');
+  // Se não houver elemento de slider ou slides cadastrados, sai silenciosamente
   if (!slider || !HERO_SLIDES.length) return;
   const total = HERO_SLIDES.length;
   let current = 0, autoTimer;
@@ -427,12 +430,14 @@ function initSlideshow() {
   counter.textContent = '1 / ' + total;
   wrap.appendChild(counter);
 
-  HERO_SLIDES.forEach((_, i) => {
-    const dot = document.createElement('div');
-    dot.className = 'cortes-dot' + (i === 0 ? ' active' : '');
-    dot.onclick = function() { goTo(i); };
-    dotsWrap.appendChild(dot);
-  });
+  if (dotsWrap) {
+    HERO_SLIDES.forEach((_, i) => {
+      const dot = document.createElement('div');
+      dot.className = 'cortes-dot' + (i === 0 ? ' active' : '');
+      dot.onclick = function() { goTo(i); };
+      dotsWrap.appendChild(dot);
+    });
+  }
 
   function goTo(idx) {
     current = (idx + total) % total;
@@ -536,7 +541,6 @@ async function carregarSlotsParaData(dataSelecionada) {
     const hoje  = agora.toISOString().split('T')[0];
     const agoraMin = agora.getHours() * 60 + agora.getMinutes();
     // Verifica se o serviço selecionado dura 1h
-    const SERVICOS_60MIN = ['nevou_corte', 'luzes_corte', 'Nevou + Corte', 'Luzes + Corte'];
     const servicoAtual = state && state.selected ? state.selected : null;
     const servico60min = servicoAtual &&
       (SERVICOS_60MIN.includes(servicoAtual.id) || SERVICOS_60MIN.includes(servicoAtual.name));
@@ -813,7 +817,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderServices();
   renderPlans();
   renderServiceOptions();
-  initSlideshow();
+  initSlideshow(); // seguro: retorna cedo se não houver slider no HTML
 
   // Sessão
   currentUser = loadSession();
@@ -825,6 +829,18 @@ document.addEventListener('DOMContentLoaded', () => {
   if (phoneInput) {
     phoneInput.addEventListener('input', function() {
       if (currentUser) return; // não sobrescreve enquanto logado
+      let v = this.value.replace(/\D/g, '').substring(0, 11);
+      if (v.length > 6)      v = `(${v.substring(0,2)}) ${v.substring(2,7)}-${v.substring(7)}`;
+      else if (v.length > 2) v = `(${v.substring(0,2)}) ${v.substring(2)}`;
+      else if (v.length > 0) v = `(${v}`;
+      this.value = v;
+    });
+  }
+
+  // Máscara telefone do modal de login
+  const loginPhoneInput = document.getElementById('login-phone-input');
+  if (loginPhoneInput) {
+    loginPhoneInput.addEventListener('input', function() {
       let v = this.value.replace(/\D/g, '').substring(0, 11);
       if (v.length > 6)      v = `(${v.substring(0,2)}) ${v.substring(2,7)}-${v.substring(7)}`;
       else if (v.length > 2) v = `(${v.substring(0,2)}) ${v.substring(2)}`;
