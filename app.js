@@ -233,7 +233,7 @@ window.openMyBookings = async function() {
     const key = currentUser.telefone;
     const snap = await firebase.firestore().collection('agendamentos')
       .where('telefone', '==', key)
-      .where('status', 'in', ['pendente','confirmado'])
+      .where('status', 'in', ['agendado','confirmado'])
       .get();
 
     if (snap.empty) {
@@ -259,7 +259,7 @@ window.openMyBookings = async function() {
       const a = d.data();
       const statusLabel = a.status === 'confirmado'
         ? '<span class="agd-status confirmado">Confirmado</span>'
-        : '<span class="agd-status pendente">Pendente</span>';
+        : '<span class="agd-status agendado">Agendado</span>';
       return `
         <div class="agd-card" id="agd-${d.id}">
           <div class="agd-info">
@@ -492,7 +492,7 @@ async function carregarSlotsParaData(dataSelecionada) {
       firebase.firestore().collection('config').doc('datas_especiais').get(),
       firebase.firestore().collection('agendamentos')
         .where('data', '==', dataSelecionada)
-        .where('status', 'in', ['pendente', 'confirmado'])
+        .where('status', 'in', ['agendado', 'confirmado'])
         .get()
     ]);
     const ocupados = new Set(agendSnap.docs.map(d => d.data().horario));
@@ -749,11 +749,10 @@ window.submitBooking = async function() {
       tipo: 'servico', servico: state.selected.name, preco: state.selected.price,
       cliente: state.name, telefone: key,
       data: state.date, horario: state.time, obs: state.obs,
-      status: 'pendente',
+      status: 'agendado',
       criadoEm: firebase.firestore.FieldValue.serverTimestamp()
     });
     sendWhatsAppNotification();
-    sendClientConfirmation();
     document.getElementById('success-modal').classList.add('open');
     state = { selected: null, name: '', phone: '', date: '', time: '', obs: '' };
     calAno = undefined; calMes = undefined;
