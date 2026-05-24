@@ -1623,6 +1623,8 @@
       } catch(e) {}
     }
 
+    function showToast(msg, duration = 4000) { showAdminToast(msg, duration); }
+
     function showAdminToast(msg, duration = 4000) {
       let toast = document.getElementById('admin-toast');
       if (!toast) {
