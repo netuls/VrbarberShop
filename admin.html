@@ -1930,19 +1930,25 @@
       const el = document.getElementById('notif-list');
       if (!el) return;
       if (!_notificacoes.length) {
-        el.innerHTML = '<div style="padding:28px 18px;text-align:center;font-family:Oswald,sans-serif;font-size:11px;letter-spacing:2px;color:#2e2e2e;text-transform:uppercase;">Nenhuma notifica\u00e7\u00e3o</div>';
+        el.innerHTML = '<div style="padding:28px 18px;text-align:center;font-family:Oswald,sans-serif;font-size:11px;letter-spacing:2px;color:#2e2e2e;text-transform:uppercase;">Nenhuma notificação</div>';
         return;
       }
       el.innerHTML = _notificacoes.map(n => {
         const ago = formatAgo(n.ts);
-        return `<div onclick="irParaAgendamento('${n.id}')" style="padding:14px 18px;border-bottom:1px solid #1a1a1a;cursor:pointer;background:${n.lida ? 'transparent' : 'rgba(255,255,255,0.025)'};transition:background .2s;display:flex;gap:12px;align-items:flex-start;" onmouseover="this.style.background='rgba(255,255,255,0.04)'" onmouseout="this.style.background='${n.lida ? 'transparent' : 'rgba(255,255,255,0.025)'}'">
-          <div style="width:6px;height:6px;border-radius:50%;background:${n.lida ? '#2e2e2e' : '#d45a5a'};flex-shrink:0;margin-top:5px;"></div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-family:'Oswald',sans-serif;font-size:13px;color:#f0ece4;letter-spacing:0.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${n.nome}</div>
-            <div style="font-family:'Roboto',sans-serif;font-size:12px;color:#555;margin-top:2px;">${n.servico}${n.data ? ' · ' + n.data : ''}${n.hora ? ' às ' + n.hora : ''}</div>
-            <div style="font-family:'Roboto',sans-serif;font-size:10px;color:#2e2e2e;margin-top:4px;letter-spacing:0.5px;">${ago}</div>
-          </div>
-        </div>`;
+        const bgNormal = n.lida ? 'transparent' : 'rgba(255,255,255,0.025)';
+        const dotColor = n.lida ? '#2e2e2e' : '#d45a5a';
+        const div = document.createElement('div');
+        div.style.cssText = 'padding:14px 18px;border-bottom:1px solid #1a1a1a;cursor:pointer;background:' + bgNormal + ';transition:background .2s;display:flex;gap:12px;align-items:flex-start;';
+        div.onmouseover = function() { this.style.background = 'rgba(255,255,255,0.04)'; };
+        div.onmouseout  = function() { this.style.background = bgNormal; };
+        div.onclick     = function() { irParaAgendamento(n.id); };
+        div.innerHTML = '<div style="width:6px;height:6px;border-radius:50%;background:' + dotColor + ';flex-shrink:0;margin-top:5px;"></div>' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div style="font-family:Oswald,sans-serif;font-size:13px;color:#f0ece4;letter-spacing:0.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + n.nome + '</div>' +
+            '<div style="font-family:Roboto,sans-serif;font-size:12px;color:#555;margin-top:2px;">' + n.servico + (n.data ? ' · ' + n.data : '') + (n.hora ? ' às ' + n.hora : '') + '</div>' +
+            '<div style="font-family:Roboto,sans-serif;font-size:10px;color:#2e2e2e;margin-top:4px;letter-spacing:0.5px;">' + ago + '</div>' +
+          '</div>';
+        return div.outerHTML;
       }).join('');
     }
 
@@ -1991,7 +1997,7 @@
       if (panel) panel.style.display = 'none';
       _notifPanelOpen = false;
       // Vai para aba de agendamentos e destaca o item
-      const navItem = document.querySelector('[onclick*="showTab('agendamentos'"]') || document.querySelector('[onclick*=\'agendamentos\']');
+      const navItem = document.querySelector('.nav-item[onclick*="agendamentos"]');
       showTab('agendamentos', navItem);
       // Destaca linha após renderizar
       setTimeout(() => {
