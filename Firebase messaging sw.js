@@ -20,8 +20,8 @@ messaging.onBackgroundMessage(payload => {
   const { title, body, icon } = payload.notification || {};
   self.registration.showNotification(title || 'Novo Agendamento', {
     body: body || 'Um cliente acabou de agendar!',
-    icon: icon || './logo.png',
-    badge: './logo.png',
+    icon: icon || './logo_512.png',
+    badge: './logo_192.png',
     vibrate: [200, 100, 200],
     tag: 'novo-agendamento',
     renotify: true,
