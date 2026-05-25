@@ -991,29 +991,30 @@
     }
 
     function salvarStatus(id, status, enviarWpp) {
+      // iOS Safari bloqueia window.open dentro de .then() (async).
+      // Por isso abrimos o WhatsApp ANTES da Promise, direto no clique do usuário.
+      if (enviarWpp && status === 'confirmado') {
+        const ag = allAgendamentos.find(a => a.id === id);
+        if (ag && ag.telefone) {
+          const primeiroNome = (ag.cliente || 'Cliente').split(' ')[0];
+          const phone = ag.telefone.replace(/\D/g, '');
+          const msg = [
+            'Ola, *' + primeiroNome + '*!',
+            '',
+            'Seu agendamento na *VR Barber Shop* foi *confirmado*!',
+            '',
+            '*Detalhes:*',
+            '*Servico:* ' + (ag.servico || '--'),
+            '*Data:* ' + (ag.data ? formatDate(ag.data) : '--'),
+            '*Horario:* ' + (ag.horario || '--'),
+            '*Valor:* R$' + (ag.preco || 0).toFixed(2).replace('.', ','),
+            '',
+            'Te esperamos! Qualquer duvida e so chamar.',
+          ].join('\n');
+          window.location.href = 'https://wa.me/55' + phone + '?text=' + encodeURIComponent(msg);
+        }
+      }
       db.collection('agendamentos').doc(id).update({ status, atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(), adminToken: ADMIN_TOKEN })
-        .then(() => {
-          if (enviarWpp && status === 'confirmado') {
-            const ag = allAgendamentos.find(a => a.id === id);
-            if (!ag || !ag.telefone) return;
-            const primeiroNome = (ag.cliente || 'Cliente').split(' ')[0];
-            const phone = ag.telefone.replace(/\D/g, '');
-            const msg = [
-              'Ola, *' + primeiroNome + '*!',
-              '',
-              'Seu agendamento na *VR Barber Shop* foi *confirmado*!',
-              '',
-              '*Detalhes:*',
-              '*Servico:* ' + (ag.servico || '--'),
-              '*Data:* ' + (ag.data ? formatDate(ag.data) : '--'),
-              '*Horario:* ' + (ag.horario || '--'),
-              '*Valor:* R$' + (ag.preco || 0).toFixed(2).replace('.', ','),
-              '',
-              'Te esperamos! Qualquer duvida e so chamar.',
-            ].join('\n');
-            window.open('https://wa.me/55' + phone + '?text=' + encodeURIComponent(msg), '_blank');
-          }
-        })
         .catch(() => alert('Erro ao atualizar status.'));
     }
 
