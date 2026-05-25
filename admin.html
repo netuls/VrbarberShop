@@ -1419,7 +1419,7 @@
             const nascFmt    = c.nascimento ? fmtNascimento(c.nascimento) : '';
             const anivAmanha = isAniversarioAmanha(c.nascimento);
             const encData    = encodeURIComponent(JSON.stringify({ nome: c.nome, telefone: c.telefone, nascimento: c.nascimento || '', agendamentos: c.agendamentos }));
-            return `<tr onclick="abrirClienteDrawer('\${encData}')"
+            return `<tr onclick="abrirClienteDrawer('${encData}')"
               style="background:#141414;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.025);\${anivAmanha ? 'border-left:3px solid #c8a96e;' : ''}"
               onmouseover="this.style.background='#1b1b1b'" onmouseout="this.style.background='#141414'">
               <td style="padding:13px 20px;">
