@@ -10,9 +10,14 @@
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="apple-mobile-web-app-title" content="VR Admin"/>
-  <link rel="apple-touch-icon" href="logo.png"/>
-  <title>Admin — VR Barber Shop</title>
-  <link rel="icon" type="image/png" href="logo.png"/>
+  <!-- Ícone Apple (iOS/iPadOS) -->
+  <link rel="apple-touch-icon" sizes="180x180" href="logo_180.png"/>
+  <link rel="apple-touch-icon" sizes="192x192" href="logo_192.png"/>
+  <link rel="apple-touch-icon" sizes="512x512" href="logo_512.png"/>
+  <!-- Ícone Android / Desktop -->
+  <link rel="icon" type="image/png" sizes="512x512" href="logo_512.png"/>
+  <link rel="icon" type="image/png" sizes="192x192" href="logo_192.png"/>
+  <link rel="icon" type="image/png" href="logo_512.png"/>
   <link rel="stylesheet" href="admin.css"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Bebas+Neue&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet"/>
@@ -123,6 +128,17 @@
       <div class="form-group">
         <label>Senha</label>
         <input type="password" id="login-pass" placeholder="••••••••"/>
+      </div>
+      <!-- Lembrar senha -->
+      <div style="display:flex;align-items:center;gap:10px;margin-top:-4px;margin-bottom:4px;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;">
+          <span style="position:relative;display:inline-block;width:36px;height:20px;">
+            <input type="checkbox" id="lembrar-senha" style="opacity:0;width:0;height:0;position:absolute;" onchange="toggleLembrarVisual(this)"/>
+            <span id="lembrar-slider" style="position:absolute;inset:0;border-radius:20px;background:#2a2a2a;border:1px solid #3a3a3a;transition:background .2s;"></span>
+            <span id="lembrar-knob" style="position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#555;transition:left .2s;"></span>
+          </span>
+          <span style="font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:2px;color:#555;text-transform:uppercase;">Lembrar de mim</span>
+        </label>
       </div>
       <button class="btn-login" onclick="doLogin()">Entrar</button>
       <p class="login-error" id="login-error"></p>
@@ -690,9 +706,27 @@
 
 
     // ── Auth ─────────────────────────────────────────
+
+    function toggleLembrarVisual(cb) {
+      document.getElementById('lembrar-slider').style.background = cb.checked ? '#c8a96e' : '#2a2a2a';
+      document.getElementById('lembrar-knob').style.left = cb.checked ? '18px' : '2px';
+      document.getElementById('lembrar-knob').style.background = cb.checked ? '#0a0a0a' : '#555';
+    }
+
+    // Restaurar estado do checkbox ao carregar
+    (function() {
+      const lembrar = localStorage.getItem('vr_lembrar') === '1';
+      const cb = document.getElementById('lembrar-senha');
+      if (cb && lembrar) {
+        cb.checked = true;
+        toggleLembrarVisual(cb);
+      }
+    })();
+
     function doLogin() {
       const pass  = document.getElementById('login-pass').value;
       const errEl = document.getElementById('login-error');
+      const lembrar = document.getElementById('lembrar-senha').checked;
       errEl.textContent = '';
       if (!pass) { errEl.textContent = 'Digite a senha.'; return; }
       const btn = document.querySelector('.btn-login');
@@ -700,7 +734,15 @@
       btn.disabled = true;
       setTimeout(() => {
         if (pass === ADMIN_PASS) {
-          sessionStorage.setItem('vr_admin', '1');
+          // Se "lembrar", usa localStorage (persiste entre sessões); senão sessionStorage (apaga ao fechar)
+          if (lembrar) {
+            localStorage.setItem('vr_admin', '1');
+            localStorage.setItem('vr_lembrar', '1');
+          } else {
+            sessionStorage.setItem('vr_admin', '1');
+            localStorage.removeItem('vr_admin');
+            localStorage.removeItem('vr_lembrar');
+          }
           document.getElementById('login-screen').style.cssText = 'display:none!important;';
           document.getElementById('admin-panel').style.cssText = 'display:flex!important;';
           initAdmin();
@@ -715,10 +757,14 @@
     function doLogout() {
       if (unsubscribe) unsubscribe();
       sessionStorage.removeItem('vr_admin');
+      localStorage.removeItem('vr_admin');
+      localStorage.removeItem('vr_lembrar');
       document.getElementById('login-screen').style.cssText = 'display:flex!important;';
       document.getElementById('admin-panel').style.cssText = 'display:none!important;';
       document.getElementById('login-pass').value = '';
       document.getElementById('login-error').textContent = '';
+      const cb = document.getElementById('lembrar-senha');
+      if (cb) { cb.checked = false; toggleLembrarVisual(cb); }
       const btn = document.querySelector('.btn-login');
       btn.textContent = 'Entrar';
       btn.disabled = false;
@@ -728,7 +774,8 @@
       if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none') doLogin();
     });
 
-    if (sessionStorage.getItem('vr_admin') === '1') {
+    // Auto-login se já estiver salvo (localStorage = lembrar ativo, sessionStorage = sessão normal)
+    if (localStorage.getItem('vr_admin') === '1' || sessionStorage.getItem('vr_admin') === '1') {
       document.getElementById('login-screen').style.cssText = 'display:none!important;';
       document.getElementById('admin-panel').style.cssText = 'display:flex!important;';
       initAdmin();
