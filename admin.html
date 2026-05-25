@@ -1528,6 +1528,10 @@
                 <div style="display:flex;align-items:center;gap:12px;">
                   <span style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#c8a96e;">R$${(a.preco||0).toFixed(2).replace('.',',')}</span>
                   ${badgeHTML(a.status)}
+                  <button onclick="deleteAgendamento('${a.id}')" title="Excluir"
+                    style="background:transparent;border:1px solid rgba(176,48,48,0.3);color:#d45a5a;width:28px;height:28px;border-radius:4px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"
+                    onmouseover="this.style.background='rgba(176,48,48,0.15)'"
+                    onmouseout="this.style.background='transparent'">✕</button>
                 </div>
               </div>
             `).join('')}
@@ -1832,11 +1836,30 @@
         btn.textContent = 'Excluindo...';
         btn.disabled = true;
         try {
+          // Exclui o cliente
           await db.collection('clientes').doc(_excluirClienteKey).delete();
           delete _clientesFirestore[_excluirClienteKey];
+
+          // Exclui todos os agendamentos do cliente (pelo telefone)
+          const tel = _excluirClienteKey.replace(/\D/g, '');
+          const agSnap = await db.collection('agendamentos')
+            .where('telefone', '==', _clientesFirestore[_excluirClienteKey]?.telefone || tel)
+            .get();
+          const batch = db.batch();
+          agSnap.forEach(doc => batch.delete(doc.ref));
+          // Tenta também pelo formato com máscara
+          if (!agSnap.empty || true) {
+            // Busca pelos agendamentos já carregados em memória
+            const agsDoCli = allAgendamentos.filter(a =>
+              (a.telefone || '').replace(/\D/g,'') === tel
+            );
+            agsDoCli.forEach(a => batch.delete(db.collection('agendamentos').doc(a.id)));
+          }
+          await batch.commit();
+
           fecharModalExcluirCliente();
           fecharClienteDrawer();
-          showToast('Cliente excluído.');
+          showToast('Cliente e agendamentos excluídos.');
           renderClientes();
         } catch(e) {
           btn.textContent = 'Excluir';
