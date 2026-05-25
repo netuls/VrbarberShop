@@ -18,6 +18,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Bebas+Neue&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet"/>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js"></script>
   <style>
     #dash-filter-de::-webkit-calendar-picker-indicator,
     #dash-filter-ate::-webkit-calendar-picker-indicator { filter: invert(0.5) sepia(1) saturate(2) hue-rotate(5deg); cursor: pointer; }
@@ -620,6 +621,14 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+
+    // ── Push Notifications (FCM) ─────────────────────
+    const FCM_VAPID_KEY = 'BX3QQJCyV8CD8TFeozpr9C4lSOcOk4_uR7z0JGUru6k';
+    let _messaging = null;
+    let _fcmToken = null;
+    try {
+      _messaging = firebase.messaging();
+    } catch(e) { console.warn('FCM não suportado:', e); }
 
     // ── Token de segurança do admin ──────────────────
     const ADMIN_TOKEN = 'MinhaBarb3r@2025#VR!';
@@ -2092,20 +2101,62 @@
     function tocarSomNotificacao() {
       try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const notas = [880, 1100];
-        notas.forEach((freq, i) => {
+        if (ctx.state === 'suspended') ctx.resume();
+        const notas = [
+          { freq: 520, t: 0.00, dur: 0.13 },
+          { freq: 660, t: 0.17, dur: 0.13 },
+          { freq: 880, t: 0.34, dur: 0.25 },
+        ];
+        notas.forEach(({ freq, t, dur }) => {
           const osc  = ctx.createOscillator();
           const gain = ctx.createGain();
           osc.connect(gain);
           gain.connect(ctx.destination);
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.12);
-          gain.gain.setValueAtTime(0.08, ctx.currentTime + i * 0.12);
-          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.12 + 0.25);
-          osc.start(ctx.currentTime + i * 0.12);
-          osc.stop(ctx.currentTime + i * 0.12 + 0.25);
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + t);
+          gain.gain.setValueAtTime(0.0001, ctx.currentTime + t);
+          gain.gain.linearRampToValueAtTime(0.4,  ctx.currentTime + t + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + t + dur);
+          osc.start(ctx.currentTime + t);
+          osc.stop(ctx.currentTime + t + dur + 0.05);
         });
-      } catch(e) {}
+      } catch(e) { console.warn('Som:', e); }
+    }
+
+    // ── FCM: pede permissão e registra token ─────────
+    async function iniciarPushNotifications() {
+      if (!_messaging) return;
+      try {
+        const perm = await Notification.requestPermission();
+        if (perm !== 'granted') {
+          console.warn('Notificação negada pelo usuário.');
+          return;
+        }
+        const reg = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
+        _fcmToken = await _messaging.getToken({ vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration: reg });
+        if (_fcmToken) {
+          // Salva o token no Firestore para uso futuro
+          await db.collection('_config').doc('fcmTokens').set(
+            { [_fcmToken]: true }, { merge: true }
+          );
+          console.log('FCM token registrado.');
+        }
+        // Mensagens quando app está em foreground
+        _messaging.onMessage(payload => {
+          const { title, body } = payload.notification || {};
+          tocarSomNotificacao();
+          if (title) {
+            const n = payload.notification;
+            adicionarNotifUI({ nome: n.body || '', servico: '', data: '', hora: '', ts: Date.now(), lida: false, id: Date.now().toString() });
+          }
+        });
+      } catch(e) { console.warn('Erro FCM:', e); }
+    }
+
+    function adicionarNotifUI(notif) {
+      _notificacoes.unshift(notif);
+      atualizarBadgeNotif();
+      renderNotifList();
     }
 
     // Solicita permissão de notificação ao iniciar o admin
@@ -2342,6 +2393,12 @@
           .catch(err => console.warn("SW falhou:", err));
       });
     }
+
+    // Inicia push notifications após login
+    document.addEventListener('click', function unlockOnce() {
+      iniciarPushNotifications();
+      document.removeEventListener('click', unlockOnce);
+    }, { once: true });
   
   </script>
   <!-- ════════════════════════════════════════════════
