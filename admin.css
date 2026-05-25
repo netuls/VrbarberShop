@@ -99,7 +99,14 @@ body.admin-body {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.login-logo { display: none !important; }
+.login-logo {
+  display: block !important;
+  width: 130px !important;
+  height: 130px !important;
+  object-fit: contain !important;
+  opacity: 0.93 !important;
+  margin: 0 auto 24px auto !important;
+}
 
 .login-card h2 {
   font-family: var(--font-display) !important;
@@ -1003,54 +1010,61 @@ body.admin-body {
   margin: 0 !important;
 }
 
-/* ── Lista de clientes — container ── */
+/* ── Lista de clientes — cada linha ── */
 #clientes-lista > div {
   border-radius: 8px !important;
   overflow: hidden !important;
 }
 
-/* Linha individual do cliente (7 colunas: nome | visitas | ticket | total | favorito | última | seta) */
+/* Linha individual do cliente */
 #clientes-lista > div > div {
   display: grid !important;
-  grid-template-columns: minmax(180px, 2fr) 70px 80px 90px 120px 110px 24px !important;
+  grid-template-columns: 42px 1fr auto auto !important;
   align-items: center !important;
-  gap: 0 !important;
-  padding: 13px 20px !important;
+  gap: 0 16px !important;
+  padding: 14px 20px !important;
   background: #141414 !important;
   transition: background 0.2s !important;
 }
 
-/* Coluna 1: avatar + nome (flex interno) */
-#clientes-lista > div > div > div:first-child {
-  display: flex !important;
+/* Coluna de stats (visitas/ticket/gasto/favorito/última visita) */
+#clientes-lista > div > div > div:nth-child(4) {
+  display: grid !important;
+  grid-template-columns: repeat(5, 64px) !important;
+  gap: 0 !important;
   align-items: center !important;
-  gap: 12px !important;
-  overflow: hidden !important;
-  min-width: 0 !important;
 }
 
-/* Avatar circular */
-#clientes-lista > div > div > div:first-child > div:first-child {
-  width: 36px !important;
-  height: 36px !important;
-  border-radius: 50% !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+/* Cada stat dentro da coluna */
+#clientes-lista > div > div > div:nth-child(4) > div {
+  text-align: center !important;
+  padding: 0 8px !important;
+  border-right: 1px solid rgba(255,255,255,0.04) !important;
+}
+#clientes-lista > div > div > div:nth-child(4) > div:last-child {
+  border-right: none !important;
+}
+
+/* Valor do stat */
+#clientes-lista > div > div > div:nth-child(4) > div > div:first-child {
   font-family: 'Bebas Neue', sans-serif !important;
-  font-size: 15px !important;
-  flex-shrink: 0 !important;
+  font-size: 18px !important;
+  line-height: 1.1 !important;
 }
 
-/* Container de texto (nome + telefone) */
-#clientes-lista > div > div > div:first-child > div:last-child {
-  overflow: hidden !important;
-  min-width: 0 !important;
-  flex: 1 !important;
+/* Label do stat */
+#clientes-lista > div > div > div:nth-child(4) > div > div:last-child {
+  font-family: 'Oswald', sans-serif !important;
+  font-size: 8px !important;
+  letter-spacing: 1.5px !important;
+  color: #444 !important;
+  text-transform: uppercase !important;
+  margin-top: 2px !important;
+  white-space: nowrap !important;
 }
 
 /* Nome do cliente */
-#clientes-lista > div > div > div:first-child > div:last-child > div:first-child {
+#clientes-lista > div > div > div:nth-child(3) > div:first-child {
   font-family: 'Oswald', sans-serif !important;
   font-size: 14px !important;
   font-weight: 500 !important;
@@ -1062,14 +1076,28 @@ body.admin-body {
 }
 
 /* Telefone / nascimento */
-#clientes-lista > div > div > div:first-child > div:last-child > div:last-child {
+#clientes-lista > div > div > div:nth-child(3) > div:last-child {
   font-family: 'Roboto', sans-serif !important;
   font-size: 11px !important;
   color: #555 !important;
   margin-top: 3px !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+}
+
+/* Avatar/inicial */
+#clientes-lista > div > div > div:first-child {
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-family: 'Bebas Neue', sans-serif !important;
+  font-size: 18px !important;
+  flex-shrink: 0 !important;
 }
 
 /* ── Busca e ordenação ── */
@@ -1110,22 +1138,41 @@ body.admin-body {
     font-size: 22px !important;
   }
 
-  /* Linha de cliente no mobile: mostra só nome + seta */
+  /* Linha de cliente no mobile: avatar + info + seta */
   #clientes-lista > div > div {
-    grid-template-columns: 1fr 24px !important;
+    grid-template-columns: 38px 1fr auto !important;
+    grid-template-rows: auto auto !important;
     padding: 14px 14px !important;
+    gap: 0 12px !important;
   }
 
-  /* Esconde colunas de stats no mobile (visitas, ticket, total, favorito, última visita) */
-  #clientes-lista > div > div > div:nth-child(n+2):nth-child(-n+6) {
-    display: none !important;
-  }
-
-  /* Seta fica na segunda coluna */
+  /* Esconde seta no mobile (ocupa espaço desnecessário) */
   #clientes-lista > div > div > div:last-child {
-    grid-column: 2 !important;
+    grid-column: 3 !important;
     grid-row: 1 !important;
     align-self: center !important;
+  }
+
+  /* Stats ficam em linha abaixo, full-width */
+  #clientes-lista > div > div > div:nth-child(4) {
+    grid-column: 1 / -1 !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+    margin-top: 12px !important;
+    padding-top: 10px !important;
+    border-top: 1px solid rgba(255,255,255,0.05) !important;
+    gap: 0 !important;
+  }
+
+  /* Cada stat menor no mobile */
+  #clientes-lista > div > div > div:nth-child(4) > div {
+    padding: 0 4px !important;
+  }
+  #clientes-lista > div > div > div:nth-child(4) > div > div:first-child {
+    font-size: 15px !important;
+  }
+  #clientes-lista > div > div > div:nth-child(4) > div > div:last-child {
+    font-size: 7px !important;
+    letter-spacing: 0.5px !important;
   }
 
   /* Campo de busca full-width no mobile */
@@ -1151,5 +1198,16 @@ body.admin-body {
     bottom: 0 !important;
     max-height: 92vh !important;
     border-radius: 12px 12px 0 0 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Esconde "favorito" e "última visita" em telas muito pequenas */
+  #clientes-lista > div > div > div:nth-child(4) {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+  #clientes-lista > div > div > div:nth-child(4) > div:nth-child(4),
+  #clientes-lista > div > div > div:nth-child(4) > div:nth-child(5) {
+    display: none !important;
   }
 }
