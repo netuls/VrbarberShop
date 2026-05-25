@@ -1412,7 +1412,7 @@
               </tr>
             </thead>
             <tbody>
-          \${lista.map(c => {
+          ${lista.map(c => {
             const s = c.stats;
             const favorito   = s.servicoFavorito ? s.servicoFavorito[0] : '—';
             const ultimaFmt  = s.ultimaVisita ? s.ultimaVisita.split('-').reverse().join('/') : '—';
