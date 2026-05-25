@@ -1399,59 +1399,58 @@
 
       el.innerHTML = `
         <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-radius:8px;overflow:hidden;">
-          <!-- Cabeçalho -->
-          <div style="display:grid;grid-template-columns:minmax(180px,2fr) 70px 80px 90px 120px 110px 24px;align-items:center;padding:8px 20px;border-bottom:1px solid rgba(255,255,255,0.04);">
-            <div style="font-family:'Oswald',sans-serif;font-size:8px;letter-spacing:2px;color:#2e2e2e;text-transform:uppercase;">Cliente</div>
-            <div style="font-family:'Oswald',sans-serif;font-size:8px;letter-spacing:2px;color:#2e2e2e;text-transform:uppercase;text-align:center;">Visitas</div>
-            <div style="font-family:'Oswald',sans-serif;font-size:8px;letter-spacing:2px;color:#2e2e2e;text-transform:uppercase;text-align:center;">Ticket</div>
-            <div style="font-family:'Oswald',sans-serif;font-size:8px;letter-spacing:2px;color:#2e2e2e;text-transform:uppercase;text-align:center;">Total</div>
-            <div style="font-family:'Oswald',sans-serif;font-size:8px;letter-spacing:2px;color:#2e2e2e;text-transform:uppercase;text-align:center;">Favorito</div>
-            <div style="font-family:'Oswald',sans-serif;font-size:8px;letter-spacing:2px;color:#2e2e2e;text-transform:uppercase;text-align:right;">Última Visita</div>
-            <div></div>
-          </div>
-          <!-- Linhas -->
-          ${lista.map(c => {
+          <table style="width:100%;border-collapse:collapse;">
+            <thead>
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                <th style="font-family:'Oswald',sans-serif;font-size:8px;letter-spacing:2px;color:#2e2e2e;text-transform:uppercase;padding:8px 20px;font-weight:400;text-align:left;">Cliente</th>
+                <th style="font-family:'Oswald',sans-serif;font-size:8px;letter-spacing:2px;color:#2e2e2e;text-transform:uppercase;padding:8px 4px;font-weight:400;text-align:center;width:70px;">Visitas</th>
+                <th style="font-family:'Oswald',sans-serif;font-size:8px;letter-spacing:2px;color:#2e2e2e;text-transform:uppercase;padding:8px 4px;font-weight:400;text-align:center;width:80px;">Ticket</th>
+                <th style="font-family:'Oswald',sans-serif;font-size:8px;letter-spacing:2px;color:#2e2e2e;text-transform:uppercase;padding:8px 4px;font-weight:400;text-align:center;width:90px;">Total</th>
+                <th style="font-family:'Oswald',sans-serif;font-size:8px;letter-spacing:2px;color:#2e2e2e;text-transform:uppercase;padding:8px 4px;font-weight:400;text-align:center;width:120px;">Favorito</th>
+                <th style="font-family:'Oswald',sans-serif;font-size:8px;letter-spacing:2px;color:#2e2e2e;text-transform:uppercase;padding:8px 20px 8px 4px;font-weight:400;text-align:right;width:110px;">Última Visita</th>
+                <th style="width:24px;"></th>
+              </tr>
+            </thead>
+            <tbody>
+          \${lista.map(c => {
             const s = c.stats;
             const favorito   = s.servicoFavorito ? s.servicoFavorito[0] : '—';
             const ultimaFmt  = s.ultimaVisita ? s.ultimaVisita.split('-').reverse().join('/') : '—';
             const nascFmt    = c.nascimento ? fmtNascimento(c.nascimento) : '';
             const anivAmanha = isAniversarioAmanha(c.nascimento);
             const encData    = encodeURIComponent(JSON.stringify({ nome: c.nome, telefone: c.telefone, nascimento: c.nascimento || '', agendamentos: c.agendamentos }));
-            return `<div onclick="abrirClienteDrawer('${encData}')"
-              style="display:grid;grid-template-columns:minmax(180px,2fr) 70px 80px 90px 120px 110px 24px;align-items:center;padding:13px 20px;background:#141414;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.025);${anivAmanha ? 'border-left:3px solid #c8a96e;padding-left:17px;' : ''}"
+            return `<tr onclick="abrirClienteDrawer('\${encData}')"
+              style="background:#141414;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.025);\${anivAmanha ? 'border-left:3px solid #c8a96e;' : ''}"
               onmouseover="this.style.background='#1b1b1b'" onmouseout="this.style.background='#141414'">
-              <!-- Avatar + Nome -->
-              <div style="display:flex;align-items:center;gap:12px;min-width:0;">
-                <div style="width:36px;height:36px;border-radius:50%;background:${anivAmanha ? '#2a1e00' : '#1e1e1e'};border:1px solid ${anivAmanha ? '#c8a96e' : '#252525'};display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:15px;color:${anivAmanha ? '#c8a96e' : '#555'};flex-shrink:0;">${(c.nome||'?')[0].toUpperCase()}</div>
-                <div style="min-width:0;overflow:hidden;">
-                  <div style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:500;color:#f0ece4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.nome}${anivAmanha ? '&nbsp;<span style="font-size:8px;background:#2a1e00;color:#c8a96e;letter-spacing:1px;padding:2px 5px;border-radius:3px;border:1px solid #4a3800;">\uD83C\uDF82 AMANHÃ</span>' : ''}</div>
-                  <div style="font-family:'Roboto',sans-serif;font-size:11px;color:#3a3a3a;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.telefone}${nascFmt ? ' · ' + nascFmt : ''}</div>
+              <td style="padding:13px 20px;">
+                <div style="display:flex;align-items:center;gap:12px;">
+                  <div style="width:36px;height:36px;border-radius:50%;background:\${anivAmanha ? '#2a1e00' : '#1e1e1e'};border:1px solid \${anivAmanha ? '#c8a96e' : '#252525'};display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:15px;color:\${anivAmanha ? '#c8a96e' : '#555'};flex-shrink:0;">\${(c.nome||'?')[0].toUpperCase()}</div>
+                  <div>
+                    <div style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:500;color:#f0ece4;">\${c.nome}\${anivAmanha ? '&nbsp;<span style="font-size:8px;background:#2a1e00;color:#c8a96e;letter-spacing:1px;padding:2px 5px;border-radius:3px;border:1px solid #4a3800;">\uD83C\uDF82 AMANHÃ</span>' : ''}</div>
+                    <div style="font-family:'Roboto',sans-serif;font-size:11px;color:#3a3a3a;margin-top:2px;">\${c.telefone}\${nascFmt ? ' · ' + nascFmt : ''}</div>
+                  </div>
                 </div>
-              </div>
-              <!-- Visitas -->
-              <div style="text-align:center;">
-                <span style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#f0ece4;line-height:1;">${s.total}</span>
-              </div>
-              <!-- Ticket -->
-              <div style="text-align:center;">
-                <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#c8a96e;line-height:1;">R$${s.ticket.toFixed(0)}</span>
-              </div>
-              <!-- Total Gasto -->
-              <div style="text-align:center;">
-                <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#f0ece4;line-height:1;">R$${s.gastoTotal.toFixed(0)}</span>
-              </div>
-              <!-- Favorito -->
-              <div style="text-align:center;overflow:hidden;">
-                <span style="font-family:'Roboto',sans-serif;font-size:11px;color:#666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;">${favorito}</span>
-              </div>
-              <!-- Última Visita -->
-              <div style="text-align:right;">
-                <span style="font-family:'Roboto',sans-serif;font-size:11px;color:#4a4a4a;white-space:nowrap;">${ultimaFmt}</span>
-              </div>
-              <!-- Seta -->
-              <div style="text-align:right;color:#2a2a2a;font-size:15px;padding-left:4px;">›</div>
-            </div>`;
+              </td>
+              <td style="text-align:center;padding:13px 4px;">
+                <span style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#f0ece4;line-height:1;">\${s.total}</span>
+              </td>
+              <td style="text-align:center;padding:13px 4px;">
+                <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#c8a96e;line-height:1;">R\$\${s.ticket.toFixed(0)}</span>
+              </td>
+              <td style="text-align:center;padding:13px 4px;">
+                <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#f0ece4;line-height:1;">R\$\${s.gastoTotal.toFixed(0)}</span>
+              </td>
+              <td style="text-align:center;padding:13px 4px;">
+                <span style="font-family:'Roboto',sans-serif;font-size:11px;color:#666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;">\${favorito}</span>
+              </td>
+              <td style="text-align:right;padding:13px 20px 13px 4px;">
+                <span style="font-family:'Roboto',sans-serif;font-size:11px;color:#4a4a4a;white-space:nowrap;">\${ultimaFmt}</span>
+              </td>
+              <td style="text-align:right;padding-right:12px;color:#2a2a2a;font-size:15px;">›</td>
+            </tr>`;
           }).join('')}
+            </tbody>
+          </table>
         </div>`;
     }
 
