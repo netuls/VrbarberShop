@@ -3,6 +3,7 @@
 // ================================================
 
 const WHATSAPP_NUMBER = '5585994044941';
+const ADMIN_TOKEN = 'VR_BARBER_2025_@#$';
 const WHATSAPP_NOTIFY = '5585994044941';
 
 // ─── Slides do Slideshow (adicione URLs de imagens aqui) ───
@@ -76,6 +77,7 @@ async function loginOrRegister(rawPhone, nome, nascimento) {
     const data = {
       nome: nome,
       telefone: key,
+      adminToken: ADMIN_TOKEN,
       criadoEm: firebase.firestore.FieldValue.serverTimestamp()
     };
     if (nascimento) data.nascimento = nascimento;
@@ -784,6 +786,7 @@ window.submitBooking = async function() {
       cliente: state.name, telefone: key,
       data: state.date, horario: state.time, obs: state.obs,
       status: 'agendado',
+      adminToken: ADMIN_TOKEN,
       criadoEm: firebase.firestore.FieldValue.serverTimestamp()
     });
     sendWhatsAppNotification();
