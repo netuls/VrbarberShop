@@ -3,7 +3,7 @@
 // ================================================
 
 const WHATSAPP_NUMBER = '5585994044941';
-const ADMIN_TOKEN = 'VR_BARBER_2025_@#$';
+const ADMIN_TOKEN = 'MinhaBarb3r@2025#VR!';
 const WHATSAPP_NOTIFY = '5585994044941';
 
 // ─── Slides do Slideshow (adicione URLs de imagens aqui) ───
