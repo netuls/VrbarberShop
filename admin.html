@@ -621,6 +621,9 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    // ── Token de segurança do admin ──────────────────
+    const ADMIN_TOKEN = 'VR_BARBER_2025_@#$';
+
     // ── Estado Global (declarado no topo para evitar TDZ) ────────────
     let allAgendamentos = [];
     let unsubscribe = null;
@@ -979,7 +982,7 @@
     }
 
     function salvarStatus(id, status, enviarWpp) {
-      db.collection('agendamentos').doc(id).update({ status, atualizadoEm: firebase.firestore.FieldValue.serverTimestamp() })
+      db.collection('agendamentos').doc(id).update({ status, atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(), adminToken: ADMIN_TOKEN })
         .then(() => {
           if (enviarWpp && status === 'confirmado') {
             const ag = allAgendamentos.find(a => a.id === id);
@@ -1035,7 +1038,7 @@
       try {
         const batch = db.batch();
         pendentes.forEach(a => {
-          batch.update(db.collection('agendamentos').doc(a.id), {
+          batch.update(db.collection('agendamentos').doc(a.id), { adminToken: ADMIN_TOKEN,
             status: 'concluido',
             atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
           });
@@ -1207,7 +1210,7 @@
       btn.textContent = 'Salvando...';
       btn.disabled = true;
       try {
-        await db.collection('config').doc('horarios').set(horariosConfig);
+        await db.collection('config').doc('horarios').set({ ...horariosConfig, adminToken: ADMIN_TOKEN });
         st.textContent = 'Salvo com sucesso!';
         st.style.color = '#f0ece4';
         setTimeout(() => { st.textContent = ''; }, 3000);
@@ -1320,7 +1323,7 @@
       try {
         const data = { nome, telefone: tel, criadoEm: firebase.firestore.FieldValue.serverTimestamp() };
         if (nasc) data.nascimento = nasc;
-        await db.collection('clientes').doc(tel).set(data, { merge: true });
+        await db.collection('clientes').doc(tel).set({ ...data, adminToken: ADMIN_TOKEN }, { merge: true });
         _clientesFirestore[tel] = { ...(_clientesFirestore[tel] || {}), ...data };
         if(st) { st.textContent = 'Cliente salvo!'; st.style.color = '#4caf50'; }
         document.getElementById('cad-nome').value = '';
@@ -1780,7 +1783,7 @@
         // Usa set com merge:true para não sobrescrever outros campos do documento
         // e funciona mesmo se o documento ainda não existir
         const docRef = db.collection('config').doc('datas_especiais');
-        await docRef.set(datasEspeciais, { merge: true });
+        await docRef.set({ ...datasEspeciais, adminToken: ADMIN_TOKEN }, { merge: true });
         // Reset form
         document.getElementById('de-data').value   = '';
         document.getElementById('de-desc').value   = '';
@@ -1802,6 +1805,7 @@
         // Usa FieldValue.delete() para remover só esse campo, sem apagar os outros
         const update = {};
         update[data] = firebase.firestore.FieldValue.delete();
+        update.adminToken = ADMIN_TOKEN;
         await db.collection('config').doc('datas_especiais').update(update);
         delete datasEspeciais[data];
         renderDatasLista();
@@ -2269,12 +2273,12 @@
           atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
         };
 
-        await db.collection('agendamentos').add(payload);
+        await db.collection('agendamentos').add({ ...payload, adminToken: ADMIN_TOKEN });
 
         // Atualiza histórico do cliente no Firestore (se tiver telefone)
         if (tel) {
           const clienteRef = db.collection('clientes').doc(tel);
-          await clienteRef.set({ nome, telefone: tel }, { merge: true });
+          await clienteRef.set({ nome, telefone: tel, adminToken: ADMIN_TOKEN }, { merge: true });
         }
 
         // Feedback de sucesso
